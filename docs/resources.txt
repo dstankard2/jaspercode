@@ -1,0 +1,25 @@
+
+Jar with Embedded Tomcat
+https://stackoverflow.com/questions/31959455/deploy-a-web-application-with-tomcat-included-in-one-jar
+https://github.com/NitorCreations/tomcat8-war-runner#readme
+
+Tomcat Configuration
+https://tomcat.apache.org/tomcat-8.0-doc/jndi-datasource-examples-howto.html
+https://tomcat.apache.org/tomcat-8.0-doc/config/context.html
+
+
+
+Javascript
+Getters and setters: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Working_with_Objects
+CAJA Parser: https://github.com/google/caja
+
+Java Source Parser
+https://github.com/forge/roaster
+
+Javascript Source Parser
+https://github.com/mozilla/rhino
+https://mozilla.github.io/rhino/javadoc/org/mozilla/javascript/Parser.html
+
+Maven Assembly plugin for ZIP file
+https://medium.com/@kasunpdh/using-the-maven-assembly-plugin-to-build-a-zip-distribution-5cbca2a3b052
+
