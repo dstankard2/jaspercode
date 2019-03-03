@@ -1,0 +1,113 @@
+package net.sf.jaspercode.engine;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import net.sf.jaspercode.api.BuildComponentProcessor;
+import net.sf.jaspercode.api.ComponentProcessor;
+import net.sf.jaspercode.api.annotation.Processor;
+import net.sf.jaspercode.api.config.BuildComponent;
+import net.sf.jaspercode.api.config.Component;
+
+public class EnginePatterns {
+	private Set<ComponentPattern> patterns = new HashSet<>();
+	private Set<BuildComponentPattern> buildPatterns = new HashSet<>();
+	PluginManager pluginManager = null;
+
+	public EnginePatterns(PluginManager pluginManager) {
+		this.pluginManager = pluginManager;
+	}
+
+	/*
+	public Set<Class<?>> getXmlConfigClasses() {
+		return xmlConfigClasses;
+	}
+	*/
+
+	@SuppressWarnings("unchecked")
+	public void findPatterns() throws EngineInitException {
+		try {
+			Set<Class<ComponentProcessor>> processorClasses = pluginManager.getPluginSubclasses(ComponentProcessor.class);
+			Set<Class<Component>> componentClasses = pluginManager.getPluginSubclasses(Component.class);
+			Set<Class<BuildComponentProcessor>> buildProcessors = pluginManager.getPluginSubclasses(BuildComponentProcessor.class);
+
+			
+			//Set<Class<?>> xmlConfigClasses = pluginManager.getPluginsWithAnnotation(XmlConfig.class);
+			
+			/*
+			xmlConfigClasses = AnnotationHelper.findAnnotatedClasses(XmlConfig.class);
+			xmlConfigClasses.add(Component.class);
+			xmlConfigClasses.add(ComponentSet.class);
+			xmlConfigClasses.add(Property.class);
+			*/
+	
+			for(Class<?> comp : componentClasses) {
+				if (BuildComponent.class.isAssignableFrom(comp)) {
+					Class<? extends BuildComponentProcessor> processorClass = null;
+					Class<? extends BuildComponent> bcomp = (Class<? extends BuildComponent>)comp;
+					for(Class<?> cl : buildProcessors) {
+						Class<? extends BuildComponentProcessor> buildProcClass = (Class<? extends BuildComponentProcessor>)cl;
+						BuildComponentProcessor inst = buildProcClass.newInstance();
+						if (inst.getComponentClass()==comp) {
+							processorClass = buildProcClass;
+							break;
+						}
+					}
+					if (processorClass==null) {
+						throw new EngineInitException("Found no processor class for build component '"+bcomp.getCanonicalName()+"'");
+					}
+					BuildComponentPattern p = new BuildComponentPattern(bcomp,processorClass);
+					buildPatterns.add(p);
+				} else {
+					Class<? extends Component> componentClass = (Class<? extends Component>)comp;
+					ComponentPattern p = new ComponentPattern(componentClass);
+					for(Class<? extends ComponentProcessor> pr : processorClasses) {
+						Processor processor = pr.getAnnotation(Processor.class);
+						if (processor==null) {
+							throw new EngineInitException("All Jasper plugins that implement ComponentProcessor must have the annotation @Processor, to mark what component class they process");
+						}
+						if (processor.componentClass()==componentClass) {
+							RegisteredProcessor proc = new RegisteredProcessor(pr);
+							p.getProcessors().add(proc);
+						}
+					}
+					patterns.add(p);
+				}
+				
+			}
+		} catch(IllegalAccessException e) {
+			throw new EngineInitException("Exception while locating component patterns",e);
+		} catch(InstantiationException e) {
+			throw new EngineInitException("Exception while locating component patterns",e);
+		}
+	}
+
+	public ComponentPattern getPattern(Class<? extends Component> compClass) {
+		for(ComponentPattern pattern : patterns) {
+			if (pattern.getPatternClass()==compClass) {
+				return pattern;
+			}
+		}
+		return null;
+	}
+
+	public BuildComponentPattern getBuildPattern(Class<? extends BuildComponent> buildComponent) {
+		for(BuildComponentPattern pattern : buildPatterns) {
+			if (pattern.getComponentClass()==buildComponent) {
+				return pattern;
+			}
+		}
+		return null;
+	}
+
+	/*
+	public <T> Set<Class<T>> getSubclasses(Class<T> superclass) {
+		return AnnotationHelper.findSubclasses(superclass);
+	}
+
+	public Set<Class<?>> getClassesWithAnnotation(Class<? extends Annotation> annotation) {
+		return AnnotationHelper.findAnnotatedClasses(annotation);
+	}
+	*/
+
+}
