@@ -1,7 +1,6 @@
 package net.sf.jaspercode.patterns.http;
 
 import net.sf.jaspercode.api.ProcessorContext;
-import net.sf.jaspercode.patterns.maven.MavenUtils;
 
 public class WebUtils {
 
