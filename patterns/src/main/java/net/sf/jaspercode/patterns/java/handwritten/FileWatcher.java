@@ -2,8 +2,8 @@ package net.sf.jaspercode.patterns.java.handwritten;
 
 import java.io.IOException;
 
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.ProcessorContext;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.ApplicationFile;
 import net.sf.jaspercode.api.resources.ResourceWatcher;
 
@@ -27,16 +27,22 @@ public class FileWatcher implements ResourceWatcher {
 
 	private void findPriority() {
 		ApplicationFile file = (ApplicationFile)ctx.getResource(path);
-		try {
-			proc = new FileProcessor(file,ctx);
-			priority = proc.getPriority();
-		} catch(IOException e) {
-			proc = null;
-			priority = 0;
-		} catch(JasperException e) {
-			proc = null;
-			priority = 0;
+
+		if (file==null) {
+			priority = -1;
+		} else {
+			try {
+				proc = new FileProcessor(file,ctx);
+				priority = proc.getPriority();
+			} catch(IOException e) {
+				proc = null;
+				priority = 0;
+			} catch(JasperException e) {
+				proc = null;
+				priority = 0;
+			}
 		}
+
 	}
 	
 	@Override
@@ -52,8 +58,14 @@ public class FileWatcher implements ResourceWatcher {
 		}
 	}
 
+	@Override
 	public int getPriority() {
 		return priority;
+	}
+	
+	@Override
+	public String getPath() {
+		return path;
 	}
 
 }

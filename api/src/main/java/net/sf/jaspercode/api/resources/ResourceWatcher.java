@@ -1,7 +1,7 @@
 package net.sf.jaspercode.api.resources;
 
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.ProcessorContext;
+import net.sf.jaspercode.api.exception.JasperException;
 
 public interface ResourceWatcher {
 
@@ -12,5 +12,7 @@ public interface ResourceWatcher {
 
 	// Called after init(), to determine processing order
 	int getPriority();
+	
+	String getPath();
 	
 }

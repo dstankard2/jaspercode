@@ -1,6 +1,6 @@
 package net.sf.jaspercode.patterns.js.template.parsing;
 
-import net.sf.jaspercode.api.JasperException;
+import net.sf.jaspercode.api.exception.JasperException;
 
 public interface Directive {
 

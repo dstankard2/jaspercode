@@ -10,11 +10,11 @@ import javax.xml.bind.annotation.XmlType;
 
 import net.sf.jaspercode.api.AttribEntry;
 import net.sf.jaspercode.api.CodeExecutionContext;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.annotation.XmlConfig;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.types.ServiceOperation;
 import net.sf.jaspercode.langsupport.java.JavaUtils;
 import net.sf.jaspercode.patterns.java.service.CallRuleRenderer;

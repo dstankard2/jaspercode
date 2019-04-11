@@ -5,9 +5,9 @@ import java.util.Map;
 
 import net.sf.jaspercode.api.AttribEntry;
 import net.sf.jaspercode.api.CodeExecutionContext;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.types.ServiceOperation;
 import net.sf.jaspercode.langsupport.java.JavaCode;
 import net.sf.jaspercode.langsupport.java.JavaUtils;
@@ -41,7 +41,7 @@ public class CallRuleRenderer extends OperationRenderer {
 			}
 			ctx.dependOnSystemAttribute(result);
 			JavaVariableType resultType = execCtx.getType(JavaVariableType.class, resultTypeName);
-			ctx.dependOnVariableType(resultTypeName);
+			ctx.dependOnVariableType(resultType);
 			JavaUtils.append(code, resultType.declare(result, execCtx));
 			execCtx.addVariable(result, resultTypeName);
 		}

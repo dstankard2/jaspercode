@@ -1,7 +1,7 @@
 package net.sf.jaspercode.patterns.js.template.parsing.directives;
 
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.annotation.Plugin;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.types.ServiceOperation;
 import net.sf.jaspercode.patterns.js.template.parsing.DirectiveContext;
 import net.sf.jaspercode.patterns.js.template.parsing.ElementDirective;

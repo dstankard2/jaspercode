@@ -17,6 +17,21 @@ public class EngineProperties {
 		String[] vals = val.split(",");
 		return Arrays.asList(vals);
 	}
+	
+	protected boolean getBoolean(String option,boolean defaultValue) {
+		boolean ret = defaultValue;
+		
+		String val = userOptions.get(option);
+		if (val!=null) {
+			if ((val.equalsIgnoreCase("true")) || (val.equalsIgnoreCase("T")) || (val.equalsIgnoreCase("Y"))) {
+				ret = true;
+			} else {
+				ret = false;
+			}
+		}
+		
+		return ret;
+	}
 
 	public EngineProperties(Map<String,String> userOptions) {
 		this.userOptions = userOptions;
@@ -44,6 +59,10 @@ public class EngineProperties {
 
 	public String getOutputDir() {
 		return userOptions.get("outputDir");
+	}
+	
+	public boolean getDebug() {
+		return getBoolean("debug", false);
 	}
 	
 }

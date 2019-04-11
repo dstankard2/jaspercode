@@ -2,6 +2,11 @@ package net.sf.jaspercode.engine.definitions;
 
 import net.sf.jaspercode.api.resources.ApplicationResource;
 
+/**
+ * Represents an application folder/file that is being watched by the engine.
+ * @author DCS
+ *
+ */
 public interface WatchedResource extends ApplicationResource {
 
 	/**
@@ -11,4 +16,7 @@ public interface WatchedResource extends ApplicationResource {
 	 */
 	public long getLastModified();
 	
+	public ApplicationFolderImpl getFolder();
+
 }
+

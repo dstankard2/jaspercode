@@ -11,8 +11,8 @@ import org.jsoup.nodes.TextNode;
 import org.jsoup.parser.Parser;
 
 import net.sf.jaspercode.api.CodeExecutionContext;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.ProcessorContext;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.types.ServiceOperation;
 import net.sf.jaspercode.langsupport.javascript.JavascriptCode;
 import net.sf.jaspercode.langsupport.javascript.ModuleImport;

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.types.DataObjectType;
 import net.sf.jaspercode.api.types.ListType;
 import net.sf.jaspercode.api.types.ServiceOperation;

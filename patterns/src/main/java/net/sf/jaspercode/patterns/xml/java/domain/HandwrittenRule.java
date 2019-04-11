@@ -55,6 +55,11 @@ public class HandwrittenRule extends DomainLogicComponent {
 	public void setParams(String params) {
 		this.params = params;
 	}
-	
+
+	@Override
+	public String getComponentName() {
+		return this.getServiceName()+'.'+this.getRule()+"("+params+")";
+	}
+
 }
 

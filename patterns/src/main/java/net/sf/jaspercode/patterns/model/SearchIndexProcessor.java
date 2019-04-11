@@ -5,14 +5,13 @@ import java.util.List;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
 
 import net.sf.jaspercode.api.AttribEntry;
-import net.sf.jaspercode.api.CodeExecutionContext;
 import net.sf.jaspercode.api.ComponentProcessor;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.annotation.Processor;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.types.ServiceOperation;
 import net.sf.jaspercode.langsupport.java.JavaClassSourceFile;
 import net.sf.jaspercode.langsupport.java.JavaCode;
@@ -52,7 +51,6 @@ public class SearchIndexProcessor implements ComponentProcessor {
 		String query = comp.getQueryString();
 
 		ServiceOperation op = new ServiceOperation(name);
-		CodeExecutionContext execCtx = new CodeExecutionContext(ctx);
 		JavaCode code = new JavaCode();
 		if (multiple==Boolean.TRUE) {
 			op.returnType("list/"+entity);
@@ -68,7 +66,7 @@ public class SearchIndexProcessor implements ComponentProcessor {
 			code.appendCodeText(".setParameter(\""+attrib.getName()+"\","+attrib.getName()+")");
 		}
 		code.appendCodeText("."+resultStr+";\n");
-		JavaClassSource cl = src.getJavaClassSource();
+		JavaClassSource cl = src.getSrc();
 		JavaUtils.addServiceOperation(op, code, cl, ctx);
 	}
 	

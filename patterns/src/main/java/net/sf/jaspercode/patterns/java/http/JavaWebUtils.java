@@ -3,9 +3,9 @@ package net.sf.jaspercode.patterns.java.http;
 import java.util.List;
 
 import net.sf.jaspercode.api.BuildContext;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.RuntimePlatform;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.langsupport.java.types.JavaVariableType;
 import net.sf.jaspercode.langsupport.java.types.impl.ExceptionJavaType;
 import net.sf.jaspercode.langsupport.java.types.impl.JavaVariableTypeImpl;

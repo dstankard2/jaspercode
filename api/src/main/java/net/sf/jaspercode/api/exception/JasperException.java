@@ -1,4 +1,4 @@
-package net.sf.jaspercode.api;
+package net.sf.jaspercode.api.exception;
 
 public class JasperException extends Exception {
 	private static final long serialVersionUID = 1L;

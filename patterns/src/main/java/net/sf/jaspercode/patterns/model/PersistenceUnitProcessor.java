@@ -10,12 +10,12 @@ import org.jboss.forge.roaster.model.source.JavaClassSource;
 import org.jboss.forge.roaster.model.source.MethodSource;
 
 import net.sf.jaspercode.api.ComponentProcessor;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.annotation.Processor;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.langsupport.java.JavaClassSourceFile;
 import net.sf.jaspercode.langsupport.java.JavaUtils;
 import net.sf.jaspercode.langsupport.java.types.JavaVariableType;
@@ -103,14 +103,14 @@ public class PersistenceUnitProcessor implements ComponentProcessor {
 		String pkg = JavaUtils.getJavaPackage(persistenceUnit, ctx);
 		JavaDataObjectType objType = new JavaDataObjectType(typeName,pkg+'.'+typeName,ctx.getBuildContext());
 		
-		entityFile.getJavaClassSource().setPackage(pkg);
-		entityFile.getJavaClassSource().setName(typeName);
-		entityFile.getJavaClassSource().addAnnotation("javax.persistence.Entity");
-		entityFile.getJavaClassSource().addAnnotation("javax.persistence.Table")
+		entityFile.getSrc().setPackage(pkg);
+		entityFile.getSrc().setName(typeName);
+		entityFile.getSrc().addAnnotation("javax.persistence.Entity");
+		entityFile.getSrc().addAnnotation("javax.persistence.Table")
 				.setLiteralValue("name", "\""+tableInfo.getTableName()+"\"")
 				.setLiteralValue("schema", "\""+tableInfo.getSchema()+"\"");
-		entityFile.getJavaClassSource().addMethod().setConstructor(true).setPublic().setBody("");
-		MethodSource<JavaClassSource> constructor = entityFile.getJavaClassSource().addMethod().setConstructor(true).setPublic();
+		entityFile.getSrc().addMethod().setConstructor(true).setPublic().setBody("");
+		MethodSource<JavaClassSource> constructor = entityFile.getSrc().addMethod().setConstructor(true).setPublic();
 		StringBuilder constructorCode = new StringBuilder();
 		for(ColumnInfo col : tableInfo.getColumns()) {
 			String enumType = null;
@@ -144,11 +144,11 @@ public class PersistenceUnitProcessor implements ComponentProcessor {
 				else throw new JasperException("Couldn't find entity property type for attribute type '"+name+"' - column type was '"+colType+"'");
 			}
 			boolean nullible = col.isNullable();
-			entityFile.getJavaClassSource().addProperty(colClass, name);
+			entityFile.getSrc().addProperty(colClass, name);
 
 			constructor.addParameter(colClass, name);
 			constructorCode.append("this."+name+" = "+name+";\n");
-			FieldSource<JavaClassSource> field = entityFile.getJavaClassSource().getField(name);
+			FieldSource<JavaClassSource> field = entityFile.getSrc().getField(name);
 			AnnotationSource<JavaClassSource> an = field.addAnnotation();
 			an.setName("javax.persistence.Column")
 					.setLiteralValue("name", "\""+colName+"\"");

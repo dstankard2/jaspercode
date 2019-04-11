@@ -53,9 +53,6 @@ public class EnginePatterns {
 							break;
 						}
 					}
-					if (processorClass==null) {
-						throw new EngineInitException("Found no processor class for build component '"+bcomp.getCanonicalName()+"'");
-					}
 					BuildComponentPattern p = new BuildComponentPattern(bcomp,processorClass);
 					buildPatterns.add(p);
 				} else {

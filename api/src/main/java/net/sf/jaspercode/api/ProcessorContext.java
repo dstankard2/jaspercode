@@ -1,6 +1,7 @@
 package net.sf.jaspercode.api;
 
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.ApplicationResource;
 import net.sf.jaspercode.api.resources.ResourceWatcher;
 import net.sf.jaspercode.api.types.VariableType;
@@ -15,17 +16,16 @@ public interface ProcessorContext {
 	public String getSystemAttribute(String name);
 
 	public void addVariableType(VariableType variableType) throws JasperException;
-	public void originateVariableType(String typeName);
-	public void dependOnVariableType(String typeName);
+	public void originateVariableType(VariableType variableType);
+	public void dependOnVariableType(VariableType variableType);
 	public VariableType getVariableType(String name) throws JasperException;
 
 	public void setObject(String name,Object obj);
-	public void originateObject(String name);
-	public void dependOnObject(String name);
+	//public void originateObject(String name);
+	//public void dependOnObject(String name);
 	public Object getObject(String name);
 
 	public void addSourceFile(SourceFile file);
-	public void originateSourceFile(SourceFile file);
 	public SourceFile getSourceFile(String path);
 
 	public String getProperty(String name);
@@ -37,10 +37,11 @@ public interface ProcessorContext {
 
 	public void addComponent(Component component);
 
-	public Log getLog();
+	Log getLog();
 
-	public void addResourceWatcher(ResourceWatcher watcher, String path);
+	void addResourceWatcher(ResourceWatcher watcher);
 	
-	public ApplicationContext getApplicationContext();
+	ApplicationContext getApplicationContext();
 	
 }
+

@@ -4,31 +4,30 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Date;
 
 import net.sf.jaspercode.api.resources.ApplicationFile;
-import net.sf.jaspercode.api.resources.ApplicationFolder;
 
 /**
- * 
+ * Implements watched resource because it is watched by the engine.
+ * Implements ApplicationFile for the sake of client API.
  * @author DCS
  */
 public class UserFile implements WatchedResource,ApplicationFile {
 	private File file = null;
 	private ApplicationFolderImpl folder = null;
-	private Date lastModified = null;
+	private long lastModified = 0;
 
 	public UserFile(File file,ApplicationFolderImpl folder) {
 		this.file = file;
-		lastModified = new Date();
 		this.folder = folder;
+		this.lastModified = file.lastModified();
 	}
 
 	@Override
-	public ApplicationFolder getFolder() {
+	public ApplicationFolderImpl getFolder() {
 		return folder;
 	}
-	
+
 	@Override
 	public String getName() {
 		return file.getName();
@@ -41,11 +40,7 @@ public class UserFile implements WatchedResource,ApplicationFile {
 
 	@Override
 	public long getLastModified() {
-		return lastModified.getTime();
-	}
-
-	public void setLastModified(Date lastModified) {
-		this.lastModified = lastModified;
+		return lastModified;
 	}
 
 	@Override
@@ -55,3 +50,4 @@ public class UserFile implements WatchedResource,ApplicationFile {
 	}
 
 }
+

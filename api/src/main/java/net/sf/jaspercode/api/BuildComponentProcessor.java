@@ -3,6 +3,7 @@ package net.sf.jaspercode.api;
 import java.util.List;
 
 import net.sf.jaspercode.api.config.BuildComponent;
+import net.sf.jaspercode.api.exception.JasperException;
 
 public interface BuildComponentProcessor {
 

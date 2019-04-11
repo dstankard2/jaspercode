@@ -31,5 +31,18 @@ public class Component {
 	public String getComponentName() {
 		return "*** Component["+this.getClass().getCanonicalName()+"] ***";
 	}
+	
+	/**
+	 * Is the given component the same component definition as this one?<br/>
+	 * This method is used when reading a modified file, to check if the components in the 
+	 * updated file match existing components.<br/>
+	 * This should only examine the XML configuration.  Changes to jasper.properties are monitored 
+	 * by the engine.<br/>
+	 * @param other Component to compare against
+	 * @return true if these are the same permutation of the same pattern.
+	 */
+	public boolean isSameComponent(Component other) {
+		return false;
+	}
 
 }

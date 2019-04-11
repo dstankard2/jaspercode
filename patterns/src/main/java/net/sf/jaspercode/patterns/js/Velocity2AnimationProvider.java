@@ -1,7 +1,7 @@
 package net.sf.jaspercode.patterns.js;
 
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.annotation.Plugin;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.langsupport.javascript.JavascriptCode;
 
 /**

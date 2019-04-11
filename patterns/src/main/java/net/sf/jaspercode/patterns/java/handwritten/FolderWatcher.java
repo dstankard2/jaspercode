@@ -4,8 +4,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.ProcessorContext;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.ApplicationFile;
 import net.sf.jaspercode.api.resources.ApplicationFolder;
 import net.sf.jaspercode.api.resources.ApplicationResource;
@@ -21,13 +21,17 @@ public class FolderWatcher implements ResourceWatcher {
 	}
 	
 	@Override
+	public String getPath() {
+		return path;
+	}
+
+	@Override
 	public void init(ProcessorContext ctx) {
 		this.ctx = ctx;
 	}
 
 	@Override
 	public void process() throws JasperException {
-		// TODO Auto-generated method stub
 		ApplicationFolder folder = (ApplicationFolder)ctx.getResource(path);
 		List<String> names = folder.getContentNames();
 		for(String name : names) {
@@ -47,7 +51,7 @@ public class FolderWatcher implements ResourceWatcher {
 			if (!watchedFiles.contains(path)) {
 				FileWatcher fileWatcher = new FileWatcher(path);
 				watchedFiles.add(path);
-				ctx.addResourceWatcher(fileWatcher, path);
+				ctx.addResourceWatcher(fileWatcher);
 			}
 		} else if (res instanceof ApplicationFolder) {
 			ApplicationFolder folder = (ApplicationFolder)res;

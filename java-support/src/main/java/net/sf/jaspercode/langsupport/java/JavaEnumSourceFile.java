@@ -3,39 +3,31 @@ package net.sf.jaspercode.langsupport.java;
 import org.jboss.forge.roaster.Roaster;
 import org.jboss.forge.roaster.model.source.JavaEnumSource;
 
-import net.sf.jaspercode.api.BuildContext;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.SourceFile;
+import net.sf.jaspercode.api.exception.JasperException;
 
-public class JavaEnumSourceFile implements SourceFile {
+public class JavaEnumSourceFile extends JavaSourceFile<JavaEnumSource> {
 
-	private BuildContext buildCtx = null;
-	private JavaEnumSource src = null;
-
-	public JavaEnumSourceFile(ProcessorContext ctx) {
-		this.buildCtx = ctx.getBuildContext();
-		src = Roaster.create(JavaEnumSource.class);
+	public JavaEnumSourceFile(ProcessorContext ctx) throws JasperException {
+		super(JavaEnumSource.class,ctx);
 	}
 	
-	public JavaEnumSource getJavaEnumSource() {
-		return src;
+	public JavaEnumSourceFile(ProcessorContext ctx, JavaEnumSource copy) throws JasperException {
+		super(JavaEnumSource.class, ctx);
+		this.src = copy;
 	}
 
-	@Override
-	public StringBuilder getSource() throws JasperException {
-		StringBuilder b = new StringBuilder();
-		b.append(src.toString());
-		return b;
-	}
-
-	@Override
-	public String getPath() {
-		String base = buildCtx.getOutputRootPath("java");
-		if (base==null) base = "";
-		String dir = src.getPackage();
-		String filename = src.getName()+".java";
-		return base + '/' + dir.replace('.', '/')+'/'+filename;
+	public SourceFile copy() {
+		StringBuilder src = this.getSource();
+		JavaEnumSource copy = Roaster.parse(JavaEnumSource.class, src.toString());
+		try {
+			return new JavaEnumSourceFile(ctx, copy);
+		} catch(JasperException e) {
+			// should be impossible
+		}
+		return null;
 	}
 
 }
+

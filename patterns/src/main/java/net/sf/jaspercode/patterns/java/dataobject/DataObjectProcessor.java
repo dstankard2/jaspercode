@@ -6,12 +6,12 @@ import org.jboss.forge.roaster.model.source.MethodSource;
 
 import net.sf.jaspercode.api.AttribEntry;
 import net.sf.jaspercode.api.ComponentProcessor;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.annotation.Processor;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.langsupport.java.JavaCode;
 import net.sf.jaspercode.langsupport.java.JavaClassSourceFile;
 import net.sf.jaspercode.langsupport.java.types.JavaVariableType;
@@ -46,19 +46,19 @@ public class DataObjectProcessor implements ComponentProcessor {
 			throw new JasperException("Type name '"+name+"' is not a valid name for a data object");
 		}
 
-		src.getJavaClassSource().setName(name);
-		src.getJavaClassSource().setPackage(pkg);
+		src.getSrc().setName(name);
+		src.getSrc().setPackage(pkg);
 
-		src.getJavaClassSource().addMethod().setConstructor(true).setBody("").setPublic();
+		src.getSrc().addMethod().setConstructor(true).setBody("").setPublic();
 
-		MethodSource<?> constructor = src.getJavaClassSource().addMethod().setConstructor(true).setPublic();
+		MethodSource<?> constructor = src.getSrc().addMethod().setConstructor(true).setPublic();
 		JavaCode constructorCode = new JavaCode();
 
 		for(AttribEntry a : attribs) {
 			String n = a.getName();
 			JavaVariableType type = (JavaVariableType)a.getType();
 			src.addImport(type);
-			src.getJavaClassSource().addProperty(type.getClassName(), n);
+			src.getSrc().addProperty(type.getClassName(), n);
 			newType.addProperty(n, type.getName());
 			constructorCode.appendCodeText("this."+n+" = "+n+";\n");
 			constructor.addParameter(type.getClassName(), n);
@@ -85,9 +85,9 @@ public class DataObjectProcessor implements ComponentProcessor {
 			}
 			newType.getSuperTypes().add(ex);
 			if (exType.getIsInterface()) {
-				src.getJavaClassSource().addInterface(exType.getImport());
+				src.getSrc().addInterface(exType.getImport());
 			} else {
-				src.getJavaClassSource().setSuperType(exType.getImport());
+				src.getSrc().setSuperType(exType.getImport());
 			}
 		}
 		

@@ -3,15 +3,20 @@ package net.sf.jaspercode.langsupport.javascript.modules;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.sf.jaspercode.api.JasperException;
+import net.sf.jaspercode.api.SourceFile;
 import net.sf.jaspercode.langsupport.javascript.JavascriptSourceFile;
+import net.sf.jaspercode.langsupport.javascript.ModuleImport;
 
 public class ModuleSourceFile extends JavascriptSourceFile {
 
 	private List<ModuleSource> modules = new ArrayList<>();
 	
+	public ModuleSourceFile() {
+		super();
+	}
+
 	@Override
-	public StringBuilder getSource() throws JasperException {
+	public StringBuilder getSource() {
 		StringBuilder build = new StringBuilder();
 
 		build.append(super.getImportSource());
@@ -36,6 +41,22 @@ public class ModuleSourceFile extends JavascriptSourceFile {
 			}
 		}
 		return null;
+	}
+
+	@Override
+	public SourceFile copy() {
+		// TODO: Finish
+		ModuleSourceFile ret = new ModuleSourceFile();
+		
+		ret.setPath(getPath());
+		for(ModuleImport im : this.importedModules) {
+			ret.addModule(im);
+		}
+		for(ModuleSource mod : this.modules) {
+			ret.addModule(mod.copy());
+		}
+
+		return ret;
 	}
 
 }

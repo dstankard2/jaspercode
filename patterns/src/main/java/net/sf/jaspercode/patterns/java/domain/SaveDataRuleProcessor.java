@@ -12,12 +12,12 @@ import org.jboss.forge.roaster.model.source.MethodSource;
 import net.sf.jaspercode.api.AttribEntry;
 import net.sf.jaspercode.api.CodeExecutionContext;
 import net.sf.jaspercode.api.ComponentProcessor;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.annotation.Processor;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.types.ServiceOperation;
 import net.sf.jaspercode.langsupport.java.JavaClassSourceFile;
 import net.sf.jaspercode.langsupport.java.JavaCode;
@@ -51,8 +51,7 @@ public class SaveDataRuleProcessor implements ComponentProcessor {
 		
 		String[] entities = entityConfig.split(",");
 
-		ctx.originateSourceFile(src);
-		MethodSource<JavaClassSource> methodSrc = src.getJavaClassSource().addMethod();
+		MethodSource<JavaClassSource> methodSrc = src.getSrc().addMethod();
 		methodSrc.setPublic().setName(ruleName);
 
 		ServiceOperation op = new ServiceOperation(ruleName);
@@ -147,7 +146,7 @@ public class SaveDataRuleProcessor implements ComponentProcessor {
 		}
 		
 		methodSrc.setBody(code.getCodeText());
-		JavaUtils.addImports(src, code);
+		src.addImports(code);
 		serviceType.addOperation(op);
 	}
 

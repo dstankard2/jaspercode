@@ -4,12 +4,12 @@ import org.jboss.forge.roaster.model.source.JavaClassSource;
 import org.jboss.forge.roaster.model.source.MethodSource;
 
 import net.sf.jaspercode.api.ComponentProcessor;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.annotation.Processor;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.langsupport.java.JavaClassSourceFile;
 import net.sf.jaspercode.patterns.model.types.impl.EntityManagerType;
 import net.sf.jaspercode.patterns.xml.model.ThreadLocalEntityManager;
@@ -39,8 +39,8 @@ public class ThreadLocalEntityManagerProcessor implements ComponentProcessor {
 		}
 
 		String className = comp.getName();
-		JavaClassSourceFile src = new JavaClassSourceFile(ctx.getBuildContext());
-		JavaClassSource cl = src.getJavaClassSource();
+		JavaClassSourceFile src = new JavaClassSourceFile(ctx);
+		JavaClassSource cl = src.getSrc();
 		cl.addImport("javax.persistence.EntityManager");
 		cl.addImport("javax.persistence.EntityManagerFactory");
 		cl.addImport("javax.persistence.Persistence");

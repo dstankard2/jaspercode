@@ -5,9 +5,7 @@ import java.util.HashMap;
 
 import javax.xml.bind.JAXBException;
 
-import net.sf.jaspercode.api.JasperException;
-import net.sf.jaspercode.engine.impl.ApplicationContextImpl;
-import net.sf.jaspercode.engine.processing.ApplicationManager;
+import net.sf.jaspercode.engine.application.ApplicationManager;
 
 public class JasperAgent {
 	private File[] libs = null;
@@ -41,7 +39,8 @@ public class JasperAgent {
 			scanApplications();
 			try {
 				if (!once)
-					Thread.sleep(100);
+					Thread.sleep(1000);
+				else done = true;
 			} catch(Exception e) {
 				// no-op
 			}
@@ -55,14 +54,17 @@ public class JasperAgent {
 			String name = appDirFile.getName();
 			ApplicationManager proc = null;
 			String outputDir = engineProperties.getOutputDir();
-			ApplicationContextImpl applicationContext = new ApplicationContextImpl(this.engineProperties, pluginManager);
+			//ApplicationContextImpl applicationContext = new ApplicationContextImpl(this.engineProperties, pluginManager);
+			
+			File outputDirFile = new File(outputDir);
 			
 			try {
-				proc = new ApplicationManager(appDirFile,outputDir,patterns,languages,applicationContext);
+				proc = new ApplicationManager(name,appDirFile,outputDirFile,engineProperties,patterns,languages,pluginManager);
+				//proc = new ApplicationManager(appDirFile,outputDir,patterns,languages,applicationContext);
 			} catch(JAXBException e) {
 				throw new EngineInitException("Couldn't initialize application manager",e);
-			} catch(JasperException e) {
-				throw new EngineInitException("Couldn't initialize application manager",e);
+			//} catch(JasperException e) {
+			//	throw new EngineInitException("Couldn't initialize application manager",e);
 			}
 			apps.put(name, proc);
 		}

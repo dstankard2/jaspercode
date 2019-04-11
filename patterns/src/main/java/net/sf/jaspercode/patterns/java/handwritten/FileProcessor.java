@@ -12,9 +12,9 @@ import org.jboss.forge.roaster.model.source.MethodSource;
 import org.jboss.forge.roaster.model.source.ParameterSource;
 
 import net.sf.jaspercode.api.CodeExecutionContext;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.ApplicationFile;
 import net.sf.jaspercode.api.types.ServiceOperation;
 import net.sf.jaspercode.langsupport.java.JavaCode;
@@ -236,10 +236,10 @@ public class FileProcessor {
 
 		LocatedServiceType serviceType = new LocatedServiceType(pkg,className,ctx.getBuildContext(),locatorPackage+'.'+locatorName,locatorName);
 		ctx.addVariableType(serviceType);
-		locatorSource.getJavaClassSource().addField().setStatic(true).setName(ref).setType(pkg+'.'+className).setLiteralInitializer("_get"+className+"()").setPrivate();
-		locatorSource.getJavaClassSource().addMethod().setName(locatorMethodName).setReturnType(className).setBody("return "+ref+";").setPublic();
+		locatorSource.getSrc().addField().setStatic(true).setName(ref).setType(pkg+'.'+className).setLiteralInitializer("_get"+className+"()").setPrivate();
+		locatorSource.getSrc().addMethod().setName(locatorMethodName).setReturnType(className).setBody("return "+ref+";").setPublic();
 
-		MethodSource<JavaClassSource> inst = locatorSource.getJavaClassSource().addMethod().setName("_get"+className).setStatic(true).setPrivate().setReturnType(pkg+'.'+className);
+		MethodSource<JavaClassSource> inst = locatorSource.getSrc().addMethod().setName("_get"+className).setStatic(true).setPrivate().setReturnType(pkg+'.'+className);
 		JavaCode locatorCode = new JavaCode();
 		CodeExecutionContext locatorExecCtx = new CodeExecutionContext(ctx);
 		locatorCode.append(serviceType.declare("_ret", locatorExecCtx));
@@ -257,7 +257,7 @@ public class FileProcessor {
 
 		constructorCode.appendCodeText(ref+" = new "+className+"();\n");
 		*/
-		locatorSource.getJavaClassSource().addImport(pkg+'.'+className);
+		locatorSource.getSrc().addImport(pkg+'.'+className);
 		List<MethodSource<JavaClassSource>> methods = src.getMethods();
 		for(MethodSource<JavaClassSource> method : methods) {
 			AnnotationSource<JavaClassSource> an = method.getAnnotation("net.sf.jaspercode.patterns.java.handwritten.Dependency");
@@ -276,7 +276,7 @@ public class FileProcessor {
 				JavaVariableType depType = JasperUtils.getType(JavaVariableType.class, depTypeName, ctx);
 				JavaUtils.append(locatorCode, JavaUtils.serviceInstance(depRef, depType, locatorExecCtx, ctx));
 				locatorCode.appendCodeText("_ret."+methodName+"("+depRef+");\n");
-				this.ctx.dependOnVariableType(depTypeName);
+				this.ctx.dependOnVariableType(depType);
 			} else {
 				an = method.getAnnotation("net.sf.jaspercode.patterns.java.handwritten.BusinessRule");
 				if (an!=null) {
@@ -297,7 +297,7 @@ public class FileProcessor {
 		locatorCode.appendCodeText("return _ret;\n");
 		inst.setBody(locatorCode.getCodeText());
 		for(String im : locatorCode.getImports()) {
-			locatorSource.getJavaClassSource().addImport(im);
+			locatorSource.getSrc().addImport(im);
 		}
 	}
 

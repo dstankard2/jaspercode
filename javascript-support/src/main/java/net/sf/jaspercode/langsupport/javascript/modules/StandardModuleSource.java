@@ -2,6 +2,7 @@ package net.sf.jaspercode.langsupport.javascript.modules;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 public class StandardModuleSource implements ModuleSource {
 
@@ -92,5 +93,25 @@ public class StandardModuleSource implements ModuleSource {
 		return b.toString();
 	}
 
+	public StandardModuleSource copy() {
+		StandardModuleSource ret = new StandardModuleSource(name);
+		
+		ret.initCode = new StringBuilder(initCode.toString());
+		ret.properties = copy(properties);
+		ret.functions = copy(functions);
+		ret.internalFunctions = copy(internalFunctions);
+		
+		return ret;
+	}
+
+	private <Y extends Object> Map<String,Y> copy(Map<String,Y> orig) {
+		Map<String,Y> ret = new HashMap<>();
+		
+		for(Entry<String,Y> entry : orig.entrySet()) {
+			ret.put(entry.getKey(), entry.getValue());
+		}
+		
+		return ret;
+	}
 }
 

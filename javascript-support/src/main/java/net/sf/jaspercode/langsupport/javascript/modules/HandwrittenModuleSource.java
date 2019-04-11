@@ -20,6 +20,12 @@ public class HandwrittenModuleSource implements ModuleSource {
 	public void setName(String name) {
 		this.name = name;
 	}
-	
+
+	public ModuleSource copy() {
+		HandwrittenModuleSource ret = new HandwrittenModuleSource(name);
+		ret.code = new StringBuilder(code.toString());
+		return ret;
+	}
+
 }
 

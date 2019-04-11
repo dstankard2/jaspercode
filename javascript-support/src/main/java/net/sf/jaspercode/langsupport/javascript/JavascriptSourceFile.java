@@ -3,15 +3,16 @@ package net.sf.jaspercode.langsupport.javascript;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.SourceFile;
 
 public class JavascriptSourceFile implements SourceFile {
 
-	private String path = null;
 	private StringBuilder source = new StringBuilder();
-
-	private List<ModuleImport> importedModules = new ArrayList<>();
+	protected String path = null;
+	protected List<ModuleImport> importedModules = new ArrayList<>();
+	
+	public JavascriptSourceFile() {
+	}
 	
 	protected String getImportSource() {
 		StringBuilder ret = new StringBuilder();
@@ -32,7 +33,7 @@ public class JavascriptSourceFile implements SourceFile {
 	}
 	
 	@Override
-	public StringBuilder getSource() throws JasperException {
+	public StringBuilder getSource() {
 		StringBuilder ret = new StringBuilder();
 		
 		ret.append(getImportSource());
@@ -60,6 +61,14 @@ public class JavascriptSourceFile implements SourceFile {
 	
 	public void addModule(ModuleImport module) {
 		importedModules.add(module);
+	}
+
+	@Override
+	public SourceFile copy() {
+		JavascriptSourceFile ret = new JavascriptSourceFile();
+		ret.setPath(getPath());
+		ret.source = new StringBuilder(getSource().toString());
+		return ret;
 	}
 
 }

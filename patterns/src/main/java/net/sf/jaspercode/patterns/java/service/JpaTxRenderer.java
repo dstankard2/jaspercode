@@ -1,9 +1,9 @@
 package net.sf.jaspercode.patterns.java.service;
 
 import net.sf.jaspercode.api.CodeExecutionContext;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.langsupport.java.JavaCode;
 import net.sf.jaspercode.langsupport.java.JavaUtils;
 import net.sf.jaspercode.patterns.model.EntityManagerLocator;

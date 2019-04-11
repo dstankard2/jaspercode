@@ -8,12 +8,12 @@ import org.jboss.forge.roaster.model.source.MethodSource;
 
 import net.sf.jaspercode.api.CodeExecutionContext;
 import net.sf.jaspercode.api.ComponentProcessor;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.annotation.Processor;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.types.ServiceOperation;
 import net.sf.jaspercode.langsupport.java.JavaCode;
 import net.sf.jaspercode.langsupport.java.JavaClassSourceFile;
@@ -116,7 +116,7 @@ public class EndpointProcessor implements ComponentProcessor {
 			throw new JasperException("Couldn't Find servlet web service '"+pkg+'.'+className+"'");
 		}
 
-		MethodSource<JavaClassSource> serviceMethod = src.getJavaClassSource().getMethod("service","javax.servlet.ServletRequest","javax.servlet.ServletResponse");
+		MethodSource<JavaClassSource> serviceMethod = src.getSrc().getMethod("service","javax.servlet.ServletRequest","javax.servlet.ServletResponse");
 		if (serviceMethod==null) {
 			throw new JasperException("Couldn't find service method in servlet web service '"+pkg+'.'+className+"'");
 		}
@@ -162,11 +162,11 @@ public class EndpointProcessor implements ComponentProcessor {
 					throw new JasperException("Cannot handle request body reference '"+requestBody+"' - That variable already exists in the code execution context");
 				}
 				ctx.dependOnSystemAttribute(requestBody);
-				ctx.dependOnVariableType(bodyType.getName());
+				ctx.dependOnVariableType(bodyType);
 				if (bodyType==ctx.getVariableType("string")) {
 					code.append("String "+requestBody+" = \"\";\n");
 					execCtx.addVariable(requestBody, "string");
-					src.getJavaClassSource().addImport("java.io.BufferedReader");
+					src.getSrc().addImport("java.io.BufferedReader");
 					code.append("BufferedReader _r = _httpRequest.getReader();\n");
 					code.append("String _l = null;\n");
 					code.append("while((_l = _r.readLine()) != null) {\n");
@@ -174,7 +174,7 @@ public class EndpointProcessor implements ComponentProcessor {
 				} else if(bodyType==ctx.getVariableType("integer")) {
 					code.append("Integer "+requestBody+" = null;\n");
 					execCtx.addVariable(requestBody, "integer");
-					src.getJavaClassSource().addImport("java.io.BufferedReader");
+					src.getSrc().addImport("java.io.BufferedReader");
 					code.append("BufferedReader _r = _httpRequest.getReader();\n");
 					code.append("String _s = \"\";\n");
 					code.append("String _l = null;\n");
@@ -185,11 +185,11 @@ public class EndpointProcessor implements ComponentProcessor {
 				} else if(bodyType instanceof JavaEnumType) {
 					String enumClassName = bodyType.getClassName();
 					//JavaEnumType en = (JavaEnumType)bodyType;
-					src.getJavaClassSource().addImport(bodyType.getImport());
+					src.getSrc().addImport(bodyType.getImport());
 
 					code.append(enumClassName+" "+requestBody+" = null;\n");
 					execCtx.addVariable(requestBody, "integer");
-					src.getJavaClassSource().addImport("java.io.BufferedReader");
+					src.getSrc().addImport("java.io.BufferedReader");
 					code.append("BufferedReader _r = _httpRequest.getReader();\n");
 					code.append("String _s = \"\";\n");
 					code.append("String _l = null;\n");
@@ -201,7 +201,7 @@ public class EndpointProcessor implements ComponentProcessor {
 				} else if (bodyType instanceof JavaDataObjectType) {
 					// We have dependency on Jackson databind API
 					JavaDataObjectType objType = (JavaDataObjectType)bodyType;
-					src.getJavaClassSource().addImport("com.fasterxml.jackson.databind.ObjectMapper");
+					src.getSrc().addImport("com.fasterxml.jackson.databind.ObjectMapper");
 					src.addImport(objType);
 					code.append("ObjectMapper _objectMapper = new ObjectMapper();\n");
 					code.append(objType.declare(requestBody, execCtx).getCodeText());
@@ -280,7 +280,7 @@ public class EndpointProcessor implements ComponentProcessor {
 		execCtx.addVariable(operationResult, resultTypeName);
 		JavaServiceType serviceType = JasperUtils.getTypeForSystemAttribute(JavaServiceType.class, ruleParts[0], ctx);
 		JavaUtils.append(invokeCode, serviceType.declare(ruleParts[0], execCtx));
-		ctx.dependOnVariableType(serviceType.getName());
+		ctx.dependOnVariableType(serviceType);
 		execCtx.addVariable(ruleParts[0], serviceType.getName());
 		JavaUtils.append(invokeCode,serviceType.instantiate(ruleParts[0]));
 		JavaUtils.append(invokeCode, JavaUtils.callJavaOperation(operationResult, ruleParts[0], serviceOp, execCtx, null));
@@ -314,8 +314,8 @@ public class EndpointProcessor implements ComponentProcessor {
 				code.append("_httpResponse.setContentType(\"application/json\");\n");
 				code.append("String _serialized = new ObjectMapper().writeValueAsString("+bodyValue+");\n");
 				code.append("_httpResponse.setContentLength(_serialized.length());\n");
-				src.getJavaClassSource().addImport("java.io.Writer");
-				src.getJavaClassSource().addImport("com.fasterxml.jackson.databind.ObjectMapper");
+				src.getSrc().addImport("java.io.Writer");
+				src.getSrc().addImport("com.fasterxml.jackson.databind.ObjectMapper");
 				code.append("Writer _writer = _httpResponse.getWriter();\n");
 				code.append("_writer.write(_serialized);\n");
 				code.append("_writer.flush();\n");

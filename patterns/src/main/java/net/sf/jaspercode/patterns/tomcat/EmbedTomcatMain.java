@@ -11,6 +11,7 @@ import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.annotation.Processor;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.langsupport.java.JavaClassSourceFile;
 
 @Plugin
@@ -26,9 +27,9 @@ public class EmbedTomcatMain implements ComponentProcessor {
 		this.ctx = ctx;
 	}
 
-	public void process() {
+	public void process() throws JasperException {
 		JavaClassSourceFile src = new JavaClassSourceFile(ctx);
-		JavaClassSource j = src.getJavaClassSource();
+		JavaClassSource j = src.getSrc();
 		String webappDirLocation = "src/main/webapp";
 		String className = "TomcatMain";
 		int port = component.getPort();

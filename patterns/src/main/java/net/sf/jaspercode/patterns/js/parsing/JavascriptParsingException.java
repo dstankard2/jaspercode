@@ -1,6 +1,6 @@
 package net.sf.jaspercode.patterns.js.parsing;
 
-import net.sf.jaspercode.api.JasperException;
+import net.sf.jaspercode.api.exception.JasperException;
 
 public class JavascriptParsingException extends JasperException {
 	private static final long serialVersionUID = 1L;

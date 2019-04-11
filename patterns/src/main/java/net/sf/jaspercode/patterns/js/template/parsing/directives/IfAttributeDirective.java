@@ -1,8 +1,8 @@
 package net.sf.jaspercode.patterns.js.template.parsing.directives;
 
 import net.sf.jaspercode.api.CodeExecutionContext;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.annotation.Plugin;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.patterns.js.parsing.JavascriptParser;
 import net.sf.jaspercode.patterns.js.parsing.JavascriptParsingResult;
 import net.sf.jaspercode.patterns.js.template.parsing.AttributeDirectiveBase;
@@ -37,16 +37,7 @@ public class IfAttributeDirective extends AttributeDirectiveBase {
 		b.append("if ("+boolVar+") {\n");
 
 		CodeExecutionContext newCtx = new CodeExecutionContext(existingCtx);
-		if (cond.equals("model.empireBuildingData.lumbermillData")) {
-			System.out.println("evaling case");
-		}
-		if (existingCtx.getTypeForVariable("b")!=null) {
-			System.out.println("Before if eval, existing ctx has b");
-		}
 		ctx.continueRenderElement(newCtx);
-		if (existingCtx.getTypeForVariable("b")!=null) {
-			System.out.println("After if eval, existing ctx has b");
-		}
 
 		b.append("}\n");
 		

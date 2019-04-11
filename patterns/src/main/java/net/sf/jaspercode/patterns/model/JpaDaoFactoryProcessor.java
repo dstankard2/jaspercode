@@ -7,12 +7,12 @@ import org.jboss.forge.roaster.model.source.MethodSource;
 
 import net.sf.jaspercode.api.CodeExecutionContext;
 import net.sf.jaspercode.api.ComponentProcessor;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.annotation.Processor;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.types.ServiceOperation;
 import net.sf.jaspercode.langsupport.java.JavaCode;
 import net.sf.jaspercode.langsupport.java.JavaClassSourceFile;
@@ -58,8 +58,8 @@ public class JpaDaoFactoryProcessor implements ComponentProcessor {
 
 		tableSet = em.getTableSet();
 		
-		JavaClassSourceFile factory = new JavaClassSourceFile(ctx.getBuildContext());
-		JavaClassSource factoryClass = factory.getJavaClassSource();
+		JavaClassSourceFile factory = new JavaClassSourceFile(ctx);
+		JavaClassSource factoryClass = factory.getSrc();
 
 		factoryClass.setPackage(pkg);
 		factoryClass.setName(name);
@@ -70,8 +70,8 @@ public class JpaDaoFactoryProcessor implements ComponentProcessor {
 		for(TableInfo table : tableSet.getTableInfos()) {
 			String daoName = table.getEntityName()+"Dao";
 			String daoRef = JasperUtils.getLowerCamelName(daoName);
-			JavaClassSourceFile daoFile = new JavaClassSourceFile(ctx.getBuildContext());
-			JavaClassSource daoClass = daoFile.getJavaClassSource();
+			JavaClassSourceFile daoFile = new JavaClassSourceFile(ctx);
+			JavaClassSource daoClass = daoFile.getSrc();
 			LocatedServiceType daoType = null;
 			String entityName = table.getEntityName();
 			String pkField = null;

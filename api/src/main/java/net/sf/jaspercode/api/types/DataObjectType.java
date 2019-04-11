@@ -4,7 +4,7 @@ import java.util.List;
 
 import net.sf.jaspercode.api.Code;
 import net.sf.jaspercode.api.CodeExecutionContext;
-import net.sf.jaspercode.api.JasperException;
+import net.sf.jaspercode.api.exception.JasperException;
 
 public interface DataObjectType extends VariableType {
 

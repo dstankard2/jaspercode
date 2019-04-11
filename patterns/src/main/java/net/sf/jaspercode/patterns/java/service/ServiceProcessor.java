@@ -7,12 +7,12 @@ import org.jboss.forge.roaster.model.source.JavaClassSource;
 import net.sf.jaspercode.api.AttribEntry;
 import net.sf.jaspercode.api.CodeExecutionContext;
 import net.sf.jaspercode.api.ComponentProcessor;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.annotation.Processor;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.types.ServiceOperation;
 import net.sf.jaspercode.langsupport.java.JavaCode;
 import net.sf.jaspercode.langsupport.java.JavaClassSourceFile;
@@ -56,8 +56,7 @@ public class ServiceProcessor implements ComponentProcessor {
 			ctx.addSystemAttribute(lowerCamel, type.getName());
 		}
 
-		ctx.originateSourceFile(src);
-		ctx.originateVariableType(className);
+		ctx.originateVariableType(type);
 		
 		//handleResult(pkg);
 		handleServiceAndResult(type,src, pkg);
@@ -94,7 +93,7 @@ public class ServiceProcessor implements ComponentProcessor {
 		JavaUtils.append(code, bodyCode);
 
 		code.appendCodeText("return returnValue;\n");
-		JavaUtils.addServiceOperation(op, code, src.getJavaClassSource(), ctx);
+		JavaUtils.addServiceOperation(op, code, src.getSrc(), ctx);
 	}
 	
 	private void processOperations(List<Operation> ops,JavaCode currentCode,CodeExecutionContext execCtx) throws JasperException {
@@ -128,7 +127,7 @@ public class ServiceProcessor implements ComponentProcessor {
 		objType = new JavaDataObjectType(resultName,servicePkg+'.'+resultName,ctx.getBuildContext());
 		ctx.addVariableType(objType);
 
-		JavaClassSource cl = src.getJavaClassSource();
+		JavaClassSource cl = src.getSrc();
 		cl.setPackage(servicePkg);
 		cl.setName(resultName);
 		ctx.addSourceFile(src);
