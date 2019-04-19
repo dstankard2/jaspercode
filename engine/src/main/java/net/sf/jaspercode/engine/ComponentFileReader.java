@@ -15,11 +15,15 @@ public class ComponentFileReader {
 	JAXBContext ctx = null;
 	Unmarshaller um = null;
 	
-	public ComponentFileReader(Set<Class<?>> xmlClasses) throws JAXBException {
+	public ComponentFileReader(Set<Class<?>> xmlClasses) throws EngineInitException {
 		Class<?>[] classes = new Class<?>[xmlClasses.size()];
 		xmlClasses.toArray(classes);
-		ctx = JAXBContext.newInstance(classes);
-		um = ctx.createUnmarshaller();
+		try {
+			ctx = JAXBContext.newInstance(classes);
+			um = ctx.createUnmarshaller();
+		} catch(JAXBException e) {
+			throw new EngineInitException("Couldn't initialize component file reader", e);
+		}
 	}
 	
 	public ComponentSet readFile(File file) throws JAXBException,FileNotFoundException {

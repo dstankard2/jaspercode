@@ -2,10 +2,13 @@ package net.sf.jaspercode.engine;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
-import javax.xml.bind.JAXBException;
-
+import net.sf.jaspercode.api.plugin.EnginePlugin;
+import net.sf.jaspercode.api.plugin.PluginContext;
 import net.sf.jaspercode.engine.application.ApplicationManager;
+import net.sf.jaspercode.engine.processing.ProcessorLog;
 
 public class JasperAgent {
 	private File[] libs = null;
@@ -16,12 +19,15 @@ public class JasperAgent {
 	private PluginManager pluginManager = null;
 	private HashMap<String,ApplicationManager> apps = new HashMap<>();
 	private boolean done = false;
+	Map<String,EnginePlugin> enginePlugins = new HashMap<>();
+	private ProcessorLog engineLogger = null;
 	
 	public JasperAgent(File[] libFiles,HashMap<String,String> userOptions) {
 		String homeDir = userOptions.get("home.dir");
 		libs = libFiles;
 		this.homeDir = homeDir;
 		this.engineProperties = new EngineProperties(userOptions);
+		this.engineLogger = new ProcessorLog("SYSTEM");
 	}
 
 	public void start() throws EngineInitException {
@@ -34,6 +40,9 @@ public class JasperAgent {
 		initializePluginManager(libs);
 		initializePatterns();
 		initializeLanguages();
+		if (!once) {
+			startEnginePlugins();
+		}
 		while(!done) {
 			if (once) done = true;
 			scanApplications();
@@ -45,6 +54,40 @@ public class JasperAgent {
 				// no-op
 			}
 		}
+
+	}
+	
+	protected void startEnginePlugins() throws EngineInitException {
+		// When we start the engine, enable all engine plugins
+		this.engineLogger.info("Scanning for engine plugins");
+		Set<Class<EnginePlugin>> pluginClasses = pluginManager.getEnginePlugins();
+		for(Class<EnginePlugin> pluginClass : pluginClasses) {
+			String className = pluginClass.getCanonicalName();
+			try {
+				EnginePlugin plugin = pluginClass.newInstance();
+				String name = plugin.getPluginName();
+				if ((name==null) || (name.trim().length()==0)) {
+					throw new EngineInitException("Found plugin '"+className+"' with no name");
+				}
+				if (enginePlugins.get(name)!=null) {
+					throw new EngineInitException("Found multiple engine plugins with name '"+name+"'");
+				}
+				String prop = "enginePlugin."+plugin.getPluginName() + ".enabled";
+				boolean enabled = this.engineProperties.getBoolean(prop, false);
+				if (enabled) {
+					PluginContext ctx = new PluginContextImpl(this.engineLogger, engineProperties);
+					plugin.setPluginContext(ctx);
+					plugin.engineStart();
+					enginePlugins.put(name, plugin);
+				} else {
+					engineLogger.info("Found plugin '"+plugin.getPluginName()+"' of class class '"+className+"' but it is not enabled");
+				}
+			} catch(IllegalAccessException | InstantiationException e) {
+				throw new EngineInitException("Couldn't initialize engine plugin class "+className, e);
+			}
+		}
+		this.engineLogger.info("Engine plugin scan complete");
+		this.engineLogger.flushToSystem();
 	}
 	
 	protected void scanSingleApp() throws EngineInitException {
@@ -54,18 +97,10 @@ public class JasperAgent {
 			String name = appDirFile.getName();
 			ApplicationManager proc = null;
 			String outputDir = engineProperties.getOutputDir();
-			//ApplicationContextImpl applicationContext = new ApplicationContextImpl(this.engineProperties, pluginManager);
 			
 			File outputDirFile = new File(outputDir);
 			
-			try {
-				proc = new ApplicationManager(name,appDirFile,outputDirFile,engineProperties,patterns,languages,pluginManager);
-				//proc = new ApplicationManager(appDirFile,outputDir,patterns,languages,applicationContext);
-			} catch(JAXBException e) {
-				throw new EngineInitException("Couldn't initialize application manager",e);
-			//} catch(JasperException e) {
-			//	throw new EngineInitException("Couldn't initialize application manager",e);
-			}
+			proc = new ApplicationManager(name,appDirFile,outputDirFile,engineProperties,patterns,languages,pluginManager/*, engineLogger*/);
 			apps.put(name, proc);
 		}
 		

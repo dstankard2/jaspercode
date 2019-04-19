@@ -244,19 +244,7 @@ public class FileProcessor {
 		CodeExecutionContext locatorExecCtx = new CodeExecutionContext(ctx);
 		locatorCode.append(serviceType.declare("_ret", locatorExecCtx));
 		locatorCode.appendCodeText("_ret = new "+className+"();\n");
-		/*
-		//MethodSource<JavaClassSource> constructor = locatorSource.getJavaClassSource().getMethod(locatorName);
-		//JavaCode constructorCode = null;
-		//CodeExecutionContext execCtx = JavaUtils.getCodeExecutionContext(locatorName, "constructor", ctx, true);
-		if (constructor==null) {
-			constructorCode = new JavaCode();
-			constructor = locatorSource.getJavaClassSource().addMethod().setConstructor(true).setPublic();
-		} else {
-			constructorCode = new JavaCode(constructor.getBody());
-		}
 
-		constructorCode.appendCodeText(ref+" = new "+className+"();\n");
-		*/
 		locatorSource.getSrc().addImport(pkg+'.'+className);
 		List<MethodSource<JavaClassSource>> methods = src.getMethods();
 		for(MethodSource<JavaClassSource> method : methods) {
@@ -277,6 +265,7 @@ public class FileProcessor {
 				JavaUtils.append(locatorCode, JavaUtils.serviceInstance(depRef, depType, locatorExecCtx, ctx));
 				locatorCode.appendCodeText("_ret."+methodName+"("+depRef+");\n");
 				this.ctx.dependOnVariableType(depType);
+				this.ctx.dependOnSystemAttribute(depRef);
 			} else {
 				an = method.getAnnotation("net.sf.jaspercode.patterns.java.handwritten.BusinessRule");
 				if (an!=null) {

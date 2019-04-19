@@ -25,6 +25,7 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
 		<module>../patterns</module>
 		<module>../launcher</module>
 		<module>../engine</module>
+		<module>../monitor-plugin</module>
 	</modules>
 	
 	<build>

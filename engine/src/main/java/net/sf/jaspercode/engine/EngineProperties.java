@@ -18,7 +18,7 @@ public class EngineProperties {
 		return Arrays.asList(vals);
 	}
 	
-	protected boolean getBoolean(String option,boolean defaultValue) {
+	public boolean getBoolean(String option,boolean defaultValue) {
 		boolean ret = defaultValue;
 		
 		String val = userOptions.get(option);
@@ -30,6 +30,15 @@ public class EngineProperties {
 			}
 		}
 		
+		return ret;
+	}
+	
+	public String getProperty(String option, String defaultValue) {
+		String ret = defaultValue;
+		String val = userOptions.get(option);
+		if (val!=null) {
+			ret = val;
+		}
 		return ret;
 	}
 
@@ -62,7 +71,8 @@ public class EngineProperties {
 	}
 	
 	public boolean getDebug() {
-		return getBoolean("debug", false);
+		return getBoolean("engineDebug", false);
 	}
-	
+
 }
+

@@ -47,6 +47,7 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 		this.lastModified = file.lastModified();
 	}
 
+	// TODO: Should this unload component files in the folder?
 	public void setJasperProperties(JasperPropertiesFile jasperProperties) {
 		this.jasperProperties = jasperProperties;
 		// This folder needs to be processed again.  Mark it as modified
@@ -89,6 +90,9 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 		}
 		for(String key : userFiles.keySet()) {
 			ret.put(key, userFiles.get(key));
+		}
+		if (jasperProperties!=null) {
+			ret.put("jasper.properties", jasperProperties);
 		}
 		
 		return ret;
@@ -249,7 +253,7 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 				ret = parent.getCurrentBuildComponent();
 			} else {
 				ComponentFile componentFile = new ComponentFile(null,null,this);
-				ret = new BuildComponentEntry(componentFile, null, applicationContext, new DefaultBuildComponent(), null, 0);
+				ret = new BuildComponentEntry(componentFile, null, applicationContext, new DefaultBuildComponent(), null, 0, 0);
 				try {
 					ret.preprocess();
 				} catch(PreprocessingException e) {
