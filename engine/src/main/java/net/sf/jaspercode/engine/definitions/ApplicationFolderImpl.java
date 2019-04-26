@@ -9,7 +9,6 @@ import java.util.Map;
 import net.sf.jaspercode.api.ApplicationContext;
 import net.sf.jaspercode.api.BuildContext;
 import net.sf.jaspercode.api.resources.ApplicationFolder;
-import net.sf.jaspercode.api.resources.ApplicationResource;
 import net.sf.jaspercode.engine.exception.PreprocessingException;
 import net.sf.jaspercode.engine.processing.BuildComponentEntry;
 
@@ -117,7 +116,7 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 	}
 
 	@Override
-	public ApplicationResource getResource(String path) {
+	public WatchedResource getResource(String path) {
 		if (path==null) return null;
 		path = path.trim();
 		if (path.length()==0) {
@@ -129,14 +128,13 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 		if (path.startsWith("./")) {
 			return getResource(path.substring(2));
 		}
-		if (path.startsWith("/")) {
+		else if (path.startsWith("/")) {
 			return getRootFolder().getResource(path.substring(1));
 		}
 		else if (path.startsWith("../")) {
 			return getParent().getResource(path.substring(3));
-		} else if (path.startsWith("./")) {
-			return getResource(path.substring(2));
-		} else if (path.indexOf('/')>0) {
+		}
+		else if (path.indexOf('/')>0) {
 			int i = path.indexOf('/');
 			String sub = path.substring(0, i);
 			if (subFolders.get(sub)!=null) {
@@ -146,9 +144,12 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 			}
 		} else {
 			// path is a name of a folder or UserFileResource
-			ApplicationResource ret = subFolders.get(path);
+			WatchedResource ret = subFolders.get(path);
 			if (ret==null) {
 				ret = userFiles.get(path);
+				if (ret==null) {
+					ret = this.componentFiles.get(path);
+				}
 			}
 			return ret;
 		}

@@ -1,7 +1,5 @@
 package net.sf.jaspercode.api;
 
-import net.sf.jaspercode.api.exception.JasperException;
-
 public interface SourceFile {
 
 	/**

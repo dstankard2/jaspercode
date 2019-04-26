@@ -238,7 +238,7 @@ public class JavaUtils {
 		String ret = null;
 		
 		if (className.equals("java.lang.String")) ret = "string";
-		else if (className.equals("java.lang.Integer")) ret = "int";
+		else if (className.equals("java.lang.Integer")) ret = "integer";
 		else if (className.equals("java.lang.Double")) ret = "double";
 		else if (className.startsWith("java.util.List")) ret = "list/object";
 		else if (className.startsWith("java.lang.Object")) ret = "object";

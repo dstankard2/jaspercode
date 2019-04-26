@@ -34,7 +34,11 @@ public class ProcessorContextImpl implements ProcessorContext {
 	}
 
 	@Override
-	public boolean addSystemAttribute(String name, String type) {
+	public boolean addSystemAttribute(String name, String type) throws JasperException {
+		String existing = getSystemAttribute(name);
+		if ((existing!=null) && (!existing.equals(type))) {
+			throw new JasperException("Found inconsistent types for system attribute '"+name+"' - it was '"+existing+"' but tried to add it as '"+type+"'");
+		}
 		ctx.addSystemAttribute(name, type);
 		return true;
 	}

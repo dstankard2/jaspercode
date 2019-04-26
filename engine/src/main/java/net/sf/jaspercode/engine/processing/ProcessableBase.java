@@ -63,7 +63,6 @@ public abstract class ProcessableBase implements Processable,ProcessableContext 
 		this.applicationContext = applicationContext;
 		this.componentFile = componentFile;
 		this.name = name;
-		this.processorContext = new ProcessorContextImpl(componentFile.getFolder(), this, log);
 		this.processingContext = processingContext;
 		this.id = id;
 		this.configOverride = configOverride;
@@ -155,7 +154,9 @@ public abstract class ProcessableBase implements Processable,ProcessableContext 
 	@Override
 	public abstract boolean process();
 
+	@Override
 	public void rollbackChanges() {
+		this.typesOriginated.clear();
 	}
 
 	@Override
@@ -173,7 +174,7 @@ public abstract class ProcessableBase implements Processable,ProcessableContext 
 		// Objects
 		// Commit dependencies to processingContext
 		for(String obj : objectDependencies) {
-			processingContext.dependOnObject(id, obj);
+			processingContext.originateObject(id, obj);
 		}
 		// Commit object updates to processingContext
 		for(Entry<String,Object> ob : objects.entrySet()) {
@@ -201,6 +202,7 @@ public abstract class ProcessableBase implements Processable,ProcessableContext 
 		for(Pair<String,VariableType> p : this.typesOriginated) {
 			processingContext.originateType(id, p.getLeft(), p.getRight());
 		}
+		this.typesOriginated.clear();
 		
 		// Source Files
 		for(SourceFile src : sourceFiles) {

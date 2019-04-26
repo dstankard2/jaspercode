@@ -4,20 +4,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.sf.jaspercode.api.plugin.ProcessorLogMessage;
-import net.sf.jaspercode.engine.application.ProcessingManager;
+import net.sf.jaspercode.engine.application.ApplicationManager;
 import net.sf.jaspercode.engine.definitions.ApplicationFolderImpl;
 import net.sf.jaspercode.engine.definitions.ComponentFile;
 import net.sf.jaspercode.engine.exception.PreprocessingException;
 
-public class RemoveComponentFileEntry implements Processable {
+public class UnloadComponentFileEntry implements Processable {
 
 	private ComponentFile componentFile = null;
-	private ProcessingManager processingManager = null;
+	private ApplicationManager applicationManager = null;
 	ApplicationFolderImpl folder = null;
-	
-	public RemoveComponentFileEntry(ComponentFile componentFile, ProcessingManager processingManager, ApplicationFolderImpl folder) {
+
+	public UnloadComponentFileEntry(ComponentFile componentFile, ApplicationManager applicationManager, ApplicationFolderImpl folder) {
 		this.componentFile = componentFile;
-		this.processingManager = processingManager;
+		this.applicationManager = applicationManager;
 		this.folder = folder;
 	}
 
@@ -29,7 +29,7 @@ public class RemoveComponentFileEntry implements Processable {
 	@Override
 	public int getPriority() {
 		// TODO Auto-generated method stub
-		return -1;
+		return 0;
 	}
 
 	@Override
@@ -42,7 +42,7 @@ public class RemoveComponentFileEntry implements Processable {
 
 	@Override
 	public boolean process() {
-		processingManager.unloadComponentFile(componentFile, false);
+		applicationManager.unloadComponentFile(componentFile, true);
 		return true;
 	}
 

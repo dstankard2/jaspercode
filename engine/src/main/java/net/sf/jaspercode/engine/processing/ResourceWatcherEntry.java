@@ -23,9 +23,10 @@ public class ResourceWatcherEntry extends ProcessableBase {
 	public ResourceWatcherEntry(ApplicationContext applicationContext, ComponentFile componentFile,ProcessingContext processingContext, int id, ResourceWatcher resourceWatcher,ResourceWatcherRecord record) {
 		super(applicationContext, componentFile, processingContext, id, resourceWatcher.getPath(), new HashMap<String,String>());
 		this.resourceWatcher = resourceWatcher;
-		resourceWatcher.init(processorContext);
 		this.record = record;
 		this.log = new ProcessorLog(getName());
+		this.processorContext = new ProcessorContextImpl(componentFile.getFolder(), this, log);
+		resourceWatcher.init(processorContext);
 	}
 
 	public String getPath() {

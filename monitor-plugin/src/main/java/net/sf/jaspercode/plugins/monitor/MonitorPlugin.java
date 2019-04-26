@@ -15,7 +15,7 @@ import net.sf.jaspercode.api.snapshot.SystemAttributeSnapshot;
 
 @Plugin
 public class MonitorPlugin implements ApplicationPlugin {
-	private String name = null;
+	private String applicationName = null;
 	private PluginContext ctx = null;
 	
 	public MonitorPlugin() {
@@ -28,7 +28,7 @@ public class MonitorPlugin implements ApplicationPlugin {
 
 	@Override
 	public void setApplicationName(String applicationName) {
-		this.name = applicationName;
+		this.applicationName = applicationName;
 	}
 
 	@Override

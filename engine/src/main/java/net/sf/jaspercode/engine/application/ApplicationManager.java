@@ -12,7 +12,6 @@ import net.sf.jaspercode.api.SourceFile;
 import net.sf.jaspercode.api.plugin.ApplicationPlugin;
 import net.sf.jaspercode.api.plugin.PluginContext;
 import net.sf.jaspercode.api.snapshot.ApplicationSnapshot;
-import net.sf.jaspercode.api.snapshot.ComponentSnapshot;
 import net.sf.jaspercode.api.snapshot.ItemSnapshot;
 import net.sf.jaspercode.api.snapshot.SourceFileSnapshot;
 import net.sf.jaspercode.api.snapshot.SystemAttributeSnapshot;
@@ -115,6 +114,7 @@ public class ApplicationManager {
 		}
 		scanForAddedFiles();
 		if (changeDetected) {
+			// This means that some file was changed, including userFile or ComponentFile
 			processingManager.checkResourceWatchers();
 			processingManager.processChanges();
 			if (processingManager.getState()==ProcessingState.COMPLETE) {
@@ -145,6 +145,7 @@ public class ApplicationManager {
 		List<WatchedResource> results = resourceManager.scanForModifiedFiles();
 		
 		if (results.size()>0) {
+			jasperResources.engineDebug("Scanned for modified files and found "+results.size());
 			changeDetected = true;
 			for(WatchedResource res : results) {
 				modifyResource(res);
@@ -153,31 +154,27 @@ public class ApplicationManager {
 	}
 	
 	protected void modifyResource(WatchedResource resource) {
-		if (resource instanceof UserFile) {
-			
-		} else if (resource instanceof ComponentFile) {
-			
-		}
-		System.out.println("Found modified resource "+resource.getPath());
+		processingManager.fileModified(resource);
 	}
 	
 	protected void scanForRemovedFiles() throws EngineException {
 		List<WatchedResource> results = resourceManager.scanForRemovedFiles();
 
 		if (results.size()>0) {
+			jasperResources.engineDebug("Scanned for removed files and found "+results.size());
 			changeDetected = true;
 			for(WatchedResource res : results) {
 				removeResource(res);
 			}
 		}
 	}
-	
+
 	// The resource has been removed (deleted) from the application folder
 	// User files need to be removed from output
 	// Component Files need to be unloaded by processingManager.
 	// UserFiles need to be removed from output
 	// Files need to be removed from parent folders
-	protected void removeResource(WatchedResource res) {
+	public void removeResource(WatchedResource res) {
 		ApplicationFolderImpl folder = res.getFolder();
 		String name = res.getName();
 		
@@ -188,9 +185,7 @@ public class ApplicationManager {
 			UserFile userFile = (UserFile)res;
 			folder.getUserFiles().remove(userFile.getName());
 			outputManager.removeUserFile(userFile);
-			// TODO: Not sure if this is necessary
-			// Consider notifying the processing manager that a user file has been removed
-			//processingManager.removeUserFile(userFile);
+			processingManager.userFileRemoved(userFile);
 		} else if (res instanceof JasperPropertiesFile) {
 			// Everything in this folder and subfolders needs to be unloaded.
 			// This includes User Files and Component Files
@@ -228,6 +223,7 @@ public class ApplicationManager {
 		List<WatchedResource> added = resourceManager.scanForNewFiles();
 		
 		if (added.size()>0) {
+			jasperResources.engineDebug("Scanned for added files and found "+added.size());
 			List<ComponentFile> componentFiles = new ArrayList<>();
 			for(WatchedResource res : added) {
 				if (res instanceof ComponentFile) {
@@ -275,8 +271,8 @@ public class ApplicationManager {
 	}
 	
 	// The component file needs to be unloaded from the processing manager
-	public void unloadComponentFile(ComponentFile componentFile) {
-		processingManager.unloadComponentFile(componentFile, false);
+	public void unloadComponentFile(ComponentFile componentFile, boolean remove) {
+		processingManager.unloadComponentFile(componentFile, remove);
 	}
 
 	public Map<String,UserFile> getUserFiles() {

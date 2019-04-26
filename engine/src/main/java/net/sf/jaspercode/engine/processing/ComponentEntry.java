@@ -26,6 +26,7 @@ public class ComponentEntry extends ProcessableBase implements Tracked {
 		this.pattern = pattern;
 		this.originatorId = originatorId;
 		this.log = new ProcessorLog(getName());
+		this.processorContext = new ProcessorContextImpl(componentFile.getFolder(), this, log);
 	}
 	
 	public int getOriginatorId() {

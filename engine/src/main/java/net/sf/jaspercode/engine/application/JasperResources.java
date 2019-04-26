@@ -62,9 +62,14 @@ public class JasperResources implements ApplicationContext {
 	
 	public void clearExistingProcessables(ApplicationFolderImpl folder) {
 		for(Entry<String,ComponentFile> f : folder.getComponentFiles().entrySet()) {
-			applicationManager.unloadComponentFile(f.getValue());
+			applicationManager.unloadComponentFile(f.getValue(), false);
 		}
 	}
 
+	public void engineDebug(String message) {
+		if (engineProperties.getDebug()) {
+			System.out.println("[Engine-Debug] "+message);
+		}
+	}
 }
 

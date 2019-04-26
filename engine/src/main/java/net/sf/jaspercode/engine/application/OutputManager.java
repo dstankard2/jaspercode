@@ -146,6 +146,9 @@ public class OutputManager {
 	// This is never called by a component so there is not a need to check created files.
 	public void removeSourceFile(String path) {
 		SourceFile added = null;
+
+		sourceFiles.remove(path);
+		
 		for(SourceFile src : sourceFilesAdded) {
 			if (src.getPath().equals(path)) {
 				added = src;
@@ -154,7 +157,9 @@ public class OutputManager {
 		}
 		if (added!=null) {
 			sourceFilesAdded.remove(added);
+			added = null;
 		}
+		
 		File actualFile = getFile(path);
 		if (actualFile.exists()) {
 			actualFile.delete();

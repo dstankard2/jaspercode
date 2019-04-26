@@ -10,7 +10,7 @@ public interface ProcessorContext {
 
 	public void setLanguageSupport(String language) throws JasperException;
 
-	public boolean addSystemAttribute(String name,String type);
+	public boolean addSystemAttribute(String name,String type) throws JasperException;
 	public void originateSystemAttribute(String name);
 	public void dependOnSystemAttribute(String name);
 	public String getSystemAttribute(String name);

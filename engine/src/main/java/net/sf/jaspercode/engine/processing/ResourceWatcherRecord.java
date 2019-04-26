@@ -35,6 +35,7 @@ public class ResourceWatcherRecord implements Tracked {
 		return id;
 	}
 
+	@Override
 	public String getName() {
 		return "ResourceWatcher["+getPath()+"]";
 	}

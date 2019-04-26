@@ -37,6 +37,10 @@ public class ResourceManager {
 		this.applicationContext = applicationContext;
 	}
 
+	public WatchedResource getResource(String path) {
+		return (WatchedResource)this.applicationFolder.getResource(path);
+	}
+	
 	public Map<String,UserFile> getUserFiles() {
 		//return new HashMap<>();
 		return userFiles;
@@ -78,12 +82,14 @@ public class ResourceManager {
 			WatchedResource res = entry.getValue();
 			File file = getFile(files, name);
 			if (file!=null) {
-				if (file.lastModified() > res.getLastModified()) {
+				if (res instanceof ApplicationFolderImpl) {
+					ApplicationFolderImpl f = (ApplicationFolderImpl)res;
+					scanForModifiedFiles(f, results);
+				}
+				else if (file.lastModified() > res.getLastModified()) {
 					if (res instanceof JasperPropertiesFile) {
 						this.manageJasperPropertiesFile(file, folder);
-					} else if (res instanceof ApplicationFolderImpl) {
-						ApplicationFolderImpl f = (ApplicationFolderImpl)res;
-						scanForModifiedFiles(f, results);
+					//} else if (res instanceof ApplicationFolderImpl) {
 					} else {
 						WatchedResource r = createFile(file, folder);
 						results.add(r);

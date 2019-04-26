@@ -88,7 +88,7 @@ public class RetrieveDataRuleProcessor implements ComponentProcessor {
 		
 		JavaCode bodyCode = internalFindAttribute(0,attrib,execCtx,serviceRefs,currentRules);
 		if (bodyCode==null) {
-			throw new JasperException("Unable to resolve rule - unable to find attribute");
+			throw new JasperException("Unable to resolve rule - unable to find attribute '"+attrib+"'");
 		}
 
 		code.append(bodyCode);
@@ -96,6 +96,7 @@ public class RetrieveDataRuleProcessor implements ComponentProcessor {
 		methodSrc.setBody(code.getCodeText());
 		src.addImports(code);
 		serviceType.addOperation(op);
+		ctx.originateVariableType(serviceType);
 	}
 
 	protected JavaCode internalFindAttribute(int level,String attrib,CodeExecutionContext execCtx,Map<String,JavaServiceType> serviceRefs, DomainDataRuleSet currentRules) throws JasperException {

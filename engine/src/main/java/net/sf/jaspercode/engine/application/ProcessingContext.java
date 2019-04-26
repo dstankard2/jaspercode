@@ -30,12 +30,13 @@ public class ProcessingContext {
 	}
 
 	public void objectDependency(int id,String key) {
-		List<Integer> ids = processingManager.getObjectDependencies().get(key);
+		List<Integer> ids = processingManager.getObjectOriginators().get(key);
 		if (ids==null) {
 			ids = new ArrayList<>();
-			processingManager.getObjectDependencies().put(key, ids);
+			processingManager.getObjectOriginators().put(key, ids);
 		}
-		ids.add(id);
+		if (!ids.contains(id))
+			ids.add(id);
 	}
 	public Object getObject(int id,String key) {
 		return processingManager.getObjects().get(key);
@@ -44,9 +45,10 @@ public class ProcessingContext {
 		List<Integer> ids = processingManager.getObjectOriginators().get(key);
 		if (ids==null) {
 			ids = new ArrayList<>();
-			processingManager.getObjectDependencies().put(key, ids);
+			processingManager.getObjectOriginators().put(key, ids);
 		}
-		ids.add(id);
+		if (!ids.contains(id))
+			ids.add(id);
 		processingManager.getObjects().put(key, value);
 	}
 
@@ -59,7 +61,8 @@ public class ProcessingContext {
 			ids = new ArrayList<>();
 			processingManager.getAttributeOriginators().put(name, ids);
 		}
-		ids.add(id);
+		if (!ids.contains(id))
+			ids.add(id);
 	}
 	public void originateObject(int id,String name,Object value) {
 		processingManager.getObjects().put(name, value);
@@ -68,7 +71,17 @@ public class ProcessingContext {
 			ids = new ArrayList<>();
 			processingManager.getObjectOriginators().put(name, ids);
 		}
-		if (!ids.contains(id)) ids.add(id);
+		if (!ids.contains(id))
+			ids.add(id);
+	}
+	public void originateObject(int id,String name) {
+		List<Integer> ids = processingManager.getObjectOriginators().get(name);
+		if (ids==null) {
+			ids = new ArrayList<>();
+			processingManager.getObjectOriginators().put(name, ids);
+		}
+		if (!ids.contains(id))
+			ids.add(id);
 	}
 	public void originateType(int id,String lang,VariableType variableType) {
 		String name = variableType.getName();
@@ -78,7 +91,8 @@ public class ProcessingContext {
 			ids = new ArrayList<>();
 			origs.put(name, ids);
 		}
-		if (!ids.contains(id)) ids.add(id);
+		if (!ids.contains(id))
+			ids.add(id);
 		Map<String,VariableType> types = processingManager.getVariableTypes(lang);
 		types.put(name, variableType);
 	}
@@ -96,7 +110,8 @@ public class ProcessingContext {
 			ids = new ArrayList<>();
 			deps.put(name, ids);
 		}
-		if (!ids.contains(id)) ids.add(id);
+		if (!ids.contains(id))
+			ids.add(id);
 	}
 	public void dependOnType(int id,String lang,String typeName) {
 		Map<String,List<Integer>> deps = processingManager.getTypeDependencies(lang);
@@ -105,16 +120,8 @@ public class ProcessingContext {
 			ids = new ArrayList<>();
 			deps.put(typeName, ids);
 		}
-		if (!ids.contains(id)) ids.add(id);
-	}
-	public void dependOnObject(int id,String objectName) {
-		Map<String,List<Integer>> deps = processingManager.getObjectDependencies();
-		List<Integer> ids = deps.get(objectName);
-		if (ids==null) {
-			ids = new ArrayList<>();
-			deps.put(objectName, ids);
-		}
-		if (!ids.contains(id)) ids.add(id);
+		if (!ids.contains(id))
+			ids.add(id);
 	}
 
 	public SourceFile getSourceFile(String path) {
