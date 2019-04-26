@@ -106,13 +106,6 @@ public class WsClientsProcessor implements ComponentProcessor {
 	// TODO: Figure out something else here
 	protected String getOperationName(WebServiceOperation op) {
 		return op.getOperationName();
-		/*
-		String val = op.getResponseBody();
-		if (val.endsWith("ServiceResult")) {
-			val = val.substring(0, val.indexOf("ServiceResult"));
-		}
-		return JasperUtils.getLowerCamelName(val);
-		*/
 	}
 
 	// The operation will be valid - there's no need to check

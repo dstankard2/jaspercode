@@ -111,11 +111,5 @@ public abstract class JavascriptType implements VariableType,DataObjectType {
 		return new ArrayList<>();
 	}
 
-	/* TODO: Support inheritance in Javascript objects
-	public List<String> getSuperTypes() {
-		return superTypes;
-	}
-	*/
-
 }
 

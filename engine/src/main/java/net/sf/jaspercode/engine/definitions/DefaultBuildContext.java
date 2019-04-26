@@ -40,7 +40,6 @@ public class DefaultBuildContext implements BuildContext {
 			//this.log.error("Default Build Context requires configuration property '"+cfgName+"' to determine output path for file extension '"+fileExt+"'");
 			throw new JasperException("Default Build Context requires configuration property '"+cfgName+"' to determine output path for file extension '"+fileExt+"'");
 		}
-		// TODO Auto-generated method stub
 		return value;
 	}
 

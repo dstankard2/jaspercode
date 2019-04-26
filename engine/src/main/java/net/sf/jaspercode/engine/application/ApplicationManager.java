@@ -61,13 +61,17 @@ public class ApplicationManager {
 			EnginePatterns patterns,EngineLanguages languages,PluginManager pluginManager) throws EngineInitException {
 		this.applicationName = applicationName;
 		this.appLog = new ProcessorLog("Application:"+applicationName);
-		jasperResources = new JasperResources(engineProperties, pluginManager, this);
+		jasperResources = new JasperResources(engineProperties, pluginManager);
 		this.resourceManager = new ResourceManager(applicationDir,this, jasperResources);
 		this.processingManager = new ProcessingManager(this, patterns, languages, jasperResources);
-		this.outputManager = new OutputManager(outputDir,new OutputContext(this));
+		this.outputManager = new OutputManager(outputDir);
 		startApplicationPlugins();
 	}
 
+	public ProcessingState getProcessingState() {
+		return processingManager.getState();
+	}
+	
 	protected void startApplicationPlugins() throws EngineInitException {
 		this.appLog.info("Scanning for application plugins");
 		Set<Class<ApplicationPlugin>> pluginClasses = jasperResources.getPlugins(ApplicationPlugin.class);
@@ -107,6 +111,10 @@ public class ApplicationManager {
 			entry.getValue().scanStart();
 		}
 		
+		if (firstScan) {
+			System.out.println("*** Begin scan of application '"+this.getApplicationName()+"'");
+		}
+
 		changeDetected = false;
 		if (!firstScan) {
 			scanForRemovedFiles();
@@ -114,6 +122,10 @@ public class ApplicationManager {
 		}
 		scanForAddedFiles();
 		if (changeDetected) {
+			if (!firstScan) {
+				System.out.println("*** Begin scan of application '"+this.getApplicationName()+"'");
+			}
+			
 			// This means that some file was changed, including userFile or ComponentFile
 			processingManager.checkResourceWatchers();
 			processingManager.processChanges();
@@ -264,7 +276,6 @@ public class ApplicationManager {
 			processingManager.originateFromSystemAttributesFile(name, type);
 		}
 		
-		// TODO: We need to unload and re-process everything in the application
 		if (!oldAttributes.isEmpty()) {
 			System.err.println("Cannot properly handle changes in systemAttributes.properties");
 		}

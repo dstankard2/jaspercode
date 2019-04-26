@@ -259,7 +259,7 @@ public class ProcessingManager {
 	}
 
 	// Remove the resource watchers that originate from the given ID
-	// TODO: Determine if anything must be done if remove==false
+	// TODO: Implement proper handling of resource watchers for remove = true/false.
 	protected void removeResourceWatchersFromOriginator(int id,boolean remove) {
 		
 	}
@@ -354,13 +354,10 @@ public class ProcessingManager {
 	// When a file is modified, we want to remove the old version and add the new version
 	// This is only applicable for component files.
 	// 
-	// TODO: Consider being smarter about when a component file changes
 	public void fileModified(WatchedResource newFile) {
 		String path = newFile.getPath();
 		WatchedResource oldFile = null;
 
-		// TODO: Not sure that the managing of componentFiles is completely right
-		// TODO: Manage transitions between userFile and componentFile
 		if (componentFiles.get(path)!=null) {
 			oldFile = componentFiles.get(path);
 			//componentFiles.put(path, (ComponentFile)newFile);
@@ -372,7 +369,6 @@ public class ProcessingManager {
 	}
 
 	public void addFiles(List<ComponentFile> componentFiles) {
-		// TODO: Fix
 		for(ComponentFile c : componentFiles) {
 			AddedFile added = new AddedFile(c, this, jasperResources);
 			filesToProcess.add(added);

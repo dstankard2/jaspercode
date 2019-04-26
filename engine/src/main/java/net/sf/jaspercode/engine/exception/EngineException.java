@@ -1,6 +1,7 @@
 package net.sf.jaspercode.engine.exception;
 
 public class EngineException extends Exception {
+	private static final long serialVersionUID = 1L;
 
 	public EngineException() {
 		super();

@@ -132,7 +132,6 @@ public class JasperAgent {
 		languages.findLanguages();
 	}
 
-	// TODO: Implement
 	private void initializeEngineProperties() {
 		// Find engine.properties in home/bin/engine.properties
 		File binDir = new File(homeDir,"bin");

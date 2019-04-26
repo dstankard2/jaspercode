@@ -45,7 +45,6 @@ public class ModuleSourceFile extends JavascriptSourceFile {
 
 	@Override
 	public SourceFile copy() {
-		// TODO: Finish
 		ModuleSourceFile ret = new ModuleSourceFile();
 		
 		ret.setPath(getPath());

@@ -128,11 +128,6 @@ public class ProcessorContextImpl implements ProcessorContext {
 	}
 
 	@Override
-	public void dependOnResource(String path) {
-		//  TODO: Implement
-	}
-
-	@Override
 	public void addComponent(Component component) {
 		ctx.addComponent(component);
 	}

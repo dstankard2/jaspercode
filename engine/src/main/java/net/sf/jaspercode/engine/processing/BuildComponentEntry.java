@@ -128,7 +128,6 @@ public class BuildComponentEntry implements Processable,Tracked {
 		if (pattern!=null) {
 			processor = pattern.getProcessor(buildComponent);
 			try {
-				// TODO: Initialize configured field of the build component
 				processor.initialize(buildComponent, buildProcessorContext);
 				this.buildContext = processor.createBuildContext();
 				folder.setBuildComponentEntry(this);

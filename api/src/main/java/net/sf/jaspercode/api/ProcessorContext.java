@@ -21,8 +21,6 @@ public interface ProcessorContext {
 	public VariableType getVariableType(String name) throws JasperException;
 
 	public void setObject(String name,Object obj);
-	//public void originateObject(String name);
-	//public void dependOnObject(String name);
 	public Object getObject(String name);
 
 	public void addSourceFile(SourceFile file);
@@ -33,7 +31,6 @@ public interface ProcessorContext {
 	public BuildContext getBuildContext();
 	
 	public ApplicationResource getResource(String path);
-	public void dependOnResource(String path);
 
 	public void addComponent(Component component);
 

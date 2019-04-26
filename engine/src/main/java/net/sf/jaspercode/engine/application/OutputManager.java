@@ -18,7 +18,6 @@ import net.sf.jaspercode.engine.definitions.UserFile;
 
 public class OutputManager {
 
-	OutputContext outputContext = null;
 	File outputDir = null;
 
 	// Source files that have been persisted
@@ -30,9 +29,8 @@ public class OutputManager {
 	// Source files that have not been persisted yet.
 	List<SourceFile> sourceFilesAdded = new ArrayList<>();
 	
-	public OutputManager(File outputDir, OutputContext outputContext) {
+	public OutputManager(File outputDir) {
 		this.outputDir = outputDir;
-		this.outputContext = outputContext;
 	}
 
 	// Returns snapshots of source files that have been persisted

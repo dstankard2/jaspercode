@@ -72,7 +72,7 @@ public class SqlExecutionProcessor implements ComponentProcessor {
 	
 	protected void addFolder(ApplicationFolder folder,PropertyWithValueList files,MavenBuildContext bctx,ProcessorContext ctx) {
 		List<String> names = folder.getContentNames();
-		ctx.dependOnResource(folder.getPath());
+		//ctx.dependOnResource(folder.getPath());
 		for(String name : names) {
 			ApplicationResource res = folder.getResource(name);
 			if (res instanceof ApplicationFile) {
@@ -87,7 +87,7 @@ public class SqlExecutionProcessor implements ComponentProcessor {
 	
 	protected void addFile(String path,PropertyWithValueList files, MavenBuildContext bctx,ProcessorContext ctx) {
 		if (path.endsWith(".sql")) {
-			ctx.dependOnResource(path);
+			//ctx.dependOnResource(path);
 			String buildBase = bctx.getApplicationFolderPath();
 			String resourcePath = path.substring(buildBase.length());
 			files.addValue(resourcePath);

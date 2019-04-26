@@ -73,8 +73,7 @@ public class ResourceManager {
 			files = folderFile.listFiles();
 		}
 
-		// TODO: Handle jasper.properies and systemAttributes.properties.
-		// TODO: folders should not be added to results.
+		// TODO: Handle systemAttributes.properties
 		boolean isRoot = folder==applicationFolder;
 
 		for(Entry<String,WatchedResource> entry : folder.getFiles().entrySet()) {
