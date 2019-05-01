@@ -3,7 +3,6 @@ package net.sf.jaspercode.engine.application;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,15 +54,11 @@ public class ResourceManager {
 		return null;
 	}
 
-	public List<WatchedResource> scanForModifiedFiles() throws EngineException {
-		List<WatchedResource> ret = new ArrayList<>();
-		
-		scanForModifiedFiles(applicationFolder, ret);
-		
-		return ret;
+	public void scanForModifiedFiles(List<ResourceChange> changes) throws EngineException {
+		scanForModifiedFiles(applicationFolder, changes);
 	}
 
-	protected void scanForModifiedFiles(ApplicationFolderImpl folder,List<WatchedResource> results) throws EngineException {
+	private void scanForModifiedFiles(ApplicationFolderImpl folder,List<ResourceChange> results) throws EngineException {
 		File folderFile = folder.getFolderFile();;
 		File[] files = null;
 		
@@ -73,25 +68,25 @@ public class ResourceManager {
 			files = folderFile.listFiles();
 		}
 
-		// TODO: Handle systemAttributes.properties
 		boolean isRoot = folder==applicationFolder;
 
 		for(Entry<String,WatchedResource> entry : folder.getFiles().entrySet()) {
 			String name = entry.getKey();
-			WatchedResource res = entry.getValue();
+			WatchedResource oldFile = entry.getValue();
 			File file = getFile(files, name);
 			if (file!=null) {
-				if (res instanceof ApplicationFolderImpl) {
-					ApplicationFolderImpl f = (ApplicationFolderImpl)res;
+				if (oldFile instanceof ApplicationFolderImpl) {
+					ApplicationFolderImpl f = (ApplicationFolderImpl)oldFile;
 					scanForModifiedFiles(f, results);
 				}
-				else if (file.lastModified() > res.getLastModified()) {
-					if (res instanceof JasperPropertiesFile) {
+				else if (file.lastModified() > oldFile.getLastModified()) {
+					if (oldFile instanceof JasperPropertiesFile) {
 						this.manageJasperPropertiesFile(file, folder);
 					//} else if (res instanceof ApplicationFolderImpl) {
 					} else {
 						WatchedResource r = createFile(file, folder);
-						results.add(r);
+						String path = r.getPath();
+						results.add(new ResourceChange(path,oldFile, r));
 					}
 				}
 			}
@@ -108,15 +103,11 @@ public class ResourceManager {
 		}
 	}
 	
-	public List<WatchedResource> scanForRemovedFiles() throws EngineException {
-		List<WatchedResource> ret = new ArrayList<>();
-		
-		scanForRemovedFiles(applicationFolder, ret);
-		
-		return ret;
+	public void scanForRemovedFiles(List<ResourceChange> changes) throws EngineException {
+		scanForRemovedFiles(applicationFolder, changes);
 	}
 
-	protected void scanForRemovedFiles(ApplicationFolderImpl folder,List<WatchedResource> results) throws EngineException {
+	private void scanForRemovedFiles(ApplicationFolderImpl folder,List<ResourceChange> changes) throws EngineException {
 		File folderFile = folder.getFolderFile();;
 		File[] files = null;
 		
@@ -130,26 +121,25 @@ public class ResourceManager {
 			String name = entry.getKey();
 			WatchedResource res = entry.getValue();
 			if (getFile(files, name)==null) {
-				results.add(res);
-			}
-			if (res instanceof ApplicationFolderImpl) {
-				ApplicationFolderImpl f = (ApplicationFolderImpl)res;
-				scanForRemovedFiles(f, results);
-			} else if (res instanceof UserFile) {
-				userFiles.remove(res.getPath());
+				String path = res.getPath();
+				if (res instanceof ApplicationFolderImpl) {
+					ApplicationFolderImpl f = (ApplicationFolderImpl)res;
+					scanForRemovedFiles(f, changes);
+				} else if (res instanceof UserFile) {
+					userFiles.remove(res.getPath());
+					changes.add(new ResourceChange(path, res, null));
+				} else if (res instanceof ComponentFile) {
+					folder.getComponentFiles().remove(res.getName());
+					changes.add(new ResourceChange(path, res, null));
+				} else if (res instanceof JasperPropertiesFile) {
+					this.manageJasperPropertiesFile(null, folder);
+				} else if (res instanceof SystemAttributesFile) {
+					applicationManager.handleSystemAttributesFileChange(null);
+				}
 			}
 		}
 	}
 
-	public List<WatchedResource> scanForNewFiles() throws EngineException {
-		List<WatchedResource> ret = new ArrayList<>();
-		
-		scanForNewFiles(applicationFolder,ret);
-		
-		//System.out.println("Scanned for new files and found "+ret.size()+" added files");
-		return ret;
-	}
-	
 	protected SystemAttributesFile createSystemAttributesFile(File file,ApplicationFolderImpl folder) throws EngineException {
 		SystemAttributesFile ret = null;
 		
@@ -184,6 +174,12 @@ public class ResourceManager {
 	protected void manageJasperPropertiesFile(File file,ApplicationFolderImpl folder) throws EngineException {
 		JasperPropertiesFile newFile = null;
 		
+		if (file==null) {
+			folder.setJasperProperties(null);
+			applicationManager.handleJasperPropertiesChange(folder.getPath());
+			return;
+		}
+
 		if (file.isDirectory()) {
 			throw new EngineException("File '"+file.getAbsolutePath()+"' is not a valid properties file");
 		}
@@ -212,7 +208,7 @@ public class ResourceManager {
 			}
 			// TODO: If jasper.properties is found, then all component files in this directory need to be unloaded
 			folder.setJasperProperties(newFile);
-
+			applicationManager.handleJasperPropertiesChange(folder.getPath());
 		} catch(IOException e) {
 			throw new EngineException("Couldn't read properties '"+file.getAbsolutePath()+"'",e);
 		} finally {
@@ -224,6 +220,7 @@ public class ResourceManager {
 		}
 	}
 	
+	// Creates a UserFile or a ComponentFile.  jasper.properties and systemAttributes.properties and folders are handled elsewhere.
 	protected WatchedResource createFile(File file, ApplicationFolderImpl folder) throws EngineException {
 		WatchedResource ret = null;
 		
@@ -250,12 +247,13 @@ public class ResourceManager {
 		return ret;
 	}
 	
-	protected void scanForNewFiles(ApplicationFolderImpl folder,List<WatchedResource> results) throws EngineException {
+	public void scanForNewFiles(List<ResourceChange> changes) throws EngineException {
+		scanForNewFiles(applicationFolder,changes);
+	}
+	
+	protected void scanForNewFiles(ApplicationFolderImpl folder,List<ResourceChange> changes) throws EngineException {
 		File folderFile = folder.getFolderFile();
 		File[] files = folderFile.listFiles();
-		//List<File> contents = Arrays.asList(files);
-		//List<File> directories = new ArrayList<>();
-		List<WatchedResource> filesInDir = new ArrayList<>();
 		
 		// First, check jasper properties and systemAttributes.properties file in this directory
 		File jasperPropsFile = null;
@@ -309,12 +307,8 @@ public class ResourceManager {
 			}
 
 			WatchedResource res = createFile(f, folder);
-			if (res!=null) {
-				filesInDir.add(res);
-			}
+			changes.add(new ResourceChange(res.getPath(), null, res));
 		}
-
-		results.addAll(filesInDir);
 
 		// Scan subdirectories
 		for(File f : files) {
@@ -333,8 +327,7 @@ public class ResourceManager {
 				//results.add(sub);
 				folder.getSubFolders().put(f.getName(), sub);
 			}
-			scanForNewFiles(sub, results);
-			continue;
+			scanForNewFiles(sub, changes);
 		}
 	}
 

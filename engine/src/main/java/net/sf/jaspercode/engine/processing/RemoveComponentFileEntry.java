@@ -4,17 +4,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.sf.jaspercode.api.plugin.ProcessorLogMessage;
+import net.sf.jaspercode.engine.application.ApplicationManager;
 import net.sf.jaspercode.engine.application.ProcessingManager;
 import net.sf.jaspercode.engine.definitions.ApplicationFolderImpl;
 import net.sf.jaspercode.engine.definitions.ComponentFile;
 import net.sf.jaspercode.engine.exception.PreprocessingException;
 
-public class AddComponentFileEntry implements Processable {
+public class RemoveComponentFileEntry implements Processable {
 
 	private ComponentFile componentFile = null;
 	private ProcessingManager processingManager = null;
 
-	public AddComponentFileEntry(ComponentFile componentFile, ProcessingManager processingManager) {
+	public RemoveComponentFileEntry(ComponentFile componentFile, ProcessingManager processingManager) {
 		this.componentFile = componentFile;
 		this.processingManager = processingManager;
 	}
@@ -39,7 +40,7 @@ public class AddComponentFileEntry implements Processable {
 
 	@Override
 	public boolean process() {
-		processingManager.addComponentFile(componentFile);
+		processingManager.removeComponentFile(componentFile, true);
 		return true;
 	}
 
@@ -69,4 +70,3 @@ public class AddComponentFileEntry implements Processable {
 	}
 	
 }
-

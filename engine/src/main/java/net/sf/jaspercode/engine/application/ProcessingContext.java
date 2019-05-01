@@ -55,11 +55,11 @@ public class ProcessingContext {
 	// Originate items: system attributes, objects, variable types
 	// Originate means that the item is saved in the processing manager
 	public void originateSystemAttribute(int id,String name,String type) {
-		processingManager.getAttributes().put(name, type);
-		List<Integer> ids = processingManager.getAttributeOriginators().get(name);
+		processingManager.getSystemAttributes().put(name, type);
+		List<Integer> ids = processingManager.getSystemAttributeOriginators().get(name);
 		if (ids==null) {
 			ids = new ArrayList<>();
-			processingManager.getAttributeOriginators().put(name, ids);
+			processingManager.getSystemAttributeOriginators().put(name, ids);
 		}
 		if (!ids.contains(id))
 			ids.add(id);
@@ -85,7 +85,7 @@ public class ProcessingContext {
 	}
 	public void originateType(int id,String lang,VariableType variableType) {
 		String name = variableType.getName();
-		Map<String,List<Integer>> origs = processingManager.getTypeOriginators(lang);
+		Map<String,List<Integer>> origs = processingManager.getVariableTypeOriginators(lang);
 		List<Integer> ids = origs.get(name);
 		if (ids==null) {
 			ids = new ArrayList<>();
@@ -98,13 +98,13 @@ public class ProcessingContext {
 	}
 
 	public String getSystemAttribute(int id,String name) {
-		return processingManager.getAttributes().get(name);
+		return processingManager.getSystemAttributes().get(name);
 	}
 
 	// Depend on items: system attributes, objects, variable types
 	// Dependency means that the item is referenced
 	public void dependOnSystemAttribute(int id,String name) {
-		Map<String,List<Integer>> deps = processingManager.getAttributeDependencies();
+		Map<String,List<Integer>> deps = processingManager.getSystemAttributeDependencies();
 		List<Integer> ids = deps.get(name);
 		if (ids==null) {
 			ids = new ArrayList<>();
@@ -114,7 +114,7 @@ public class ProcessingContext {
 			ids.add(id);
 	}
 	public void dependOnType(int id,String lang,String typeName) {
-		Map<String,List<Integer>> deps = processingManager.getTypeDependencies(lang);
+		Map<String,List<Integer>> deps = processingManager.getVariableTypeDependencies(lang);
 		List<Integer> ids = deps.get(typeName);
 		if (ids==null) {
 			ids = new ArrayList<>();

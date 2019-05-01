@@ -10,7 +10,6 @@ import java.util.Map.Entry;
 import net.sf.jaspercode.api.SourceFile;
 import net.sf.jaspercode.api.config.BuildComponent;
 import net.sf.jaspercode.api.config.Component;
-import net.sf.jaspercode.api.config.ComponentSet;
 import net.sf.jaspercode.api.langsupport.LanguageSupport;
 import net.sf.jaspercode.api.logging.ProcessorLogLevel;
 import net.sf.jaspercode.api.plugin.ProcessorLogMessage;
@@ -21,25 +20,24 @@ import net.sf.jaspercode.api.snapshot.SourceFileSnapshot;
 import net.sf.jaspercode.api.snapshot.SystemAttributeSnapshot;
 import net.sf.jaspercode.api.snapshot.TypeInfo;
 import net.sf.jaspercode.api.types.VariableType;
+import net.sf.jaspercode.engine.BuildComponentPattern;
 import net.sf.jaspercode.engine.ComponentPattern;
 import net.sf.jaspercode.engine.EngineLanguages;
 import net.sf.jaspercode.engine.EnginePatterns;
 import net.sf.jaspercode.engine.definitions.ApplicationFolderImpl;
 import net.sf.jaspercode.engine.definitions.ComponentFile;
 import net.sf.jaspercode.engine.definitions.UserFile;
-import net.sf.jaspercode.engine.definitions.WatchedResource;
 import net.sf.jaspercode.engine.exception.PreprocessingException;
-import net.sf.jaspercode.engine.exception.ProcessingException;
-import net.sf.jaspercode.engine.processing.AddedFile;
+import net.sf.jaspercode.engine.processing.AddComponentFileEntry;
 import net.sf.jaspercode.engine.processing.BuildComponentEntry;
 import net.sf.jaspercode.engine.processing.ComponentEntry;
-import net.sf.jaspercode.engine.processing.FileToProcess;
-import net.sf.jaspercode.engine.processing.ModifiedFile;
 import net.sf.jaspercode.engine.processing.Processable;
 import net.sf.jaspercode.engine.processing.ProcessableBase;
 import net.sf.jaspercode.engine.processing.ProcessingState;
+import net.sf.jaspercode.engine.processing.RemoveComponentFileEntry;
 import net.sf.jaspercode.engine.processing.ResourceWatcherRecord;
 import net.sf.jaspercode.engine.processing.Tracked;
+import net.sf.jaspercode.engine.processing.UnloadComponentFileEntry;
 
 public class ProcessingManager {
 	
@@ -56,7 +54,7 @@ public class ProcessingManager {
 	private Map<String,Object> objects = new HashMap<>();
 
 	// System attributes
-	private Map<String,String> attributes = new HashMap<>();
+	private Map<String,String> systemAttributes = new HashMap<>();
 
 	// Variable Types
 	private Map<String,Map<String,VariableType>> variableTypes = new HashMap<>();
@@ -65,7 +63,7 @@ public class ProcessingManager {
 	// Variable Types
 	private Map<String,Map<String,List<Integer>>> variableTypeOriginators = new HashMap<>();
 	// System attributes
-	private Map<String,List<Integer>> attributeOriginators = new HashMap<>();
+	private Map<String,List<Integer>> systemAttributeOriginators = new HashMap<>();
 	//  Source Files
 	private Map<String,List<Integer>> sourceFileOriginators = new HashMap<>();
 	// Objects
@@ -77,22 +75,14 @@ public class ProcessingManager {
 	// Variable Types
 	private Map<String,Map<String,List<Integer>>> variableTypeDependencies = new HashMap<>();
 	// System attributes
-	private Map<String,List<Integer>> attributeDependencies = new HashMap<>();
+	private Map<String,List<Integer>> systemAttributeDependencies = new HashMap<>();
 
-	// System attributes that come from the system attributes file
-	private List<String> systemAttributesFromFile = new ArrayList<>();
-
-	// Files to process, found while scanning
-	List<FileToProcess> filesToProcess = new ArrayList<>();
-	
 	// Build components, components and resource watcher records
 	private List<Tracked> items = new ArrayList<>();
 
 	private List<Processable> toProcess = new ArrayList<>();
-	//List<WatchedResource> toRemove = null;
 	
 	List<BuildComponentEntry> buildComponentsToProcess = new ArrayList<>();
-	//List<BuildComponentEntry> buildComponentsToGenerate = new ArrayList<>();
 
 	public ProcessingState getState() {
 		return state;
@@ -104,8 +94,11 @@ public class ProcessingManager {
 		this.languages = languages;
 		this.jasperResources = resourceContext;
 	}
-	
-	protected List<ResourceWatcherRecord> getResourceWatcherRecords() {
+
+	/**
+	 * Miscellaneous internal APIs 
+	 */
+	private List<ResourceWatcherRecord> getResourceWatcherRecords() {
 		List<ResourceWatcherRecord> ret = new ArrayList<>();
 		
 		for(Tracked item : items) {
@@ -117,70 +110,6 @@ public class ProcessingManager {
 		return ret;
 	}
 
-	// All resource watcher records that watch this file's path must be removed.
-	// Watchers that watch this path exactly must be removed.
-	// Watchers that watch a substring of the path should be unloaded.
-	public void userFileRemoved(UserFile userFile) {
-		String path = userFile.getPath();
-		
-		for(ResourceWatcherRecord rec : getResourceWatcherRecords()) {
-			if (rec.getPath().equals(path)) {
-				// This watcher must be removed since its file has been removed
-				this.removeItem(rec.getId());
-			} else if (path.startsWith(rec.getPath())) {
-				// This watcher must be unloaded 
-				this.unloadItem(rec.getId());
-			}
-		}
-	}
-
-	// Adds the componentFile to the system.
-	public void loadComponentFile(ComponentFile componentFile) {
-		this.componentFiles.put(componentFile.getPath(), componentFile);
-	}
-
-	// NOTE: Do not track the component file.  It can be tracked elsewhere.
-	// When a component file is deleted its components must be removed (remove = true)
-	// When a component file needs to be reprocessed its components must be unloaded (remove = false)
-	// The latter can happen when jasper.properties is changed
-	public void unloadComponentFile(ComponentFile componentFile, boolean remove) {
-		ComponentSet set = componentFile.getComponentSet();
-		for(Component comp : set.getComponent()) {
-			int id = -1;
-			if (comp instanceof BuildComponent) {
-				componentFile.getFolder().getBuildComponent();
-				if (comp==componentFile.getFolder().getBuildComponent().getBuildComponent()) {
-					id = componentFile.getFolder().getBuildComponent().getId();
-				} else {
-					System.err.println("Tried to unload/remove a build component but it was not assigned to this folder!");
-				}
-			} else {
-				for(Tracked i : items) {
-					if (i instanceof ComponentEntry) {
-						ComponentEntry e = (ComponentEntry)i;
-						if (e.getComponent()==comp) {
-							id = e.getId();
-							break;
-						}
-					}
-				}
-			}
-			if (id<0) {
-				System.err.println("Tried to unload/remove component '"+comp.getComponentName()+"' from file '"+componentFile.getPath()+"' but couldn't find it in engine state");
-			} else {
-				if (remove) {
-					removeItem(id);
-				} else {
-					this.unloadItem(id);
-				}
-			}
-		}
-
-		// Resource Manager will manage component file in the folder.
-		// Remove records of this component file in the processingManager
-		componentFiles.remove(componentFile.getPath());
-	}
-
 	protected Tracked getItem(int id) {
 		for(Tracked item : items) {
 			if (item.getId()==id) {
@@ -190,27 +119,184 @@ public class ProcessingManager {
 		return null;
 	}
 
-	// Parameter causeUnload will cause other items dependent on the same key to be unloaded as well.
+	/**
+	 * End of miscellaneous internal APIs 
+	 */
+
+	
+
+	/**
+	 * API required by applicationManager
+	 */
+	
+	public void componentFileRemoved(ComponentFile file) {
+		this.toProcess.add(new RemoveComponentFileEntry(file, this));
+	}
+	
+	public void componentFileAdded(ComponentFile file) {
+		this.toProcess.add(new AddComponentFileEntry(file, this));
+	}
+	
+	// Unloads component files whose path starts with the given string, and marks the items to be reprocessed.
+	// This happens because of a change in systemAttributes.properties or jasper.properties
+	public void unloadComponentFiles(String pathPrefix) {
+		for(Entry<String,ComponentFile> entry : componentFiles.entrySet()) {
+			String path = entry.getKey();
+			if (path.startsWith(pathPrefix)) {
+				toProcess.add(new UnloadComponentFileEntry(entry.getValue(), this));
+			}
+		}
+	}
+	
+	public void processChanges(boolean userFileChangesDetected) {
+		if (userFileChangesDetected) {
+			this.checkResourceWatchers();
+		}
+		runProcessing();
+	}
+
+	/**
+	 * End of methods used by applicationManager
+	 */
+
+
+
+	/**
+	 * Start of methods for processing
+	 */
+
+	public void addComponentFile(ComponentFile componentFile) {
+		for(Component comp : componentFile.getComponentSet().getComponent()) {
+			if (comp instanceof BuildComponent) {
+				BuildComponent b = (BuildComponent)comp;
+				ProcessingContext processingContext = new ProcessingContext(this);
+				BuildComponentPattern pattern = patterns.getBuildPattern(b.getClass());
+				BuildComponentEntry e = new BuildComponentEntry(componentFile, processingContext, jasperResources, b, pattern, newId(), 0);
+				toProcess.add(e);
+			} else {
+				ProcessingContext processingContext = new ProcessingContext(this);
+				ComponentPattern pattern = this.patterns.getPattern(comp.getClass());
+				ComponentEntry e = new ComponentEntry(jasperResources, componentFile, processingContext, comp, pattern, newId(), 0);
+				toProcess.add(e);
+			}
+		}
+	}
+
+	public void removeComponentFile(ComponentFile componentFile, boolean remove) {
+		if (componentFiles.get(componentFile.getPath())!=componentFile) {
+			System.err.println("Attempted to remove component file '"+componentFile.getPath()+"' but is not the same as the file registered with the processingManager");
+		}
+		for(Component comp : componentFile.getComponentSet().getComponent()) {
+			int id = 0;
+			// TODO: Unload/remove the component
+			if (comp instanceof BuildComponent) {
+				if (comp==componentFile.getFolder().getBuildComponent().getBuildComponent()) {
+					id = componentFile.getFolder().getBuildComponent().getId();
+				}
+			} else {
+				for(Tracked item : items) {
+					if (item instanceof ComponentEntry) {
+						ComponentEntry e = (ComponentEntry)item;
+						if (e.getComponent()==comp) {
+							id = e.getId();
+							break;
+						}
+					}
+				}
+			}
+			unloadItem(id, remove);
+		}
+		if (remove) {
+			componentFiles.remove(componentFile.getPath());
+		}
+	}
+
+	/**
+	 * End of methods for processing
+	 */
+
+
+
+	/**
+	 * Methods required to unload/remove an item
+	 */
+	
+	// Removes the item from processing completely.
+	// The item is never null
+	protected void removeItem(Tracked item, boolean reAdd) {
+		jasperResources.engineDebug("Unloading item "+item.getId());
+		
+		items.remove(item);
+		if (item instanceof BuildComponentEntry) {
+			BuildComponentEntry e = (BuildComponentEntry)item;
+			ApplicationFolderImpl folder = e.getFolder();
+			folder.setBuildComponentEntry(null);
+			if (this.buildComponentsToProcess.contains(e)) {
+				buildComponentsToProcess.remove(e);
+			}
+			System.err.println("TODO: When a build component is removed, we must unload all components contained in the folder");
+		}
+		
+		if (reAdd) {
+			if (jasperResources.getEngineProperties().getDebug()) {
+				System.out.println("Re-adding item '"+item.getName()+"' which was likely unloaded");
+			}
+			this.toProcess.add((Processable)item);
+		}
+	}
+
+	protected void removeSourceFilesFromOriginator(int id) {
+		List<String> toRemove = new ArrayList<>();
+		
+		for(Entry<String,List<Integer>> entry : sourceFileOriginators.entrySet()) {
+			if (entry.getValue().contains(id)) {
+				toRemove.add(entry.getKey());
+			}
+		}
+		for(String s : toRemove) {
+			removeSourceFile(s);
+		}
+	}
+	protected void removeSourceFile(String path) {
+		List<Integer> origs = this.sourceFileOriginators.get(path);
+		List<Integer> todo = new ArrayList<>(origs);
+		for(Integer i : todo) {
+			this.unloadItem(i, false);
+		}
+		applicationManager.removeSourceFile(path);
+		this.sourceFileOriginators.remove(path);
+	}
+
+	// Remove the resource watchers that originate from the given ID
+	protected void removeResourceWatchersFromOriginator(int id, boolean remove) {
+		for(ResourceWatcherRecord record : this.getResourceWatcherRecords()) {
+			if (record.getOriginatorId()==id) {
+				this.unloadItem(record.getId(), remove);
+			}
+		}
+	}
+
+	// Parameter causeUnload will cause other items dependent on the same key to be
+	// unloaded as well.
 	// causeUnload is false for system attribute dependency
 	// causeUnload is true otherwise.
-	protected void removeItemEntries(Map<String,List<Integer>> map, int id, boolean causeUnload) {
+	protected void removeItemEntries(Map<String, List<Integer>> map, int id, boolean causeUnload) {
 		List<Integer> toUnload = new ArrayList<>();
-		
-		for(Entry<String,List<Integer>> entry : map.entrySet()) {
+
+		for (Entry<String, List<Integer>> entry : map.entrySet()) {
 			List<Integer> ids = entry.getValue();
 			int index = ids.indexOf(id);
-			if (index>=0) {
+			if (index >= 0) {
 				ids.remove(index);
 				if (causeUnload) {
 					toUnload.addAll(ids);
 				}
 			}
 		}
-		for(Integer i : toUnload) {
-			this.unloadItem(i);
+		for (Integer i : toUnload) {
+			this.unloadItem(i, false);
 		}
 	}
-	
 	protected void unloadItemFromTypes(Map<String,Map<String,List<Integer>>> typeMap, int id, boolean causeUnload) {
 		List<Integer> toUnload = new ArrayList<>();
 		
@@ -233,15 +319,14 @@ public class ProcessingManager {
 			}
 		}
 		for(Integer i : toUnload) {
-			this.unloadItem(i);
+			this.unloadItem(i, false);
 		}
 	}
-	
 	protected void unloadDependencies(Tracked item) {
 		int id = item.getId();
 		// System attributes
-		removeItemEntries(this.attributeOriginators, id, true);
-		removeItemEntries(this.attributeDependencies, id, false);
+		removeItemEntries(this.systemAttributeOriginators, id, true);
+		removeItemEntries(this.systemAttributeDependencies, id, false);
 
 		// Objects
 		removeItemEntries(this.objectOriginators, id, true);
@@ -249,230 +334,36 @@ public class ProcessingManager {
 		// Types
 		unloadItemFromTypes(this.variableTypeDependencies, id, false);
 		unloadItemFromTypes(this.variableTypeOriginators, id, true);
-		
+
 		// Unload this item's originator?
-		if (item.getOriginatorId()>0) {
-			this.unloadItem(item.getOriginatorId());
+		if (item.getOriginatorId() > 0) {
+			this.unloadItem(item.getOriginatorId(), false);
 		}
 
 		// Items that originate from this item
 	}
 
-	// Remove the resource watchers that originate from the given ID
-	// TODO: Implement proper handling of resource watchers for remove = true/false.
-	protected void removeResourceWatchersFromOriginator(int id,boolean remove) {
-		
-	}
-
-	protected void removeItem(int id) {
+	protected void unloadItem(int id, boolean remove) {
 		Tracked tracked = getItem(id);
-
+		
+		if (tracked==null) return;
+		
 		if (jasperResources.getEngineProperties().getDebug()) {
 			System.out.println("Removing item id "+id+" with name '"+tracked.getName()+"'");
 		}
-
-		if (tracked!=null) {
-			// Remove tracked item first so it won't be re-added to toProcess
-			removeId(id, false);
-			//items.remove(tracked);
-
-			// Remove references to ID
-			unloadDependencies(tracked);
-			removeResourceWatchersFromOriginator(id,true);
-			removeSourceFilesFromOriginator(id);
-		}
+		removeItem(tracked, !remove);
+		unloadDependencies(tracked);
+		removeResourceWatchersFromOriginator(id,true);
+		removeSourceFilesFromOriginator(id);
 	}
 	
-	protected void unloadItem(int id) {
-		Tracked tracked = getItem(id);
+	/**
+	 * End of methods required to unload/remove an item
+	 */
 
-		if (tracked!=null) {
-			if (jasperResources.getEngineProperties().getDebug()) {
-				System.out.println("Unloading item id "+id+" with name '"+tracked.getName()+"'");
-			}
-			removeId(id, true);
-
-			// Remove references to ID
-			unloadDependencies(tracked);
-			removeResourceWatchersFromOriginator(id,false);
-			removeSourceFilesFromOriginator(id);
-		}
-	}
-
-	protected void removeId(int id, boolean reAdd) {
-		Tracked item = null;
-		
-		for(Tracked t : items) {
-			if (t.getId()==id) {
-				item = t;
-				break;
-			}
-		}
-		
-		if (item!=null) {
-			System.out.println("Unloading "+item.getName());
-			items.remove(item);
-			if (item instanceof BuildComponentEntry) {
-				BuildComponentEntry e = (BuildComponentEntry)item;
-				ApplicationFolderImpl folder = e.getFolder();
-				folder.setBuildComponentEntry(null);
-				System.err.println("TODO: When a build component is removed, we must unload all components contained in the folder");
-			}
-			if ((reAdd) && (item instanceof Processable)) {
-				if (jasperResources.getEngineProperties().getDebug()) {
-					System.out.println("Re-adding item '"+item.getName()+"' which was likely unloaded");
-				}
-				this.toProcess.add((Processable)item);
-			}
-		} else {
-			System.err.println("Couldn't remove ID "+id+" because it was not loaded");
-		}
-	}
-
-	protected void removeSourceFilesFromOriginator(int id) {
-		List<String> toRemove = new ArrayList<>();
-		
-		for(Entry<String,List<Integer>> entry : sourceFileOriginators.entrySet()) {
-			if (entry.getValue().contains(id)) {
-				toRemove.add(entry.getKey());
-			}
-		}
-		for(String s : toRemove) {
-			removeSourceFile(s);
-		}
-	}
-	protected void removeSourceFile(String path) {
-		List<Integer> origs = this.sourceFileOriginators.get(path);
-		List<Integer> todo = new ArrayList<>(origs);
-		for(Integer i : todo) {
-			this.unloadItem(i);
-		}
-		applicationManager.removeSourceFile(path);
-		this.sourceFileOriginators.remove(path);
-	}
-
-	// When a file is modified, we want to remove the old version and add the new version
-	// This is only applicable for component files.
-	// 
-	public void fileModified(WatchedResource newFile) {
-		String path = newFile.getPath();
-		WatchedResource oldFile = null;
-
-		if (componentFiles.get(path)!=null) {
-			oldFile = componentFiles.get(path);
-			//componentFiles.put(path, (ComponentFile)newFile);
-			ModifiedFile f = new ModifiedFile(newFile,oldFile,this,applicationManager,this.jasperResources);
-			filesToProcess.add(f);
-		} else {
-			// This is a userFile - no-op
-		}
-	}
-
-	public void addFiles(List<ComponentFile> componentFiles) {
-		for(ComponentFile c : componentFiles) {
-			AddedFile added = new AddedFile(c, this, jasperResources);
-			filesToProcess.add(added);
-			this.componentFiles.put(c.getPath(), c);
-		}
-	}
-
-	// These are added via a processable's ProcessorContext
-	public void addResourceWatcher(int originatorId, ComponentFile componentFile,ResourceWatcher watcher) {
-		ResourceWatcherRecord rec = new ResourceWatcherRecord(jasperResources, new ProcessingContext(this), watcher,componentFile,newId(),originatorId);
-		this.items.add(rec);
-		this.checkResourceWatchers();
-		//toProcessChanged = true;
-	}
-	public void addComponent(int originatorId, Component component, ComponentFile componentFile) throws PreprocessingException {
-		ComponentPattern pattern = patterns.getPattern(component.getClass());
-		ComponentEntry e = new ComponentEntry(jasperResources, componentFile, new ProcessingContext(this), component, pattern, newId(), originatorId);
-		e.preprocess();
-		toProcess.add(e);
-		//toProcessChanged = true;
-	}
-	// End of add via ProcessorContext
 	
-	public void processChanges() throws PreprocessingException,ProcessingException {
-		this.state = ProcessingState.PROCESSING;
-		List<FileToProcess> preprocessed = new ArrayList<>();
-		try {
-			for(FileToProcess f : filesToProcess) {
-				List<Processable> entries = f.preprocess();
-				preprocessed.add(f);
-				// Remove build component if there is one (there will be one or zero)
-				if (entries!=null) {
-					BuildComponentEntry b = null;
-					for(Processable e : entries) {
-						if (e instanceof BuildComponentEntry) {
-							b = (BuildComponentEntry)e;
-							break;
-						}
-					}
-					if (b!=null) {
-						entries.remove(b);
-						buildComponentsToProcess.add(b);
-						//toProcessChanged = true;
-					}
-					if (entries.size()>0) {
-						toProcess.addAll(entries);
-						//toProcessChanged = true;
-					}
-				} else {
-					// Do something...
-					//throw new JasperException("");
-				}
-			}
-		} finally {
-			for(FileToProcess f : preprocessed) {
-				filesToProcess.remove(f);
-			}
-		}
 
-		filesToProcess.clear();
-		runProcessing();
-
-		if (state==ProcessingState.PROCESSING) {
-			//userFilesToWrite.clear();
-			this.state = ProcessingState.COMPLETE;
-		}
-	}
-
-	List<ResourceWatcherRecord> activeResourceWatcherRecords = new ArrayList<>();
-	public void checkResourceWatchers() {
-		Map<String,UserFile> userFiles = applicationManager.getUserFiles();
-		for(Tracked tracked : items) {
-			if (tracked instanceof ResourceWatcherRecord) {
-				ResourceWatcherRecord rec = (ResourceWatcherRecord)tracked;
-				long last = rec.getLastRun();
-				String path = rec.getPath();
-
-				for(Entry<String,UserFile> entry : userFiles.entrySet()) {
-					//String path = entry.getKey();
-					UserFile userFile = entry.getValue();
-					if (last < userFile.getLastModified()) {
-						if (entry.getKey().startsWith(path)) {
-							if (!activeResourceWatcherRecords.contains(rec)) {
-								activeResourceWatcherRecords.add(rec);
-								toProcess.add(rec.entry());
-							}
-						}
-					}
-				}
-				/* processingManager should not concern itself with writing user files.
-				for(UserFile file : userFilesToWrite) {
-					if (file.getPath().startsWith(path)) {
-						if (!activeResourceWatcherRecords.contains(rec)) {
-							activeResourceWatcherRecords.add(rec);
-							toProcess.add(rec.entry());
-						}
-					}
-				}
-				*/
-			}
-		}
-	}
-	
-	protected void logErrorState(List<ProcessorLogMessage> msgs) {
+	protected void logMessages(List<ProcessorLogMessage> msgs) {
 		for(ProcessorLogMessage msg : msgs) {
 			String m = String.format("[%s] %s", msg.getLevel().name(), msg.getMessage());
 			if (msg.getLevel()==ProcessorLogLevel.ERROR) {
@@ -489,7 +380,39 @@ public class ProcessingManager {
 		}
 	}
 	
-	protected void runProcessing() {
+	// Create Processable IDs
+	private int nextId = 1;
+	public int newId() {
+		return nextId++;
+	}
+	
+	/*
+	public EngineLanguages getLanguages() {
+		return languages;
+	}
+	*/
+	
+	private void checkResourceWatchers() {
+		Map<String,UserFile> userFiles = applicationManager.getUserFiles();
+		for(ResourceWatcherRecord rec : this.getResourceWatcherRecords()) {
+			// If the resource watcher is already active then a userFile must be a perfect path match
+			boolean alreadyActive = rec.isActive(); 
+			String path = rec.getPath();
+			for(Entry<String,UserFile> entry : userFiles.entrySet()) {
+				String filePath = entry.getKey();
+				UserFile file = entry.getValue();
+				if (rec.getLastRun() < file.getLastModified()) {
+					if ((alreadyActive) && (filePath.equals(path))) {
+						this.toProcess.add(rec.entry());
+					} else if ((!alreadyActive) && (filePath.startsWith(path))) {
+						this.toProcess.add(rec.entry());
+					}
+				}
+			}
+		}
+	}
+	
+	private void runProcessing() {
 		System.out.println("Starting processing, found "+toProcess.size()+" items to process");
 
 		while(toProcess.size()>0) {
@@ -499,106 +422,46 @@ public class ProcessingManager {
 				jasperResources.engineDebug("Skipping component '"+p.getName()+"' with invalid priority");
 				toProcess.remove(0);
 			} else {
-				String name = p.getName();
-				if (name!=null) {
-					System.out.println("Processing component "+name);
-				}
-				if (p.process()) {
-					p.commitChanges();
-					toProcess.remove(p);
-					if (p instanceof Tracked) {
-						items.add((Tracked)p);
-					}
-				} else {
-					logErrorState(p.getMessages());
-					p.rollbackChanges();
-					this.state = ProcessingState.ERROR;
-					break;
-				}
+				
 			}
 		}
-
-		// Finish processing of build components
-		while(buildComponentsToProcess.size()>0) {
-			BuildComponentEntry e = buildComponentsToProcess.get(0);
-			System.out.println("Processing component "+e.getName());
-			boolean result = e.process();
-			if (result) {
-				e.commitChanges();
-				e.getFolder().setBuildComponentEntry(e);
-				buildComponentsToProcess.remove(0);
-				this.items.add(e);
-			} else {
-				logErrorState(e.getMessages());
-				this.state = ProcessingState.ERROR;
-				break;
-				//throw new JasperException("Processing failed");
-			}
-		}
-		if (state==ProcessingState.ERROR) {
-			return;
-		}
-
-		activeResourceWatcherRecords.clear();
 	}
 
-	// Create a system attribute from system attributes file
-	public void originateFromSystemAttributesFile(String name,String type) {
-		attributes.put(name,type);
-		if (!systemAttributesFromFile.contains(name)) {
-			systemAttributesFromFile.add(name);
-		}
+
+
+	/**
+	 * Required by processingContext
+	 */
+	
+	public void addResourceWatcher(int originatorId, ComponentFile componentFile,ResourceWatcher watcher) {
+		ResourceWatcherRecord rec = new ResourceWatcherRecord(jasperResources, new ProcessingContext(this), watcher,componentFile,newId(),originatorId);
+		this.items.add(rec);
+		this.checkResourceWatchers();
+	}
+	public void addComponent(int originatorId, Component component, ComponentFile componentFile) throws PreprocessingException {
+		ComponentPattern pattern = patterns.getPattern(component.getClass());
+		ComponentEntry e = new ComponentEntry(jasperResources, componentFile, new ProcessingContext(this), component, pattern, newId(), originatorId);
+		e.preprocess();
+		toProcess.add(e);
 	}
 	
-	// Create Processable IDs
-	private int nextId = 1;
-	public int newId() {
-		return nextId++;
+	public Map<String,List<Integer>> getObjectOriginators() {
+		return objectOriginators;
 	}
-	
-	public EnginePatterns getPatterns() {
-		return patterns;
+	public Map<String,Object> getObjects() {
+		return objects;
 	}
-
-	public EngineLanguages getLanguages() {
-		return languages;
+	public Map<String,String> getSystemAttributes() {
+		return systemAttributes;
 	}
-
-	/*
-	public List<ResourceWatcherRecord> getResourceWatcherRecords() {
-		return resourceWatcherRecords;
+	public Map<String,List<Integer>> getSystemAttributeOriginators() {
+		return systemAttributeOriginators;
 	}
-	*/
-
-	// Access source files (add and get - both operations produce a dependency)
-	public void addSourceFile(int id,SourceFile sourceFile) {
-		applicationManager.addSourceFile(sourceFile);
-		List<Integer> ids = sourceFileOriginators.get(sourceFile.getPath());
-		if (ids==null) {
-			ids = new ArrayList<>();
-			sourceFileOriginators.put(sourceFile.getPath(), ids);
-		}
-		if (!ids.contains(id)) {
-			ids.add(id);
-		}
+	public Map<String,List<Integer>> getVariableTypeOriginators(String lang) {
+		return this.variableTypeOriginators.get(lang);
 	}
-	public void originateSourceFile(int id,String path) {
-		List<Integer> ids = sourceFileOriginators.get(path);
-		if (ids==null) {
-			ids = new ArrayList<>();
-			sourceFileOriginators.put(path, ids);
-		}
-		if (!ids.contains(id)) {
-			ids.add(id);
-		}
-	}
-	public SourceFile getSourceFile(String path) {
-		return applicationManager.getSourceFile(path);
-	}
-
-	// Access attributes, variable types, objects
-	public Map<String,String> getAttributes() {
-		return attributes;
+	public Map<String,List<Integer>> getVariableTypeDependencies(String lang) {
+		return this.variableTypeDependencies.get(lang);
 	}
 	public Map<String,VariableType> getVariableTypes(String lang) {
 		Map<String,VariableType> ret = variableTypes.get(lang);
@@ -612,67 +475,33 @@ public class ProcessingManager {
 		}
 		return ret;
 	}
-	public Map<String,Object> getObjects() {
-		return objects;
+	public Map<String,List<Integer>> getSystemAttributeDependencies() {
+		return systemAttributeDependencies;
 	}
-	public Map<String, List<Integer>> getObjectOriginators() {
-		return objectOriginators;
+	public SourceFile getSourceFile(String path) {
+		return applicationManager.getSourceFile(path);
 	}
-
-	// Get originators: attributes, variable types, objects
-	public Map<String, List<Integer>> getAttributeOriginators() {
-		return attributeOriginators;
-	}
-	public Map<String,List<Integer>> getTypeOriginators(String lang) {
-		Map<String,List<Integer>> ret = null;
-		ret = variableTypeOriginators.get(lang);
-		if (ret==null) {
-			ret = new HashMap<>();
-			variableTypeOriginators.put(lang, ret);
+	public void addSourceFile(int id,SourceFile sourceFile) {
+		applicationManager.addSourceFile(sourceFile);
+		List<Integer> ids = sourceFileOriginators.get(sourceFile.getPath());
+		if (ids==null) {
+			ids = new ArrayList<>();
+			sourceFileOriginators.put(sourceFile.getPath(), ids);
 		}
-		return ret;
-	}
-
-	// Get dependencies: attributes, variable types, objects
-	public Map<String, List<Integer>> getAttributeDependencies() {
-		return attributeDependencies;
-	}
-	public Map<String,List<Integer>> getTypeDependencies(String lang) {
-		Map<String,List<Integer>> ret = null;
-		ret = variableTypeDependencies.get(lang);
-		if (ret==null) {
-			ret = new HashMap<>();
-			variableTypeDependencies.put(lang, ret);
-		}
-		return ret;
-	}
-	public void populateSourceFileOriginators(List<SourceFileSnapshot> srcs) {
-		for(SourceFileSnapshot src : srcs) {
-			List<Integer> origs = new ArrayList<>();
-			origs.addAll(this.sourceFileOriginators.get(src.getPath()));
-			src.setOriginators(origs);
+		if (!ids.contains(id)) {
+			ids.add(id);
 		}
 	}
+	
+	/**
+	 * End of methods required by processingContext
+	 */
 
-	public List<SystemAttributeSnapshot> getSystemAttributeSnapshots() {
-		List<SystemAttributeSnapshot> ret = new ArrayList<>();
 
-		for(Entry<String,String> entry : attributes.entrySet()) {
-			String name = entry.getKey();
-			String type = entry.getValue();
-			List<Integer> origs = new ArrayList<>();
-			List<Integer> deps = new ArrayList<>();
-			if (this.attributeOriginators.containsKey(name)) {
-				origs.addAll(this.attributeOriginators.get(name));
-			}
-			if (this.attributeDependencies.containsKey(name)) {
-				deps.addAll(this.attributeDependencies.get(name));
-			}
-			ret.add(new SystemAttributeSnapshot(name, type, "Placeholder", origs, deps));
-		}
 
-		return ret;
-	}
+	/**
+	 * Create application snapshot
+	 */
 
 	protected List<String> searchMapForId(Map<String,List<Integer>> map, int id) {
 		List<String> ret = new ArrayList<>();
@@ -685,7 +514,6 @@ public class ProcessingManager {
 		
 		return ret;
 	}
-
 	protected List<TypeInfo> searchTypes(Map<String,Map<String,List<Integer>>> map,int id) {
 		List<TypeInfo> ret = new ArrayList<>();
 		
@@ -697,10 +525,9 @@ public class ProcessingManager {
 				}
 			}
 		}
-		
+
 		return ret;
 	}
-
 	public List<ItemSnapshot> getItemSnapshots() {
 		List<ItemSnapshot> ret = new ArrayList<>();
 		
@@ -721,8 +548,8 @@ public class ProcessingManager {
 				ret.add(sn);
 				sn.setId(e.getId());
 				sn.setName(e.getName());
-				sn.setSystemAttributesOriginated(searchMapForId(this.attributeOriginators, e.getId()));
-				sn.setSystemAttributeDependencies(searchMapForId(this.attributeDependencies, e.getId()));
+				sn.setSystemAttributesOriginated(searchMapForId(this.systemAttributeOriginators, e.getId()));
+				sn.setSystemAttributeDependencies(searchMapForId(this.systemAttributeDependencies, e.getId()));
 				sn.setTypesOriginated(searchTypes(this.variableTypeOriginators, e.getId()));
 				sn.setTypeDependencies(searchTypes(this.variableTypeDependencies, e.getId()));
 				sn.setSourceFilePaths(searchMapForId(this.sourceFileOriginators, e.getId()));
@@ -740,6 +567,37 @@ public class ProcessingManager {
 		
 		return ret;
 	}
+	public List<SystemAttributeSnapshot> getSystemAttributeSnapshots() {
+		List<SystemAttributeSnapshot> ret = new ArrayList<>();
+
+		for(Entry<String,String> entry : systemAttributes.entrySet()) {
+			String name = entry.getKey();
+			String type = entry.getValue();
+			List<Integer> origs = new ArrayList<>();
+			List<Integer> deps = new ArrayList<>();
+			if (this.systemAttributeOriginators.containsKey(name)) {
+				origs.addAll(this.systemAttributeOriginators.get(name));
+			}
+			if (this.systemAttributeDependencies.containsKey(name)) {
+				deps.addAll(this.systemAttributeDependencies.get(name));
+			}
+			ret.add(new SystemAttributeSnapshot(name, type, "Placeholder", origs, deps));
+		}
+
+		return ret;
+	}
+
+	public void populateSourceFileOriginators(List<SourceFileSnapshot> srcs) {
+		for(SourceFileSnapshot src : srcs) {
+			List<Integer> origs = new ArrayList<>();
+			origs.addAll(this.sourceFileOriginators.get(src.getPath()));
+			src.setOriginators(origs);
+		}
+	}
 	
+	/**
+	 * End of methods to create application snapshots
+	 */
+
 }
 

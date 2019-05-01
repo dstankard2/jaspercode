@@ -5,6 +5,7 @@ import java.util.List;
 
 import net.sf.jaspercode.api.plugin.ProcessorLogMessage;
 import net.sf.jaspercode.engine.application.ApplicationManager;
+import net.sf.jaspercode.engine.application.ProcessingManager;
 import net.sf.jaspercode.engine.definitions.ApplicationFolderImpl;
 import net.sf.jaspercode.engine.definitions.ComponentFile;
 import net.sf.jaspercode.engine.exception.PreprocessingException;
@@ -12,13 +13,11 @@ import net.sf.jaspercode.engine.exception.PreprocessingException;
 public class UnloadComponentFileEntry implements Processable {
 
 	private ComponentFile componentFile = null;
-	private ApplicationManager applicationManager = null;
-	ApplicationFolderImpl folder = null;
+	private ProcessingManager processingManager = null;
 
-	public UnloadComponentFileEntry(ComponentFile componentFile, ApplicationManager applicationManager, ApplicationFolderImpl folder) {
+	public UnloadComponentFileEntry(ComponentFile componentFile, ProcessingManager processingManager) {
 		this.componentFile = componentFile;
-		this.applicationManager = applicationManager;
-		this.folder = folder;
+		this.processingManager = processingManager;
 	}
 
 	@Override
@@ -41,13 +40,13 @@ public class UnloadComponentFileEntry implements Processable {
 
 	@Override
 	public boolean process() {
-		applicationManager.unloadComponentFile(componentFile, true);
+		processingManager.removeComponentFile(componentFile, false);
 		return true;
 	}
 
 	@Override
 	public ApplicationFolderImpl getFolder() {
-		return folder;
+		return componentFile.getFolder();
 	}
 
 	// There's nothing to commit

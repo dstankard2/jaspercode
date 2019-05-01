@@ -56,8 +56,19 @@ public class ResourceWatcherRecord implements Tracked {
 	public void setLastRun(long lastRun) {
 		this.lastRun = lastRun;
 	}
+	
+	public boolean isActive() {
+		return entry != null;
+	}
+
+	public void deactivate() {
+		this.entry = null;
+	}
 
 	public ResourceWatcherEntry entry() {
+		if (entry==null) {
+			entry = new ResourceWatcherEntry(applicationContext, originatorFile, processingContext, id, watcher, this);
+		}
 		return entry;
 	}
 
