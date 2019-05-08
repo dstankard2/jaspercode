@@ -6,7 +6,8 @@ import java.util.HashMap;
 
 import net.sf.jaspercode.api.ApplicationContext;
 import net.sf.jaspercode.api.annotation.ConfigProperty;
-import net.sf.jaspercode.api.resources.ResourceWatcher;
+import net.sf.jaspercode.api.resources.ApplicationFile;
+import net.sf.jaspercode.api.resources.FolderWatcher;
 import net.sf.jaspercode.engine.application.ProcessingContext;
 import net.sf.jaspercode.engine.definitions.ComponentFile;
 import net.sf.jaspercode.engine.exception.PreprocessingException;
@@ -15,31 +16,35 @@ import net.sf.jaspercode.engine.exception.PreprocessingException;
  * This represents a resource watcher that needs to be executed for a watched resource path.
  * @author DCS
  */
-public class ResourceWatcherEntry extends ProcessableBase {
+public class FolderWatcherEntry extends ProcessableBase {
 
-	private ResourceWatcher resourceWatcher = null;
-	private ResourceWatcherRecord record = null;
+	private FolderWatcher folderWatcher = null;
+	private FolderWatcherRecord record = null;
+	private String path = null;
+	private ApplicationFile applicationFile = null;
 
-	public ResourceWatcherEntry(ApplicationContext applicationContext, ComponentFile componentFile,ProcessingContext processingContext, int id, ResourceWatcher resourceWatcher,ResourceWatcherRecord record) {
-		super(applicationContext, componentFile, processingContext, id, resourceWatcher.getPath(), new HashMap<String,String>());
-		this.resourceWatcher = resourceWatcher;
+	public FolderWatcherEntry(String path, ApplicationContext applicationContext, ComponentFile componentFile,ProcessingContext processingContext, int id, FolderWatcher folderWatcher,FolderWatcherRecord record, ApplicationFile applicationFile) {
+		super(applicationContext, componentFile, processingContext, id, path, new HashMap<String,String>());
+		this.folderWatcher = folderWatcher;
+		this.applicationFile = applicationFile;
 		this.record = record;
+		this.path = path;
 		this.log = new ProcessorLog(getName());
 		this.processorContext = new ProcessorContextImpl(componentFile.getFolder(), this, log);
-		resourceWatcher.init(processorContext);
+		this.folderWatcher.init(processorContext);
 	}
 
 	public String getPath() {
-		return resourceWatcher.getPath();
+		return path;
 	}
 
 	@Override
 	public int getPriority() {
-		return resourceWatcher.getPriority();
+		return folderWatcher.getPriority();
 	}
 
 	public void preprocess() throws PreprocessingException {
-		Class<?> compClass = resourceWatcher.getClass();
+		Class<?> compClass = folderWatcher.getClass();
 		Method[] methods = compClass.getMethods();
 		
 		this.state = ProcessingState.PREPROCESSING;
@@ -48,7 +53,7 @@ public class ResourceWatcherEntry extends ProcessableBase {
 			if (prop!=null) {
 				try {
 					Object value = super.handleConfigProperty(prop, method.getParameterTypes());
-					method.invoke(resourceWatcher, value);
+					method.invoke(folderWatcher, value);
 				} catch(InvocationTargetException | IllegalAccessException e) {
 					throw new PreprocessingException("Couldn't invoke ConfigProperty annotation on "+compClass.getCanonicalName(), e);
 				}
@@ -63,7 +68,7 @@ public class ResourceWatcherEntry extends ProcessableBase {
 		
 		this.state = ProcessingState.PROCESSING;
 		try {
-			resourceWatcher.process();
+			folderWatcher.process(applicationFile);
 			this.state = ProcessingState.COMPLETE;
 			record.setLastRun(System.currentTimeMillis());
 		} catch(Exception e) {
@@ -76,7 +81,7 @@ public class ResourceWatcherEntry extends ProcessableBase {
 
 	@Override
 	public String getName() {
-		return "ResourceWatcher["+getPath()+"]";
+		return "FolderWatcher["+getPath()+"] for file '"+applicationFile.getPath()+"'";
 	}
 
 }

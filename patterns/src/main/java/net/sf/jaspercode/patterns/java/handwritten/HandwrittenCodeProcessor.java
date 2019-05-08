@@ -48,8 +48,8 @@ public class HandwrittenCodeProcessor implements ComponentProcessor {
 	}
 	
 	protected void watchDirectory(ApplicationFolder folder) {
-		FolderWatcher folderWatcher = new FolderWatcher(folder.getPath());
-		ctx.addResourceWatcher(folderWatcher);
+		HandwrittenCodeFolderWatcher folderWatcher = new HandwrittenCodeFolderWatcher();
+		ctx.addFolderWatcher(folder.getPath(),folderWatcher);
 	}
 
 	protected void watchFile(ApplicationFile file) {

@@ -59,6 +59,10 @@ public class RetrieveDataRule extends DomainLogicComponent {
 	public void setName(String name) {
 		this.name = name;
 	}
+	
+	public String getComponentName() {
+		return "RetrieveDataRule["+this.getServiceName()+"."+name+"]";
+	}
 
 }
 

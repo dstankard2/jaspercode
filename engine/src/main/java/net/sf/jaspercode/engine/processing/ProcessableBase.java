@@ -15,7 +15,8 @@ import net.sf.jaspercode.api.annotation.ConfigProperty;
 import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.plugin.ProcessorLogMessage;
-import net.sf.jaspercode.api.resources.ResourceWatcher;
+import net.sf.jaspercode.api.resources.FileWatcher;
+import net.sf.jaspercode.api.resources.FolderWatcher;
 import net.sf.jaspercode.api.types.VariableType;
 import net.sf.jaspercode.engine.application.ProcessingContext;
 import net.sf.jaspercode.engine.definitions.ApplicationFolderImpl;
@@ -50,7 +51,8 @@ public abstract class ProcessableBase implements Processable,ProcessableContext 
 
 	protected Map<String,String> configOverride = null;
 	
-	protected List<ResourceWatcher> watchersAdded = new ArrayList<>();
+	protected List<Pair<String,FolderWatcher>> folderWatchersAdded = new ArrayList<>();
+	protected List<Pair<String,FileWatcher>> fileWatchersAdded = new ArrayList<>();
 	protected List<Component> componentsAdded = new ArrayList<>();
 
 	protected String name = null;
@@ -210,8 +212,11 @@ public abstract class ProcessableBase implements Processable,ProcessableContext 
 		}
 		
 		// Added Resource Watchers
-		for(ResourceWatcher w : this.watchersAdded) {
-			processingContext.addResourceWatcher(id, componentFile, w);
+		for(Pair<String,FileWatcher> w : this.fileWatchersAdded) {
+			processingContext.addFileWatcher(id, componentFile, w.getKey(), w.getRight());
+		}
+		for(Pair<String,FolderWatcher> w : this.folderWatchersAdded) {
+			processingContext.addFolderWatcher(id, componentFile, w.getKey(), w.getRight());
 		}
 		
 		return true;
@@ -315,8 +320,13 @@ public abstract class ProcessableBase implements Processable,ProcessableContext 
 	}
 
 	@Override
-	public void addResourceWatcher(ResourceWatcher resourceWatcher) {
-		this.watchersAdded.add(resourceWatcher);
+	public void addFileWatcher(String path, FileWatcher fileWatcher) {
+		this.fileWatchersAdded.add(Pair.of(path, fileWatcher));
+	}
+
+	@Override
+	public void addFolderWatcher(String path,FolderWatcher folderWatcher) {
+		this.folderWatchersAdded.add(Pair.of(path, folderWatcher));
 	}
 
 	@Override

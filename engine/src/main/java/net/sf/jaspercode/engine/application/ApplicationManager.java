@@ -21,12 +21,9 @@ import net.sf.jaspercode.engine.EnginePatterns;
 import net.sf.jaspercode.engine.EngineProperties;
 import net.sf.jaspercode.engine.PluginContextImpl;
 import net.sf.jaspercode.engine.PluginManager;
-import net.sf.jaspercode.engine.definitions.ApplicationFolderImpl;
 import net.sf.jaspercode.engine.definitions.ComponentFile;
-import net.sf.jaspercode.engine.definitions.JasperPropertiesFile;
 import net.sf.jaspercode.engine.definitions.SystemAttributesFile;
 import net.sf.jaspercode.engine.definitions.UserFile;
-import net.sf.jaspercode.engine.definitions.WatchedResource;
 import net.sf.jaspercode.engine.processing.EngineException;
 import net.sf.jaspercode.engine.processing.ProcessingState;
 import net.sf.jaspercode.engine.processing.ProcessorLog;
@@ -34,7 +31,6 @@ import net.sf.jaspercode.engine.processing.ProcessorLog;
 public class ApplicationManager {
 
 	private boolean firstScan = true;
-	//private boolean userFileChangeDetected = false;
 
 	// Application resources
 	private OutputManager outputManager = null;
@@ -49,6 +45,8 @@ public class ApplicationManager {
 	private SystemAttributesFile systemAttributesFile = null;
 
 	Map<String,ApplicationPlugin> plugins = new HashMap<>();
+	
+	Map<String,List<String>> folderCommands = new HashMap<>();
 
 	public String getApplicationName() {
 		return applicationName;
@@ -106,6 +104,14 @@ public class ApplicationManager {
 		
 	}
 
+	public List<String> getCommands(String folderPath) {
+		return folderCommands.get(folderPath);
+	}
+
+	public void setCommands(String folderPath,List<String> commands) {
+		folderCommands.put(folderPath, commands);
+	}
+	
 	public void scan() throws Exception {
 		boolean userFileChangeDetected = false;
 		for(Entry<String,ApplicationPlugin> entry : this.plugins.entrySet()) {
@@ -129,72 +135,77 @@ public class ApplicationManager {
 			
 		} else if (firstScan) {
 			System.out.println("*** Initial scan found no files - Ending ***");
+			return;
 		}
+		
+		boolean changeDetected = (changes.size()>0) || (userFileChangeDetected);
 
-		for(ResourceChange change : changes) {
-			boolean wasComponentFile = change.wasComponentFile();
-			boolean wasUserFile = change.wasUserFile();
-			boolean isComponentFile = change.isComponentFile();
-			boolean isUserFile = change.isUserFile();
+		if (changeDetected) {
+			for(ResourceChange change : changes) {
+				boolean wasComponentFile = change.wasComponentFile();
+				boolean wasUserFile = change.wasUserFile();
+				boolean isComponentFile = change.isComponentFile();
+				boolean isUserFile = change.isUserFile();
 
-			if (change.getOldFile()==null) {
-				// Added file
-				if (change.isUserFile()) {
-					userFileChangeDetected = true;
-					outputManager.writeUserFile((UserFile)change.getNewFile());
-				} else if (change.isComponentFile()) {
-					processingManager.componentFileAdded((ComponentFile)change.getNewFile());
-				} else {
-					jasperResources.engineDebug("Detected a new file is neither a user file or component file: "+change.getPath());
+				if (change.getOldFile()==null) {
+					// Added file
+					if (change.isUserFile()) {
+						userFileChangeDetected = true;
+						outputManager.writeUserFile((UserFile)change.getNewFile());
+					} else if (change.isComponentFile()) {
+						processingManager.componentFileAdded((ComponentFile)change.getNewFile());
+					} else {
+						jasperResources.engineDebug("Detected a new file is neither a user file or component file: "+change.getPath());
+					}
+				} else if (change.getNewFile()==null) {
+					// Removed file
+					if (change.wasUserFile()) {
+						userFileChangeDetected = true;
+						outputManager.removeUserFile((UserFile)change.getOldFile());
+					} else if (change.wasComponentFile()) {
+						processingManager.componentFileRemoved((ComponentFile)change.getOldFile());
+					} else {
+						jasperResources.engineDebug("Detected a removed file is neither a user file or component file: "+change.getPath());
+					}
 				}
-			} else if (change.getNewFile()==null) {
-				// Removed file
-				if (change.wasUserFile()) {
-					userFileChangeDetected = true;
-					outputManager.removeUserFile((UserFile)change.getOldFile());
-				} else if (change.wasComponentFile()) {
+				else if (wasUserFile) {
+					userFileChangeDetected = true; // A user file has changed
+					if (isUserFile) {
+						outputManager.writeUserFile((UserFile)change.getNewFile());
+					} else if (isComponentFile) {
+						outputManager.removeUserFile((UserFile)change.getOldFile());
+						processingManager.componentFileAdded((ComponentFile)change.getNewFile());
+					} else {
+						jasperResources.engineDebug("Making a file update that is neither a user file or component file: "+change.getPath());
+					}
+				} else if (wasComponentFile) {
+					// In both cases we remove the old component file
 					processingManager.componentFileRemoved((ComponentFile)change.getOldFile());
+					if (isUserFile) {
+						userFileChangeDetected = true;
+						outputManager.writeUserFile((UserFile)change.getNewFile());
+					} else if (isComponentFile) {
+						processingManager.componentFileAdded((ComponentFile)change.getNewFile());
+					} else {
+						jasperResources.engineDebug("Making a file update that is neither a user file or component file: "+change.getPath());
+					}
 				} else {
-					jasperResources.engineDebug("Detected a removed file is neither a user file or component file: "+change.getPath());
+					jasperResources.engineDebug("Making a file update that was neither a user file or component file: "+change.getPath());
 				}
 			}
-			else if (wasUserFile) {
-				userFileChangeDetected = true; // A user file has changed
-				if (isUserFile) {
-					outputManager.writeUserFile((UserFile)change.getNewFile());
-				} else if (isComponentFile) {
-					outputManager.removeUserFile((UserFile)change.getOldFile());
-					processingManager.componentFileAdded((ComponentFile)change.getNewFile());
-				} else {
-					jasperResources.engineDebug("Making a file update that is neither a user file or component file: "+change.getPath());
-				}
-			} else if (wasComponentFile) {
-				// In both cases we remove the old component file
-				processingManager.componentFileRemoved((ComponentFile)change.getOldFile());
-				if (isUserFile) {
-					userFileChangeDetected = true;
-					outputManager.writeUserFile((UserFile)change.getNewFile());
-				} else if (isComponentFile) {
-					processingManager.componentFileAdded((ComponentFile)change.getNewFile());
-				} else {
-					jasperResources.engineDebug("Making a file update that is neither a user file or component file: "+change.getPath());
-				}
-			} else {
-				jasperResources.engineDebug("Making a file update that was neither a user file or component file: "+change.getPath());
+
+			processingManager.processChanges(userFileChangeDetected);
+
+			if (processingManager.getState()==ProcessingState.COMPLETE) {
+				outputManager.writeAddedSourceFiles();
 			}
-		}
 
-		processingManager.processChanges(userFileChangeDetected);
-
-		if (processingManager.getState()==ProcessingState.COMPLETE) {
-			outputManager.writeAddedSourceFiles();
-		}
-
-		System.out.println("*** Scan completed ***");
-		if (plugins.size()>0) {
-			ApplicationSnapshot snapshot = createSnapshot();
-			for(Entry<String,ApplicationPlugin> entry : this.plugins.entrySet()) {
-				entry.getValue().scanComplete(snapshot);
+			System.out.println("*** Scan completed ***");
+			if (plugins.size()>0) {
+				ApplicationSnapshot snapshot = createSnapshot();
+				for(Entry<String,ApplicationPlugin> entry : this.plugins.entrySet()) {
+					entry.getValue().scanComplete(snapshot);
+				}
 			}
 		}
 
@@ -255,18 +266,31 @@ public class ApplicationManager {
 
 		this.systemAttributesFile = f;
 		
-		// Iterate through the new attributes
+		// Iterate through the new attributes and look for ones that have been added or changed
 		for(Entry<String,String> entry : newAttributes.entrySet()) {
 			String name = entry.getKey();
 			String type = entry.getValue();
-			if ((processingManager.getSystemAttributes().get(name)!=null) && (!processingManager.getSystemAttributes().get(name).equals(type))) {
-				System.err.println("processingManager should remove components that use system attribute '"+name+"'");
+			if (processingManager.getSystemAttributes().get(name)!=null) {
+				String existingType = processingManager.getSystemAttributes().get(name);
+				if (!type.equals(existingType)) {
+					processingManager.removeGlobalSystemAttribute(name);
+					//processingManager.unloadItemsForAttribute(name);
+				}
+				processingManager.addGlobalSystemAttribute(name, type);
+			} else {
+				processingManager.addGlobalSystemAttribute(name, type);
 			}
-			processingManager.originateFromSystemAttributesFile(name, type);
 		}
-
-		// All component files must be unloaded and re-processed
-		processingManager.unloadComponentFiles("/");
+		// Iterate through old attributes and look for ones that have been removed
+		for(Entry<String,String> entry : oldAttributes.entrySet()) {
+			String name = entry.getKey();
+			//String type = entry.getValue();
+			if (newAttributes.get(name)==null) {
+				processingManager.removeGlobalSystemAttribute(name);
+				//processingManager.unloadItemsForAttribute(name);
+			}
+		}
+		this.systemAttributesFile = f;
 	}
 
 	public Map<String,UserFile> getUserFiles() {

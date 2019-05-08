@@ -4,7 +4,8 @@ import net.sf.jaspercode.api.ApplicationContext;
 import net.sf.jaspercode.api.BuildContext;
 import net.sf.jaspercode.api.SourceFile;
 import net.sf.jaspercode.api.config.Component;
-import net.sf.jaspercode.api.resources.ResourceWatcher;
+import net.sf.jaspercode.api.resources.FileWatcher;
+import net.sf.jaspercode.api.resources.FolderWatcher;
 import net.sf.jaspercode.api.types.VariableType;
 
 /**
@@ -35,7 +36,8 @@ public interface ProcessableContext {
 	VariableType getVariableType(String language,String typeName);
 
 	String getConfigurationProperty(String name);
-	void addResourceWatcher(ResourceWatcher resourceWatcher);
+	void addFileWatcher(String path,FileWatcher resourceWatcher);
+	void addFolderWatcher(String path,FolderWatcher resourceWatcher);
 	ApplicationContext getApplicationContext();
 	void addComponent(Component component);
 

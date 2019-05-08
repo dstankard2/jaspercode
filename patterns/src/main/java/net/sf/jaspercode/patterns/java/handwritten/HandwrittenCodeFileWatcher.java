@@ -5,16 +5,16 @@ import java.io.IOException;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.ApplicationFile;
-import net.sf.jaspercode.api.resources.ResourceWatcher;
+import net.sf.jaspercode.api.resources.FileWatcher;
 
-public class FileWatcher implements ResourceWatcher {
+public class HandwrittenCodeFileWatcher implements FileWatcher {
 
 	ProcessorContext ctx = null;
 	int priority = 0;
-	String path = null;
 	FileProcessor proc = null;
+	String path = null;
 	
-	public FileWatcher(String path) {
+	public HandwrittenCodeFileWatcher(String path) {
 		this.path = path;
 	}
 
@@ -22,7 +22,7 @@ public class FileWatcher implements ResourceWatcher {
 	public void init(ProcessorContext ctx) {
 		this.ctx = ctx;
 		findPriority();
-		System.out.println("Priority for '"+path+"' is "+priority);
+		//System.out.println("Priority for '"+path+"' is "+priority);
 	}
 
 	private void findPriority() {
@@ -46,12 +46,10 @@ public class FileWatcher implements ResourceWatcher {
 	}
 	
 	@Override
-	public void process() throws JasperException {
+	public void process(ApplicationFile applicationFile) throws JasperException {
 		ctx.setLanguageSupport("Java8");
-		// Reload the FileProcessor in case the file still needs to be parsed.
-		ApplicationFile file = (ApplicationFile)ctx.getResource(path);
 		try {
-			proc = new FileProcessor(file,ctx);
+			proc = new FileProcessor(applicationFile,ctx);
 			proc.process();
 		} catch(IOException e) {
 			throw new JasperException("IOException while reading resource '"+path+"'", e);
@@ -63,10 +61,5 @@ public class FileWatcher implements ResourceWatcher {
 		return priority;
 	}
 	
-	@Override
-	public String getPath() {
-		return path;
-	}
-
 }
 

@@ -33,7 +33,6 @@ public class BuildComponentEntry implements Processable,Tracked {
 	private BuildComponent buildComponent = null;
 	private BuildContext buildContext = null;
 	private BuildComponentPattern pattern;
-	private BuildComponentProcessor processor = null;
 	private int id = 0;
 	private int originatorId = 0;
 	private BuildProcessorContextImpl buildProcessorContext = null;
@@ -48,6 +47,8 @@ public class BuildComponentEntry implements Processable,Tracked {
 	private ProcessingState state = null;
 	private ProcessorLog log = null;
 	
+	private BuildComponentProcessor processor = null;
+	
 	public BuildComponentEntry(ComponentFile componentFile,ProcessingContext processingContext, ApplicationContext applicationContext,BuildComponent buildComponent,BuildComponentPattern pattern, int id, int originatorId) {
 		this.componentFile = componentFile;
 		this.processingContext = processingContext;
@@ -60,6 +61,18 @@ public class BuildComponentEntry implements Processable,Tracked {
 		this.originatorId = originatorId;
 		this.log = new ProcessorLog(getName());
 		this.buildProcessorContext = new BuildProcessorContextImpl(folder, this, buildComponent, applicationContext, log);
+	}
+	
+	public boolean init() {
+		boolean ret = true;
+		processor = pattern.getProcessor(buildComponent);
+		try {
+			processor.initialize(buildComponent, buildProcessorContext);
+		} catch(JasperException e) {
+			ret = false;
+		}
+		buildContext = processor.createBuildContext();
+		return ret;
 	}
 
 	public BuildComponent getBuildComponent() {
@@ -164,7 +177,6 @@ public class BuildComponentEntry implements Processable,Tracked {
 
 	@Override
 	public int getPriority() {
-		// A build component is always first to be processed
 		return 0;
 	}
 

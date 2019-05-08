@@ -1,33 +1,39 @@
 package net.sf.jaspercode.engine.processing;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import net.sf.jaspercode.api.ApplicationContext;
-import net.sf.jaspercode.api.resources.ResourceWatcher;
+import net.sf.jaspercode.api.resources.ApplicationFile;
+import net.sf.jaspercode.api.resources.FolderWatcher;
 import net.sf.jaspercode.engine.application.ProcessingContext;
 import net.sf.jaspercode.engine.definitions.ComponentFile;
 
 // TODO: Not certain that the record and entry need to be separate
-public class ResourceWatcherRecord implements Tracked {
-	protected ResourceWatcher watcher = null;
+public class FolderWatcherRecord implements Tracked {
+	protected FolderWatcher watcher = null;
 	protected ComponentFile originatorFile = null;
 	protected int originatorId = 0;
 	protected int id = 0;
 	protected ApplicationContext applicationContext = null;
 	protected ProcessingContext processingContext = null;
 	protected long lastRun = 0;
-	protected List<String> matchedFiles = new ArrayList<>();
-	protected ResourceWatcherEntry entry = null;
+	protected FolderWatcherEntry entry = null;
+	protected String path = null;
+	protected Map<String,Long> filesProcessed = new HashMap<>();
 	
-	public ResourceWatcherRecord(ApplicationContext applicationContext,ProcessingContext processingContext,ResourceWatcher watcher, ComponentFile originatorFile, int id, int originatorId) {
+	public FolderWatcherRecord(String path, ApplicationContext applicationContext,ProcessingContext processingContext,FolderWatcher watcher, ComponentFile originatorFile, int id, int originatorId) {
 		this.applicationContext = applicationContext;
 		this.processingContext = processingContext;
 		this.watcher = watcher;
 		this.originatorFile = originatorFile;
 		this.id = id;
 		this.originatorId = originatorId;
-		this.entry = new ResourceWatcherEntry(applicationContext, originatorFile, processingContext, id, watcher, this);
+		this.path = path;
+	}
+
+	public Map<String,Long> getFilesProcessed() {
+		return filesProcessed;
 	}
 
 	@Override
@@ -37,7 +43,7 @@ public class ResourceWatcherRecord implements Tracked {
 
 	@Override
 	public String getName() {
-		return "ResourceWatcher["+getPath()+"]";
+		return "FolderWatcher["+getPath()+"]";
 	}
 
 	@Override
@@ -46,7 +52,7 @@ public class ResourceWatcherRecord implements Tracked {
 	}
 	
 	public String getPath() {
-		return watcher.getPath();
+		return path;
 	}
 	
 	public long getLastRun() {
@@ -65,11 +71,8 @@ public class ResourceWatcherRecord implements Tracked {
 		this.entry = null;
 	}
 
-	public ResourceWatcherEntry entry() {
-		if (entry==null) {
-			entry = new ResourceWatcherEntry(applicationContext, originatorFile, processingContext, id, watcher, this);
-		}
-		return entry;
+	public FolderWatcherEntry entry(ApplicationFile applicationFile) {
+		return new FolderWatcherEntry(path, applicationContext, originatorFile, processingContext, id, watcher, this, applicationFile);
 	}
 
 }

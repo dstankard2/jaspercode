@@ -96,7 +96,7 @@ public class MonitorPlugin implements ApplicationPlugin {
 		}
 		File file = new File(location);
 		if (!file.exists()) {
-			file.mkdirs();
+			file.getParentFile().mkdirs();
 			try {
 			file.createNewFile();
 			} catch(IOException e) {

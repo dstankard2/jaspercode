@@ -12,10 +12,17 @@ public class ComponentFile implements WatchedResource {
 	private ApplicationFolderImpl folder = null;
 
 	public ComponentFile(ComponentSet componentSet,File file,ApplicationFolderImpl folder) {
-		this.file = file;
-		this.componentSet = componentSet;
-		this.folder = folder;
-		this.lastModified = file.lastModified();
+		if (file!=null) {
+			this.file = file;
+			this.componentSet = componentSet;
+			this.folder = folder;
+			this.lastModified = file.lastModified();
+		} else {
+			// In the case of the default build component, file is null
+			// There is no file, the folder is the root folder, there is no component set
+			this.folder = folder;
+			lastModified = Long.MIN_VALUE;
+		}
 	}
 
 	@Override

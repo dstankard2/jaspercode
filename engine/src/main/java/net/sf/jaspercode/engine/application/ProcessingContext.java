@@ -1,6 +1,7 @@
 package net.sf.jaspercode.engine.application;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -8,6 +9,8 @@ import net.sf.jaspercode.api.SourceFile;
 import net.sf.jaspercode.api.config.BuildComponent;
 import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.exception.JasperException;
+import net.sf.jaspercode.api.resources.FileWatcher;
+import net.sf.jaspercode.api.resources.FolderWatcher;
 import net.sf.jaspercode.api.resources.ResourceWatcher;
 import net.sf.jaspercode.api.types.VariableType;
 import net.sf.jaspercode.engine.definitions.ComponentFile;
@@ -144,8 +147,12 @@ public class ProcessingContext {
 		processingManager.addComponent(id, component, componentFile);
 	}
 	
-	public void addResourceWatcher(int originatorId, ComponentFile componentFile,ResourceWatcher watcher) {
-		processingManager.addResourceWatcher(originatorId, componentFile, watcher);
+	public void addFileWatcher(int originatorId, ComponentFile componentFile,String path,FileWatcher watcher) {
+		processingManager.addFileWatcher(originatorId, componentFile, path, watcher);
+	}
+
+	public void addFolderWatcher(int originatorId, ComponentFile componentFile,String path,FolderWatcher watcher) {
+		processingManager.addFolderWatcher(originatorId, componentFile, path, watcher);
 	}
 
 }

@@ -1,8 +1,10 @@
 package net.sf.jaspercode.engine.application;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -116,6 +118,18 @@ public class ResourceManager {
 		} else {
 			files = folderFile.listFiles();
 		}
+		
+		// If there is no commands.txt and if the application has commands for this folder, then set them null
+		if (applicationManager.getCommands(folder.getPath())!=null) {
+			boolean found = false;
+			for(File f : files) {
+				if (f.getName().equals("commands.txt")) {
+					found = true;
+					break;
+				}
+			}
+			if (!found) applicationManager.setCommands(folder.getPath(), null);
+		}
 
 		for(Entry<String,WatchedResource> entry : folder.getFiles().entrySet()) {
 			String name = entry.getKey();
@@ -220,6 +234,50 @@ public class ResourceManager {
 		}
 	}
 	
+	protected List<String> getCommands(File file) throws EngineException {
+		List<String> ret = new ArrayList<>();
+		FileReader reader = null;
+		BufferedReader r = null;
+		
+		if (file.isDirectory()) {
+			throw new EngineException("File '"+file.getPath()+"' is a directory");
+		}
+
+		try {
+			reader = new FileReader(file);
+			r = new BufferedReader(reader);
+			String line = null;
+			while((line = r.readLine())!=null) {
+				line = line.trim();
+				if (line.length()>0) {
+					if (line.equals("build")) {
+						ret.add("build");
+					} else if (line.equals("buildAlways")) {
+						ret.add("buildAlways");
+					} else if (line.equals("clean")) {
+						ret.add("clean");
+					} else if (line.equals("cleanAlways")) {
+						ret.add("cleanAlways");
+					} else if (line.equals("deploy")) {
+						ret.add("deploy");
+					} else if (line.equals("deployAlways")) {
+						ret.add("deployAlways");
+					}
+				}
+			}
+		} catch(IOException e) {
+			throw new EngineException("Couldn't read commands.txt file",  e);
+		} finally {
+			if (r!=null) {
+				try {
+					r.close();
+				} catch(Exception e) { }
+			}
+		}
+		
+		return ret;
+	}
+
 	// Creates a UserFile or a ComponentFile.  jasper.properties and systemAttributes.properties and folders are handled elsewhere.
 	protected WatchedResource createFile(File file, ApplicationFolderImpl folder) throws EngineException {
 		WatchedResource ret = null;

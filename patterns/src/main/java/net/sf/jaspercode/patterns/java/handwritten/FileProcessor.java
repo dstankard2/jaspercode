@@ -208,7 +208,7 @@ public class FileProcessor {
 		}
 		String lowerCamel = JasperUtils.getLowerCamelName(className);
 		ctx.addSystemAttribute(lowerCamel, className);
-		ctx.addSystemAttribute(lowerCamel+"List", "list"+type);
+		ctx.addSystemAttribute(lowerCamel+"List", "list/"+className);
 		String plural = JasperUtils.getMultiple(lowerCamel);
 		ctx.addSystemAttribute(plural, "list/"+className);
 	}

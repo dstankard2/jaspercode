@@ -9,7 +9,7 @@ import net.sf.jaspercode.engine.definitions.ApplicationFolderImpl;
 import net.sf.jaspercode.engine.definitions.ComponentFile;
 import net.sf.jaspercode.engine.exception.PreprocessingException;
 
-public class AddComponentFileEntry implements Processable {
+public class AddComponentFileEntry implements FileToProcess {
 
 	private ComponentFile componentFile = null;
 	private ProcessingManager processingManager = null;
@@ -39,8 +39,14 @@ public class AddComponentFileEntry implements Processable {
 
 	@Override
 	public boolean process() {
-		processingManager.addComponentFile(componentFile);
-		return true;
+		boolean ret = false;
+		try {
+			processingManager.addComponentFile(componentFile);
+			ret = true;
+		} catch(PreprocessingException e) {
+			e.printStackTrace();
+		}
+		return ret;
 	}
 
 	@Override

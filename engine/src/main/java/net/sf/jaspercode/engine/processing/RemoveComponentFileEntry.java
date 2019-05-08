@@ -10,7 +10,7 @@ import net.sf.jaspercode.engine.definitions.ApplicationFolderImpl;
 import net.sf.jaspercode.engine.definitions.ComponentFile;
 import net.sf.jaspercode.engine.exception.PreprocessingException;
 
-public class RemoveComponentFileEntry implements Processable {
+public class RemoveComponentFileEntry implements FileToProcess {
 
 	private ComponentFile componentFile = null;
 	private ProcessingManager processingManager = null;
