@@ -128,7 +128,6 @@ public class FileProcessor {
 		} else if (classType==ClassType.WEB_CONTEXT_LISTENER) {
 			processWebContextListener();
 		}
-		System.out.println("Process handwritten class with annotation " + classAnnotation.getName());
 	}
 
 	private void processWebContextListener() throws JasperException {

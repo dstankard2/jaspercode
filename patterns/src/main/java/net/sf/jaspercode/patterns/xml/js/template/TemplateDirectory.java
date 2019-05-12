@@ -58,6 +58,11 @@ public class TemplateDirectory extends Component {
 	public void setSubfolder(List<Subfolder> subfolder) {
 		this.subfolder = subfolder;
 	}
+	
+	@Override
+	public String getComponentName() {
+		return "TemplateDirectory["+serviceName+"]";
+	}
 
 }
 

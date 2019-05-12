@@ -82,6 +82,10 @@ public class ProcessorContextImpl implements ProcessorContext {
 	public VariableType getVariableType(String name) throws JasperException {
 		VariableType ret = null;
 		
+		if (lang==null) {
+			throw new JasperException("Cannot get type '"+name+"' because there is no selected language support");
+		}
+
 		if (name.startsWith("list/")) {
 			ListType listType = (ListType)ctx.getVariableType(lang, "list");
 			String elementTypeName = name.substring(5);

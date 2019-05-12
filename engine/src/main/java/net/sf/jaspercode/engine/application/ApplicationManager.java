@@ -62,7 +62,7 @@ public class ApplicationManager {
 		jasperResources = new JasperResources(engineProperties, pluginManager);
 		this.resourceManager = new ResourceManager(applicationDir,this, jasperResources);
 		this.processingManager = new ProcessingManager(this, patterns, languages, jasperResources);
-		this.outputManager = new OutputManager(outputDir);
+		this.outputManager = new OutputManager(outputDir, jasperResources);
 		startApplicationPlugins();
 	}
 

@@ -220,6 +220,7 @@ public class ProcessingManager {
 				System.err.println("Wasn't able to import '"+f.getName()+"' into the engine - process returned false");
 			}
 		}
+		filesToProcess.clear();
 
 		runProcessing();
 	}
@@ -245,8 +246,8 @@ public class ProcessingManager {
 				BuildComponent b = (BuildComponent)comp;
 				ProcessingContext processingContext = new ProcessingContext(this);
 				BuildComponentPattern pattern = patterns.getBuildPattern(b.getClass());
-				BuildComponentEntry e = new BuildComponentEntry(componentFile, processingContext, jasperResources, b, pattern, newId(), 0);
-				buildComp = e;
+				buildComp = new BuildComponentEntry(componentFile, processingContext, jasperResources, b, pattern, newId(), 0);
+				buildComp.preprocess();
 			} else {
 				ProcessingContext processingContext = new ProcessingContext(this);
 				ComponentPattern pattern = this.patterns.getPattern(comp.getClass());
@@ -260,6 +261,7 @@ public class ProcessingManager {
 		for(ComponentEntry e : newComps) {
 			toProcess.add(e);
 		}
+		componentFiles.put(componentFile.getPath(), componentFile);
 	}
 
 	public void removeComponentFile(ComponentFile componentFile, boolean remove) {
@@ -284,7 +286,8 @@ public class ProcessingManager {
 					}
 				}
 			}
-			unloadItem(id, remove);
+			if (id>0) 
+				unloadItem(id, remove);
 		}
 		if (remove) {
 			componentFiles.remove(componentFile.getPath());
@@ -304,24 +307,23 @@ public class ProcessingManager {
 	// Removes the item from processing completely.
 	// The item is never null
 	protected void removeItem(Tracked item, boolean reAdd) {
-		jasperResources.engineDebug("Unloading item "+item.getId());
-		
 		items.remove(item);
 		if (item instanceof BuildComponentEntry) {
 			BuildComponentEntry e = (BuildComponentEntry)item;
 			ApplicationFolderImpl folder = e.getFolder();
 			folder.setBuildComponentEntry(null);
+			buildComponentsToProcess.remove(e);
+			buildComponentsInProcess.remove(e);
 			if (this.buildComponentsToProcess.contains(e)) {
-				buildComponentsToProcess.remove(e);
 			}
 			System.err.println("TODO: When a build component is removed, we must unload all components contained in the folder");
 		}
 		
 		if (reAdd) {
-			if (jasperResources.getEngineProperties().getDebug()) {
-				System.out.println("Re-adding item '"+item.getName()+"' which was likely unloaded");
-			}
-			if (item instanceof Processable) {
+			//jasperResources.engineDebug("Re-adding item '"+item.getName()+"' which was likely unloaded");
+			if (item instanceof BuildComponentEntry) {
+				buildComponentsToProcess.add((BuildComponentEntry)item);
+			} if (item instanceof Processable) {
 				toProcess.add((Processable)item);
 			} else if (item instanceof FileWatcherRecord) {
 				FileWatcherRecord rec = (FileWatcherRecord)item;
@@ -379,8 +381,10 @@ public class ProcessingManager {
 	// unloaded as well.
 	// causeUnload is false for system attribute dependency
 	// causeUnload is true otherwise.
-	protected void removeItemEntries(Map<String, List<Integer>> map, int id, boolean causeUnload) {
+	protected void removeItemEntries(Map<String, List<Integer>> map, int id, boolean causeUnload, boolean causeRemoveSystemAttribute) {
 		List<Integer> toUnload = new ArrayList<>();
+		List<String> entriesToRemove = new ArrayList<>();
+		List<String> systemAttributesToRemove = new ArrayList<>();
 
 		for (Entry<String, List<Integer>> entry : map.entrySet()) {
 			List<Integer> ids = entry.getValue();
@@ -390,16 +394,27 @@ public class ProcessingManager {
 				if (causeUnload) {
 					toUnload.addAll(ids);
 				}
+				if (causeRemoveSystemAttribute) {
+					systemAttributesToRemove.add(entry.getKey());
+				}
+				if (ids.size()==0) entriesToRemove.add(entry.getKey());
 			}
 		}
 		for (Integer i : toUnload) {
 			this.unloadItem(i, false);
+		}
+		for(String s : entriesToRemove) {
+			map.remove(s);
+		}
+		for(String s : systemAttributesToRemove) {
+			systemAttributes.remove(s);
 		}
 	}
 	protected void unloadItemFromTypes(Map<String,Map<String,List<Integer>>> typeMap, int id, boolean causeUnload) {
 		List<Integer> toUnload = new ArrayList<>();
 		
 		for(Entry<String,Map<String,List<Integer>>> langEntry : typeMap.entrySet()) {
+			List<String> toRemove = new ArrayList<>();
 			for(Entry<String,List<Integer>> typeEntry : langEntry.getValue().entrySet()) {
 				List<Integer> ids = typeEntry.getValue();
 				int index = ids.indexOf(id);
@@ -409,12 +424,15 @@ public class ProcessingManager {
 						toUnload.addAll(ids);
 						if (variableTypes.get(langEntry.getKey()).containsKey(typeEntry.getKey())) {
 							this.variableTypes.get(langEntry.getKey()).remove(typeEntry.getKey());
-							if (this.jasperResources.getEngineProperties().getDebug()) {
-								System.out.println("Removed type '"+typeEntry.getKey()+"' from lang '"+langEntry.getKey()+"'");
-							}
 						}
 					}
+					if (ids.size()==0) {
+						toRemove.add(typeEntry.getKey());
+					}
 				}
+			}
+			for(String r : toRemove) {
+				langEntry.getValue().remove(r);
 			}
 		}
 		for(Integer i : toUnload) {
@@ -424,11 +442,11 @@ public class ProcessingManager {
 	protected void unloadDependencies(Tracked item) {
 		int id = item.getId();
 		// System attributes
-		removeItemEntries(this.systemAttributeOriginators, id, true);
-		removeItemEntries(this.systemAttributeDependencies, id, false);
+		removeItemEntries(this.systemAttributeDependencies, id, false, false);
+		removeItemEntries(this.systemAttributeOriginators, id, false, true);
 
 		// Objects
-		removeItemEntries(this.objectOriginators, id, true);
+		removeItemEntries(this.objectOriginators, id, true, false);
 
 		// Types
 		unloadItemFromTypes(this.variableTypeDependencies, id, false);
@@ -444,18 +462,15 @@ public class ProcessingManager {
 
 	protected void unloadItem(int id, boolean remove) {
 		Tracked tracked = getItem(id);
-		
+
 		if (tracked==null) return;
-		
-		if (jasperResources.getEngineProperties().getDebug()) {
-			System.out.println("Removing item id "+id+" with name '"+tracked.getName()+"'");
-		}
+		jasperResources.engineDebug("Removing item id "+id+" with name '"+tracked.getName()+"' with remove = "+remove);
 		removeItem(tracked, !remove);
 		unloadDependencies(tracked);
 		removeResourceWatchersFromOriginator(id,true);
 		removeSourceFilesFromOriginator(id);
 	}
-	
+
 	/**
 	 * End of methods required to unload/remove an item
 	 */
@@ -525,15 +540,14 @@ public class ProcessingManager {
 	}
 	
 	private void runProcessing() {
-		System.out.println("Starting processing, found "+toProcess.size()+" items to process");
-
 		state = ProcessingState.PROCESSING;
 		
 		while(buildComponentsToProcess.size()>0) {
+			//System.out.println("In processing and there are "+buildComponentsToProcess.size()+" build components to process");
 			BuildComponentEntry e = buildComponentsToProcess.get(0);
 			if (e.init()) {
 				e.commitChanges();
-				buildComponentsToProcess.remove(0);
+				buildComponentsToProcess.remove(e);
 				buildComponentsInProcess.add(e);
 			} else {
 				// Halt processing
@@ -544,11 +558,12 @@ public class ProcessingManager {
 		}
 		
 		while(toProcess.size()>0) {
+			jasperResources.engineDebug("In processing and there are "+toProcess.size()+" items to process");
 			Collections.sort(toProcess);
 			Processable p = toProcess.get(0);
 			if (p.getPriority()<0) {
-				jasperResources.engineDebug("Skipping component '"+p.getName()+"' with invalid priority");
-				toProcess.remove(0);
+				//jasperResources.engineDebug("Skipping component '"+p.getName()+"' with invalid priority");
+				toProcess.remove(p);
 			} else {
 				String name = p.getName();
 				if (name!=null) {
@@ -556,7 +571,7 @@ public class ProcessingManager {
 				}
 				if (p.process()) {
 					p.commitChanges();
-					toProcess.remove(0);
+					toProcess.remove(p);
 					if (p instanceof Tracked) {
 						items.add((Tracked)p);
 					}
@@ -579,7 +594,7 @@ public class ProcessingManager {
 			if (e.process()) {
 				e.commitChanges();
 				e.getFolder().setBuildComponentEntry(e);
-				buildComponentsInProcess.remove(0);
+				buildComponentsInProcess.remove(e);
 				items.add(e);
 			} else {
 				e.rollbackChanges();

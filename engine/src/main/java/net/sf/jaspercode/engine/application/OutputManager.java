@@ -18,6 +18,8 @@ import net.sf.jaspercode.engine.definitions.UserFile;
 
 public class OutputManager {
 
+	JasperResources jasperResources = null;
+	
 	File outputDir = null;
 
 	// Source files that have been persisted
@@ -29,8 +31,9 @@ public class OutputManager {
 	// Source files that have not been persisted yet.
 	List<SourceFile> sourceFilesAdded = new ArrayList<>();
 	
-	public OutputManager(File outputDir) {
+	public OutputManager(File outputDir,JasperResources jasperResources) {
 		this.outputDir = outputDir;
+		this.jasperResources = jasperResources;
 	}
 
 	// Returns snapshots of source files that have been persisted
@@ -161,7 +164,7 @@ public class OutputManager {
 		File actualFile = getFile(path);
 		if (actualFile.exists()) {
 			actualFile.delete();
-			System.out.println("Removing source file at path "+actualFile.getAbsolutePath());
+			jasperResources.engineDebug("Removing source file at path "+actualFile.getAbsolutePath());
 		}
 	}
 	

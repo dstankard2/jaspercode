@@ -50,7 +50,7 @@ public class TemplateDirectoryProcessor implements ComponentProcessor {
 			throw new JasperException("Template directory requires a 'serviceName' attribute");
 		}
 		if (!JasperUtils.isUpperCamelName(serviceName)) {
-			throw new JasperException("Template directory serviceName must be a type name");
+			throw new JasperException("Template directory serviceName should be a type name");
 		}
 
 		String ref = JasperUtils.getLowerCamelName(serviceName);
@@ -61,7 +61,6 @@ public class TemplateDirectoryProcessor implements ComponentProcessor {
 		JavascriptServiceType type = new JavascriptServiceType(serviceName,true,ctx);
 		ctx.addSystemAttribute(ref, serviceName);
 		ctx.addVariableType(type);
-		
 
 		ApplicationResource res = ctx.getBuildContext().getApplicationResource(comp.getFolder());
 		if (res==null) {
@@ -70,11 +69,15 @@ public class TemplateDirectoryProcessor implements ComponentProcessor {
 		if (!(res instanceof ApplicationFolder)) {
 			throw new JasperException("Resource '"+comp.getFolder()+"' specified as template folder is not a folder");
 		}
-		
+		ApplicationFolder root = (ApplicationFolder)res;
+
 		StandardModuleSource rootModule = new StandardModuleSource(serviceName);
 		src.addModule(rootModule);
 		
-		ApplicationFolder root = (ApplicationFolder)res;
+		TemplateRootWatcher watcher = new TemplateRootWatcher(root, serviceName);
+		ctx.addFolderWatcher(root.getPath(), watcher);
+		/*
+		// Each subfolder has a template directory watcher
 		for(Subfolder sub : comp.getSubfolder()) {
 			String path = sub.getPath();
 			String r = sub.getRef();
@@ -86,11 +89,15 @@ public class TemplateDirectoryProcessor implements ComponentProcessor {
 			if (!(templateFolder instanceof ApplicationFolder)) {
 				throw new JasperException("Resource '"+templateFolder.getPath()+"' is not a folder");
 			}
-			handleApplicationFolder((ApplicationFolder)templateFolder, fullRef, path, type, src, rootModule);
+			TemplateDirectoryWatcher folderWatcher = new TemplateDirectoryWatcher((ApplicationFolder)templateFolder);
+			ctx.addFolderWatcher(templateFolder.getPath(), folderWatcher);
+			//handleApplicationFolder((ApplicationFolder)templateFolder, fullRef, path, type, src, rootModule);
 		}
-		ctx.getLog().info("Test");
+		 */
+		//ctx.getLog().info("Test");
 	}
 
+	/*
 	protected void handleApplicationFolder(ApplicationFolder templateFolder,String ref, String path, JavascriptServiceType type, ModuleSourceFile src, StandardModuleSource rootModule) throws JasperException {
 		List<String> names =  templateFolder.getContentNames();
 		JavascriptServiceType folderType = null;
@@ -127,41 +134,13 @@ public class TemplateDirectoryProcessor implements ComponentProcessor {
 			}
 		}
 	}
-	
+
 	protected void addStandardFunctions(StandardModuleSource mod) {
 		mod.addInternalFunction(DirectiveUtils.getInvokeRem());
 		mod.addInternalFunction(DirectiveUtils.getRem());
 		mod.addInternalFunction(DirectiveUtils.getIns());
 	}
+	*/
 	
-	protected void handleFile(ApplicationFile file,String ruleName, JavascriptServiceType folderType, StandardModuleSource mod, String objRef, ModuleSourceFile src) throws JasperException {
-		int c = 0;
-		StringBuilder templateString = new StringBuilder();
-
-		try (InputStreamReader reader = new InputStreamReader(file.getInputStream())) {
-			while((c = reader.read())>=0) {
-				templateString.append((char)c);
-			}
-		} catch(Exception e) {
-			throw new JasperException("Couldn't read HTML template file",e);
-		}
-
-		ServiceOperation op = new ServiceOperation(ruleName);
-		ModuleFunction fn = new ModuleFunction();
-		fn.setName(ruleName);
-		op.returnType("DOMElement");
-		ctx.getLog().info("Parsing template "+file.getPath());
-		TemplateParser parser = new TemplateParser(templateString.toString(),ctx,objRef,op);
-		CodeExecutionContext execCtx = new CodeExecutionContext(ctx);
-		JavascriptCode code = parser.generateJavascriptCode(execCtx);
-		fn.setParameters(op);
-		fn.setCode(code);
-		mod.addFunction(fn);
-		folderType.addOperation(op);
-		for(ModuleImport m : code.getModules()) {
-			src.addModule(m);
-		}
-	}
-
 }
 
