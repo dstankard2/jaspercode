@@ -21,7 +21,6 @@ import net.sf.jaspercode.engine.BuildComponentPattern;
 import net.sf.jaspercode.engine.application.ProcessingContext;
 import net.sf.jaspercode.engine.definitions.ApplicationFolderImpl;
 import net.sf.jaspercode.engine.definitions.ComponentFile;
-import net.sf.jaspercode.engine.definitions.DefaultBuildContext;
 import net.sf.jaspercode.engine.exception.PreprocessingException;
 import net.sf.jaspercode.engine.exception.RequiredConfigurationException;
 
@@ -61,18 +60,6 @@ public class BuildComponentEntry implements Processable,Tracked {
 		this.originatorId = originatorId;
 		this.log = new ProcessorLog(getName());
 		this.buildProcessorContext = new BuildProcessorContextImpl(folder, this, buildComponent, applicationContext, log);
-	}
-	
-	public boolean init() {
-		boolean ret = true;
-		processor = pattern.getProcessor(buildComponent);
-		try {
-			processor.initialize(buildComponent, buildProcessorContext);
-		} catch(JasperException e) {
-			ret = false;
-		}
-		buildContext = processor.createBuildContext();
-		return ret;
 	}
 
 	public BuildComponent getBuildComponent() {
@@ -140,16 +127,18 @@ public class BuildComponentEntry implements Processable,Tracked {
 		this.state = ProcessingState.PREPROCESSING;
 		if (pattern!=null) {
 			processor = pattern.getProcessor(buildComponent);
+			/*
 			try {
-				processor.initialize(buildComponent, buildProcessorContext);
-				this.buildContext = processor.createBuildContext();
-				folder.setBuildComponentEntry(this);
+				//processor.initialize(buildComponent, buildProcessorContext);
+				//this.buildContext = processor.createBuildContext();
+				//folder.setBuildComponentEntry(this);
 			} catch(JasperException e) {
 				this.log.error(e.getMessage(), e);
 				throw new PreprocessingException();
 			}
 		} else {
 			this.buildContext = new DefaultBuildContext(log,buildProcessorContext);
+			*/
 		}
 		
 		Class<?> compClass = buildComponent.getClass();
@@ -171,6 +160,24 @@ public class BuildComponentEntry implements Processable,Tracked {
 		this.state = ProcessingState.PREPROCESSED;
 	}
 	
+	public boolean init() {
+		boolean ret = true;
+
+		try {
+			processor.initialize(buildComponent, buildProcessorContext);
+			this.buildContext = processor.createBuildContext();
+			folder.setBuildComponentEntry(this);
+		} catch(JasperException e) {
+			this.log.error("Exception while initializing build", e);
+			ret = false;
+		}
+		
+		//if (pattern!=null) {
+		//	processor = pattern.getProcessor(buildComponent);
+		//}
+		return ret;
+	}
+
 	public BuildContext getBuildContext() {
 		return buildContext;
 	}

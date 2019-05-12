@@ -44,7 +44,7 @@ public class HandwrittenCodeFileWatcher implements FileWatcher {
 		}
 
 	}
-	
+
 	@Override
 	public void process(ApplicationFile applicationFile) throws JasperException {
 		ctx.setLanguageSupport("Java8");

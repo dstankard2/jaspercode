@@ -541,7 +541,7 @@ public class ProcessingManager {
 	
 	private void runProcessing() {
 		state = ProcessingState.PROCESSING;
-		
+
 		while(buildComponentsToProcess.size()>0) {
 			//System.out.println("In processing and there are "+buildComponentsToProcess.size()+" build components to process");
 			BuildComponentEntry e = buildComponentsToProcess.get(0);
@@ -556,7 +556,7 @@ public class ProcessingManager {
 				return;
 			}
 		}
-		
+
 		while(toProcess.size()>0) {
 			jasperResources.engineDebug("In processing and there are "+toProcess.size()+" items to process");
 			Collections.sort(toProcess);

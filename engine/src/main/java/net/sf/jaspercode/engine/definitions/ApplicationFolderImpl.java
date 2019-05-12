@@ -256,6 +256,7 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 				ComponentFile componentFile = new ComponentFile(null,null,this);
 				ret = new BuildComponentEntry(componentFile, null, applicationContext, new DefaultBuildComponent(), null, 0, 0);
 				try {
+					ret.init();
 					ret.preprocess();
 				} catch(PreprocessingException e) {
 					// no-op

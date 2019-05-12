@@ -31,14 +31,22 @@ public class FileProcessor {
 	
 	private ApplicationFile file = null;
 	private ProcessorContext ctx = null;
-	private JavaClassSource src = null;
+	//private JavaClassSource src = null;
 	private String stringPriority = null;
 	private int priority = 0;
 	private AnnotationSource<JavaClassSource> classAnnotation = null;
 	private ClassType classType = null;
+	private JavaType<?> javaType = null;
 
 	public int getPriority() {
 		return priority;
+	}
+	
+	private JavaType<?> parseType() throws IOException {
+		if (javaType==null) {
+			javaType = Roaster.parse(file.getInputStream());
+		}
+		return javaType;
 	}
 	
 	public FileProcessor(ApplicationFile file,ProcessorContext ctx) throws IOException,JasperException {
@@ -58,8 +66,9 @@ public class FileProcessor {
 	
 	private void findPriority() throws IOException {
 		AnnotationSource<JavaClassSource> an = null;
+		JavaClassSource src = null;
 
-		JavaType<?> type = Roaster.parse(file.getInputStream());
+		JavaType<?> type = parseType();
 		if (!(type instanceof JavaClassSource)) {
 			return;
 		}
@@ -115,22 +124,30 @@ public class FileProcessor {
 	}
 	
 	public void process() throws JasperException {
+		JavaClassSource src = null;
+		
+		try {
+			src = (JavaClassSource)parseType();
+		} catch(IOException e) {
+			// Should be impossible
+		}
+
 		if (classType==ClassType.BUSINESS_SERVICE) {
-			processBusinessService();
+			processBusinessService(src);
 		} else if (classType==ClassType.DATA_OBJECT) {
-			processDataObject();
+			processDataObject(src);
 		} else if (classType==ClassType.SERVLET_FILTER) {
-			processServletFilter();
+			processServletFilter(src);
 		} else if (classType==ClassType.SERVLET) {
-			processServlet();
+			processServlet(src);
 		} else if (classType==ClassType.WEBSOCKET) {
-			processWebsocket();
+			processWebsocket(src);
 		} else if (classType==ClassType.WEB_CONTEXT_LISTENER) {
-			processWebContextListener();
+			processWebContextListener(src);
 		}
 	}
 
-	private void processWebContextListener() throws JasperException {
+	private void processWebContextListener(JavaClassSource src) throws JasperException {
 		List<String> interfaces = src.getInterfaces();
 		boolean found = false;
 		for(String in : interfaces) {
@@ -145,7 +162,7 @@ public class FileProcessor {
 		platform.addServletContextListener(src.getCanonicalName());
 	}
 	
-	private void processWebsocket() throws JasperException {
+	private void processWebsocket(JavaClassSource src) throws JasperException {
 		String className = src.getName();
 		String pkg = src.getPackage();
 		AnnotationSource<JavaClassSource> an = src.getAnnotation("net.sf.jaspercode.patterns.java.handwritten.Websocket");
@@ -161,7 +178,7 @@ public class FileProcessor {
 		platform.addWebsocketEndpoint(path, pkg+'.'+className);
 	}
 	
-	private void processServlet() throws JasperException {
+	private void processServlet(JavaClassSource src) throws JasperException {
 		String className = src.getName();
 		String pkg = src.getPackage();
 		AnnotationSource<JavaClassSource> an = src.getAnnotation("net.sf.jaspercode.patterns.java.handwritten.WebServlet");
@@ -179,7 +196,7 @@ public class FileProcessor {
 		}
 	}
 
-	private void processServletFilter() throws JasperException {
+	private void processServletFilter(JavaClassSource src) throws JasperException {
 		String className = src.getName();
 		String pkg = src.getPackage();
 		AnnotationSource<JavaClassSource> an = src.getAnnotation("net.sf.jaspercode.patterns.java.handwritten.WebServletFilter");
@@ -189,7 +206,7 @@ public class FileProcessor {
 		platform.addFilter(name, pkg+'.'+className);
 	}
 	
-	private void processDataObject() throws JasperException {
+	private void processDataObject(JavaClassSource src) throws JasperException {
 		String className = src.getName();
 		String pkg = src.getPackage();
 		JavaDataObjectType type = null;
@@ -212,7 +229,7 @@ public class FileProcessor {
 		ctx.addSystemAttribute(plural, "list/"+className);
 	}
 
-	private void processBusinessService() throws JasperException {
+	private void processBusinessService(JavaClassSource src) throws JasperException {
 		String className = src.getName();
 		String pkg = src.getPackage();
 		String ref = classAnnotation.getStringValue("ref");
