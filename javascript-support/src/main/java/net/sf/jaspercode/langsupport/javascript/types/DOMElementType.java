@@ -12,6 +12,8 @@ public class DOMElementType extends JavascriptType {
 	}
 
 	{
+		properties.put("border", "integer");
+		properties.put("colSpan", "integer");
 		properties.put("tagvalue", "object");
 		properties.put("tagName", "string");
 		properties.put("tabIndex", "integer");
@@ -26,17 +28,14 @@ public class DOMElementType extends JavascriptType {
 		properties.put("offsetLeft", "integer");
 		properties.put("offsetTop", "integer");
 		properties.put("offsetWidth", "integer");
-		properties.put("colSpan", "integer");
 		properties.put("style", "DOMStyle");
 		properties.put("classList", "DOMClassList");
 		properties.put("min", "integer");
 		properties.put("max", "integer");
 		properties.put("value", "string");
 		properties.put("id", "string");
-
 		properties.put("disabled", "string");
-
-		properties.put("border", "integer");
+		properties.put("title", "string");
 	}
 
 }

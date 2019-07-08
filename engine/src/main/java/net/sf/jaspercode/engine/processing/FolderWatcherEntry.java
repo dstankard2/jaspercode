@@ -1,16 +1,12 @@
 package net.sf.jaspercode.engine.processing;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 
 import net.sf.jaspercode.api.ApplicationContext;
-import net.sf.jaspercode.api.annotation.ConfigProperty;
 import net.sf.jaspercode.api.resources.ApplicationFile;
 import net.sf.jaspercode.api.resources.FolderWatcher;
 import net.sf.jaspercode.engine.application.ProcessingContext;
 import net.sf.jaspercode.engine.definitions.ComponentFile;
-import net.sf.jaspercode.engine.exception.PreprocessingException;
 
 /**
  * This represents a resource watcher that needs to be executed for a watched resource path.
@@ -43,23 +39,8 @@ public class FolderWatcherEntry extends ProcessableBase {
 		return folderWatcher.getPriority();
 	}
 
-	public void preprocess() throws PreprocessingException {
-		Class<?> compClass = folderWatcher.getClass();
-		Method[] methods = compClass.getMethods();
-		
-		this.state = ProcessingState.PREPROCESSING;
-		for(Method method : methods) {
-			ConfigProperty prop = method.getDeclaredAnnotation(ConfigProperty.class);
-			if (prop!=null) {
-				try {
-					Object value = super.handleConfigProperty(prop, method.getParameterTypes());
-					method.invoke(folderWatcher, value);
-				} catch(InvocationTargetException | IllegalAccessException e) {
-					throw new PreprocessingException("Couldn't invoke ConfigProperty annotation on "+compClass.getCanonicalName(), e);
-				}
-			}
-		}
-		this.state = ProcessingState.PREPROCESSED;
+	public boolean preprocess() {
+		return populateConfigurations(folderWatcher);
 	}
 
 	@Override
@@ -72,8 +53,10 @@ public class FolderWatcherEntry extends ProcessableBase {
 			this.state = ProcessingState.COMPLETE;
 			record.setLastRun(System.currentTimeMillis());
 		} catch(Exception e) {
+			ret = false;
+			this.log.error(e.getMessage(), e);
 			this.state = ProcessingState.ERROR;
-			e.printStackTrace();
+			//e.printStackTrace();
 		}
 		
 		return ret;

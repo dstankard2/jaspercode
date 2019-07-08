@@ -19,27 +19,24 @@ import net.sf.jaspercode.patterns.PatternPriority;
 @Plugin
 @XmlRootElement(name="templateDirectory")
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name="templateDirectory",propOrder={ "subfolder" })
-public class TemplateDirectory extends Component {
-
-	@XmlAttribute(required = true)
-	private String folder = "";
+@XmlType(name="templateDirectory",propOrder={ "folder" })
+public class TemplateSets extends Component {
 
 	@XmlAttribute
 	private String serviceName = "";
 
 	@XmlElement
-	private List<Subfolder> subfolder = new ArrayList<>();
+	private List<TemplateFolder> folder = new ArrayList<>();
 	
 	public int getPriority() {
 		return PatternPriority.HTML_TEMPLATE;
 	}
 
-	public String getFolder() {
+	public List<TemplateFolder> getFolder() {
 		return folder;
 	}
 
-	public void setFolder(String folder) {
+	public void setFolder(List<TemplateFolder> folder) {
 		this.folder = folder;
 	}
 
@@ -51,17 +48,9 @@ public class TemplateDirectory extends Component {
 		this.serviceName = serviceName;
 	}
 
-	public List<Subfolder> getSubfolder() {
-		return subfolder;
-	}
-
-	public void setSubfolder(List<Subfolder> subfolder) {
-		this.subfolder = subfolder;
-	}
-	
 	@Override
 	public String getComponentName() {
-		return "TemplateDirectory["+serviceName+"]";
+		return "TemplateSets["+serviceName+"]";
 	}
 
 }

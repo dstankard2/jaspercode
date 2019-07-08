@@ -33,6 +33,7 @@ public class MavenBuildComponentProcessor implements BuildComponentProcessor {
 	private String artifact = null;
 
 	private List<Command> build = new ArrayList<>();
+	private List<Command> clean = new ArrayList<>();
 
 	@Override
 	public Class<? extends BuildComponent> getComponentClass() {
@@ -71,6 +72,9 @@ public class MavenBuildComponentProcessor implements BuildComponentProcessor {
 		}
 		
 		build.add(new MavenCommand());
+		MavenCommand cleanCmd = new MavenCommand();
+		cleanCmd.addPhase("clean");
+		clean.add(cleanCmd);
 		
 		ApplicationResource src = ctx.getFolder().getResource("src/main/java");
 		if (src!=null) {
@@ -301,6 +305,11 @@ public class MavenBuildComponentProcessor implements BuildComponentProcessor {
 	@Override
 	public List<Command> build() {
 		return build;
+	}
+
+	@Override
+	public List<Command> clean() {
+		return clean;
 	}
 
 }

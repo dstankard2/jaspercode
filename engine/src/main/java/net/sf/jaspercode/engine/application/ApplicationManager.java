@@ -24,7 +24,7 @@ import net.sf.jaspercode.engine.PluginManager;
 import net.sf.jaspercode.engine.definitions.ComponentFile;
 import net.sf.jaspercode.engine.definitions.SystemAttributesFile;
 import net.sf.jaspercode.engine.definitions.UserFile;
-import net.sf.jaspercode.engine.processing.EngineException;
+import net.sf.jaspercode.engine.exception.EngineException;
 import net.sf.jaspercode.engine.processing.ProcessingState;
 import net.sf.jaspercode.engine.processing.ProcessorLog;
 
@@ -36,17 +36,23 @@ public class ApplicationManager {
 	private OutputManager outputManager = null;
 	private ResourceManager resourceManager = null;
 	private ProcessingManager processingManager = null;
+	private BuildManager buildManager = null;
 	private ProcessorLog appLog = null;
 
 	// Engine resources and applicationContext
 	private String applicationName;
 	private JasperResources jasperResources = null;
+	private boolean jasperPropertiesChanged = false;
 
 	private SystemAttributesFile systemAttributesFile = null;
 
 	Map<String,ApplicationPlugin> plugins = new HashMap<>();
 	
-	Map<String,List<String>> folderCommands = new HashMap<>();
+	//Map<String,List<String>> folderCommands = new HashMap<>();
+
+	public ProcessorLog getApplicationLog() {
+		return appLog;
+	}
 
 	public String getApplicationName() {
 		return applicationName;
@@ -59,11 +65,16 @@ public class ApplicationManager {
 			EnginePatterns patterns,EngineLanguages languages,PluginManager pluginManager) throws EngineInitException {
 		this.applicationName = applicationName;
 		this.appLog = new ProcessorLog("Application:"+applicationName);
-		jasperResources = new JasperResources(engineProperties, pluginManager);
+		this.jasperResources = new JasperResources(engineProperties, pluginManager);
 		this.resourceManager = new ResourceManager(applicationDir,this, jasperResources);
-		this.processingManager = new ProcessingManager(this, patterns, languages, jasperResources);
+		this.processingManager = new ProcessingManager(this, patterns, languages, jasperResources, appLog);
 		this.outputManager = new OutputManager(outputDir, jasperResources);
+		this.buildManager = new BuildManager(resourceManager.getRootFolder());
 		startApplicationPlugins();
+	}
+	
+	public File getOutputDirectory() {
+		return outputManager.getOutputDirectory();
 	}
 
 	public ProcessingState getProcessingState() {
@@ -104,12 +115,16 @@ public class ApplicationManager {
 		
 	}
 
-	public List<String> getCommands(String folderPath) {
-		return folderCommands.get(folderPath);
-	}
-
 	public void setCommands(String folderPath,List<String> commands) {
-		folderCommands.put(folderPath, commands);
+		if (commands==null) {
+			buildManager.clearStandingCommands(folderPath);
+		} else {
+			buildManager.updateCommands(folderPath, commands);
+		}
+	}
+	
+	public List<String> getStandingCommands(String path) {
+		return buildManager.getStandingCommands(path);
 	}
 	
 	public void scan() throws Exception {
@@ -117,6 +132,8 @@ public class ApplicationManager {
 		for(Entry<String,ApplicationPlugin> entry : this.plugins.entrySet()) {
 			entry.getValue().scanStart();
 		}
+		
+		buildManager.scanStarted();
 		
 		if (firstScan) {
 			System.out.println("*** Begin scan of application '"+this.getApplicationName()+"'");
@@ -138,10 +155,12 @@ public class ApplicationManager {
 			return;
 		}
 		
-		boolean changeDetected = (changes.size()>0) || (userFileChangeDetected);
+		boolean changeDetected = (changes.size()>0) || (userFileChangeDetected) || (jasperPropertiesChanged);
 
 		if (changeDetected) {
+			jasperPropertiesChanged = false;
 			for(ResourceChange change : changes) {
+				buildManager.changeDetected(change.getPath());
 				boolean wasComponentFile = change.wasComponentFile();
 				boolean wasUserFile = change.wasUserFile();
 				boolean isComponentFile = change.isComponentFile();
@@ -207,6 +226,7 @@ public class ApplicationManager {
 					entry.getValue().scanComplete(snapshot);
 				}
 			}
+			buildManager.checkCommands();
 		}
 
 		// First scan is complete
@@ -251,6 +271,7 @@ public class ApplicationManager {
 
 	public void handleJasperPropertiesChange(String folderPath) {
 		processingManager.unloadComponentFiles(folderPath);
+		jasperPropertiesChanged = true;
 	}
 
 	public void handleSystemAttributesFileChange(SystemAttributesFile f) {

@@ -4,11 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.sf.jaspercode.api.plugin.ProcessorLogMessage;
-import net.sf.jaspercode.engine.application.ApplicationManager;
 import net.sf.jaspercode.engine.application.ProcessingManager;
 import net.sf.jaspercode.engine.definitions.ApplicationFolderImpl;
 import net.sf.jaspercode.engine.definitions.ComponentFile;
-import net.sf.jaspercode.engine.exception.PreprocessingException;
 
 public class RemoveComponentFileEntry implements FileToProcess {
 
@@ -18,6 +16,11 @@ public class RemoveComponentFileEntry implements FileToProcess {
 	public RemoveComponentFileEntry(ComponentFile componentFile, ProcessingManager processingManager) {
 		this.componentFile = componentFile;
 		this.processingManager = processingManager;
+	}
+
+	@Override
+	public int getId() {
+		return 0;
 	}
 
 	@Override
@@ -35,7 +38,8 @@ public class RemoveComponentFileEntry implements FileToProcess {
 		return new ArrayList<>();
 	}
 
-	public void preprocess() throws PreprocessingException {
+	public boolean preprocess() {
+		return true;
 	}
 
 	@Override

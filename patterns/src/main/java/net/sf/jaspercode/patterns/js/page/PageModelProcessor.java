@@ -39,6 +39,7 @@ public class PageModelProcessor implements ComponentProcessor {
 		}
 
 		PageModelType modelType = info.getModelType();
+		ctx.originateVariableType(modelType);
 
 		String attrs = comp.getAttributes();
 		List<AttribEntry> entries = JasperUtils.readParametersAsList(attrs, ctx);

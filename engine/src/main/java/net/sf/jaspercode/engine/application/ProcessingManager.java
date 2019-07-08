@@ -28,15 +28,17 @@ import net.sf.jaspercode.engine.EnginePatterns;
 import net.sf.jaspercode.engine.definitions.ApplicationFolderImpl;
 import net.sf.jaspercode.engine.definitions.ComponentFile;
 import net.sf.jaspercode.engine.definitions.UserFile;
-import net.sf.jaspercode.engine.exception.PreprocessingException;
+import net.sf.jaspercode.engine.exception.EngineException;
 import net.sf.jaspercode.engine.processing.AddComponentFileEntry;
 import net.sf.jaspercode.engine.processing.BuildComponentEntry;
 import net.sf.jaspercode.engine.processing.ComponentEntry;
 import net.sf.jaspercode.engine.processing.FileToProcess;
 import net.sf.jaspercode.engine.processing.FileWatcherRecord;
+import net.sf.jaspercode.engine.processing.FolderWatcherEntry;
 import net.sf.jaspercode.engine.processing.Processable;
 import net.sf.jaspercode.engine.processing.ProcessableBase;
 import net.sf.jaspercode.engine.processing.ProcessingState;
+import net.sf.jaspercode.engine.processing.ProcessorLog;
 import net.sf.jaspercode.engine.processing.RemoveComponentFileEntry;
 import net.sf.jaspercode.engine.processing.FolderWatcherRecord;
 import net.sf.jaspercode.engine.processing.Tracked;
@@ -49,6 +51,8 @@ public class ProcessingManager {
 	private EngineLanguages languages = null;
 	JasperResources jasperResources = null;
 	private ProcessingState state = ProcessingState.TO_PROCESS;
+	boolean userFileCheckRequired = false;
+	private ProcessorLog applicationLog = null;
 
 	// Component Files
 	protected Map<String,ComponentFile> componentFiles = new HashMap<>();
@@ -135,11 +139,14 @@ public class ProcessingManager {
 		return state;
 	}
 
-	public ProcessingManager(ApplicationManager applicationManager, EnginePatterns patterns,EngineLanguages languages, JasperResources resourceContext) {
+	public ProcessingManager(ApplicationManager applicationManager, EnginePatterns patterns,
+			EngineLanguages languages, JasperResources resourceContext,
+			ProcessorLog applicationLog) {
 		this.applicationManager = applicationManager;
 		this.patterns = patterns;
 		this.languages = languages;
 		this.jasperResources = resourceContext;
+		this.applicationLog = applicationLog;
 	}
 
 	/**
@@ -192,37 +199,64 @@ public class ProcessingManager {
 	}
 
 	public void componentFileAdded(ComponentFile file) {
-		this.filesToProcess.add(new AddComponentFileEntry(file, this));
+		this.filesToProcess.add(new AddComponentFileEntry(file, this, this.applicationLog));
 	}
 	
 	// Unloads component files whose path starts with the given string, and marks the items to be reprocessed.
 	// This happens because of a change in systemAttributes.properties or jasper.properties
 	public void unloadComponentFiles(String pathPrefix) {
+		if (componentFiles.size()==0) return;
+		
 		for(Entry<String,ComponentFile> entry : componentFiles.entrySet()) {
 			String path = entry.getKey();
 			if (path.startsWith(pathPrefix)) {
-				filesToProcess.add(new UnloadComponentFileEntry(entry.getValue(), this));
+				filesToProcess.add(0, new UnloadComponentFileEntry(entry.getValue(), this));
 			}
 		}
 	}
 	
 	public void processChanges(boolean userFileChangesDetected) {
+		// Before we run processing, look at filesToProcess and process them.
 		if (userFileChangesDetected) {
-			this.checkResourceWatchers();
+			this.userFileCheckRequired = true;
 		}
 
-		// Before we run processing, look at filesToProcess and process them.
+		this.state = ProcessingState.PROCESSING;
+		
+		while(filesToProcess.size()>0) {
+			FileToProcess f = filesToProcess.get(0);
+			if (f.process()) {
+				f.commitChanges();
+				filesToProcess.remove(0);
+			} else {
+				this.state = ProcessingState.ERROR;
+				break;
+			}
+		}
 
+		/*
 		for(FileToProcess f : filesToProcess) {
 			if (f.process()) {
 				f.commitChanges();
+				processedFiles.add(f);
 			} else {
-				System.err.println("Wasn't able to import '"+f.getName()+"' into the engine - process returned false");
+				//System.err.println("Wasn't able to import '"+f.getName()+"' into the engine - process returned false");
+				this.state = ProcessingState.ERROR;
+				break;
 			}
 		}
-		filesToProcess.clear();
+		*/
 
-		runProcessing();
+		if (state!=ProcessingState.ERROR) {
+
+			if (userFileCheckRequired) {
+				this.checkResourceWatchers();
+				userFileCheckRequired = false;
+			}
+			
+			runProcessing();
+		}
+
 	}
 
 	/**
@@ -235,24 +269,24 @@ public class ProcessingManager {
 	 * Start of methods for processing
 	 */
 
-	public void addComponentFile(ComponentFile componentFile) throws PreprocessingException {
+	public void addComponentFile(ComponentFile componentFile) throws EngineException {
 		BuildComponentEntry buildComp = null;
 		List<ComponentEntry> newComps = new ArrayList<>();
 		for(Component comp : componentFile.getComponentSet().getComponent()) {
 			if (comp instanceof BuildComponent) {
 				if (buildComp!=null) {
-					throw new PreprocessingException("File contained more than one build component");
+					throw new EngineException("File contained more than one build component");
 				}
 				BuildComponent b = (BuildComponent)comp;
 				ProcessingContext processingContext = new ProcessingContext(this);
 				BuildComponentPattern pattern = patterns.getBuildPattern(b.getClass());
-				buildComp = new BuildComponentEntry(componentFile, processingContext, jasperResources, b, pattern, newId(), 0);
-				buildComp.preprocess();
+				buildComp = new BuildComponentEntry(componentFile, processingContext, jasperResources, b, pattern, newId(), 0, applicationManager.getOutputDirectory(), applicationManager.getApplicationLog());
+				//buildComp.preprocess();
 			} else {
 				ProcessingContext processingContext = new ProcessingContext(this);
 				ComponentPattern pattern = this.patterns.getPattern(comp.getClass());
 				ComponentEntry e = new ComponentEntry(jasperResources, componentFile, processingContext, comp, pattern, newId(), 0);
-				e.preprocess();
+				//e.preprocess();
 				newComps.add(e);
 			}
 		}
@@ -268,13 +302,19 @@ public class ProcessingManager {
 		if (componentFiles.get(componentFile.getPath())!=componentFile) {
 			System.err.println("Attempted to remove component file '"+componentFile.getPath()+"' but is not the same as the file registered with the processingManager");
 		}
+		
+		List<Integer> idsToRemove = new ArrayList<>();
+		
 		for(Component comp : componentFile.getComponentSet().getComponent()) {
 			int id = 0;
 			// TODO: Unload/remove the component
 			if (comp instanceof BuildComponent) {
-				if (comp==componentFile.getFolder().getBuildComponent().getBuildComponent()) {
+				if (componentFile.getFolder().getBuildComponent()!=null) {
 					id = componentFile.getFolder().getBuildComponent().getId();
 				}
+				//if ((componentFile) && ()) {
+				//if (comp==componentFile.getFolder().getBuildComponent().getBuildComponent()) {
+				//}
 			} else {
 				for(Tracked item : items) {
 					if (item instanceof ComponentEntry) {
@@ -286,9 +326,15 @@ public class ProcessingManager {
 					}
 				}
 			}
-			if (id>0) 
-				unloadItem(id, remove);
+			if (id>0) {
+				idsToRemove.add(id);
+			}
 		}
+		
+		for(Integer id : idsToRemove) {
+			unloadItem(id, remove);
+		}
+		
 		if (remove) {
 			componentFiles.remove(componentFile.getPath());
 		}
@@ -307,30 +353,55 @@ public class ProcessingManager {
 	// Removes the item from processing completely.
 	// The item is never null
 	protected void removeItem(Tracked item, boolean reAdd) {
+		List<Integer> toRemove = new ArrayList<>();
 		items.remove(item);
+
+		// Unload this item's originator
+		if (item.getOriginatorId() > 0) {
+			toRemove.add(item.getOriginatorId());
+		}
+
+		// Unload items that originate from this item
+		for(Tracked i : items) {
+			if (i.getOriginatorId()==item.getId()) {
+				toRemove.add(i.getId());
+			}
+		}
+
+		for(Integer i : toRemove) {
+			this.unloadItem(i, !reAdd);
+		}
+		
+		// TODO: Create a separate rule for cleaning inProcess items?
+		// May need to check resource watchers
+		// Remove this item from pending processing
+		this.buildComponentsToProcess.remove(item);
+		this.buildComponentsInProcess.remove(item);
+		if (item instanceof Processable) {
+			this.toProcess.remove((Processable)item);
+		}
+		
 		if (item instanceof BuildComponentEntry) {
 			BuildComponentEntry e = (BuildComponentEntry)item;
 			ApplicationFolderImpl folder = e.getFolder();
 			folder.setBuildComponentEntry(null);
 			buildComponentsToProcess.remove(e);
 			buildComponentsInProcess.remove(e);
-			if (this.buildComponentsToProcess.contains(e)) {
-			}
-			System.err.println("TODO: When a build component is removed, we must unload all components contained in the folder");
+			this.unloadComponentFiles(folder.getPath());
 		}
 		
 		if (reAdd) {
-			//jasperResources.engineDebug("Re-adding item '"+item.getName()+"' which was likely unloaded");
 			if (item instanceof BuildComponentEntry) {
 				buildComponentsToProcess.add((BuildComponentEntry)item);
-			} if (item instanceof Processable) {
+			} else if (item instanceof Processable) {
 				toProcess.add((Processable)item);
 			} else if (item instanceof FileWatcherRecord) {
 				FileWatcherRecord rec = (FileWatcherRecord)item;
 				toProcess.add(rec.currentEntry());
 			} else if (item instanceof FolderWatcherRecord) {
 				FolderWatcherRecord rec = (FolderWatcherRecord)item;
-				System.out.println("TODO: Determine what to do with folder watcher records - should they be re-added?");
+				rec.clearFilesProcessed();
+				System.out.println("TODO: Determine what to do on folder watcher re-add");
 			} else {
 				System.err.println("Couldn't re-add item to processing");
 			}
@@ -381,7 +452,7 @@ public class ProcessingManager {
 	// unloaded as well.
 	// causeUnload is false for system attribute dependency
 	// causeUnload is true otherwise.
-	protected void removeItemEntries(Map<String, List<Integer>> map, int id, boolean causeUnload, boolean causeRemoveSystemAttribute) {
+	protected void removeItemEntries(Map<String, List<Integer>> map, int id, boolean causeUnload, boolean causeRemoveSystemAttribute, Map<String,?> actualData) {
 		List<Integer> toUnload = new ArrayList<>();
 		List<String> entriesToRemove = new ArrayList<>();
 		List<String> systemAttributesToRemove = new ArrayList<>();
@@ -405,6 +476,8 @@ public class ProcessingManager {
 		}
 		for(String s : entriesToRemove) {
 			map.remove(s);
+			if (actualData!=null)
+				actualData.remove(s);
 		}
 		for(String s : systemAttributesToRemove) {
 			systemAttributes.remove(s);
@@ -442,33 +515,43 @@ public class ProcessingManager {
 	protected void unloadDependencies(Tracked item) {
 		int id = item.getId();
 		// System attributes
-		removeItemEntries(this.systemAttributeDependencies, id, false, false);
-		removeItemEntries(this.systemAttributeOriginators, id, false, true);
+		removeItemEntries(this.systemAttributeDependencies, id, false, false, null);
+		removeItemEntries(this.systemAttributeOriginators, id, false, true, this.systemAttributes);
 
 		// Objects
-		removeItemEntries(this.objectOriginators, id, true, false);
+		removeItemEntries(this.objectOriginators, id, true, false, this.objects);
 
 		// Types
 		unloadItemFromTypes(this.variableTypeDependencies, id, false);
 		unloadItemFromTypes(this.variableTypeOriginators, id, true);
-
-		// Unload this item's originator?
-		if (item.getOriginatorId() > 0) {
-			this.unloadItem(item.getOriginatorId(), false);
-		}
-
-		// Items that originate from this item
 	}
 
+	//private List<Tracked> removing = new ArrayList<>();
 	protected void unloadItem(int id, boolean remove) {
 		Tracked tracked = getItem(id);
 
-		if (tracked==null) return;
-		jasperResources.engineDebug("Removing item id "+id+" with name '"+tracked.getName()+"' with remove = "+remove);
-		removeItem(tracked, !remove);
-		unloadDependencies(tracked);
-		removeResourceWatchersFromOriginator(id,true);
-		removeSourceFilesFromOriginator(id);
+		if (tracked!=null) {
+			//if (removing.contains(tracked)) return;
+			//removing.add(tracked);
+			jasperResources.engineDebug("Removing item id "+id+" with name '"+tracked.getName()+"' with remove = "+remove);
+			removeItem(tracked, !remove);
+			unloadDependencies(tracked);
+			removeResourceWatchersFromOriginator(id,true);
+			removeSourceFilesFromOriginator(id);
+			//removing.remove(tracked);
+		} else if (id > 0) {
+			// Need to make sure that this item is not in processing
+			List<Processable> toRemove = new ArrayList<>();
+			for(Processable p : toProcess) {
+				if ((p.getId()==id) && (!toRemove.contains(p))) {
+					toRemove.add(p);
+				}
+			}
+			for(Processable p : toRemove) {
+				toProcess.remove(p);
+			}
+		}
+		//if (tracked==null) return;
 	}
 
 	/**
@@ -506,12 +589,14 @@ public class ProcessingManager {
 			String path = rec.getPath();
 			Map<String,Long> processed = rec.getFilesProcessed();
 			for(Entry<String,UserFile> entry : userFiles.entrySet()) {
+				boolean previouslyApplied = false;
 				boolean apply = false;
 				String filePath = entry.getKey();
 				UserFile userFile = entry.getValue();
 				if (filePath.startsWith(path)) {
 					long fileModified = userFile.getLastModified();
 					if (processed.get(filePath)!=null) {
+						previouslyApplied = true;
 						if (fileModified > processed.get(filePath)) {
 							apply = true;
 						}
@@ -520,7 +605,11 @@ public class ProcessingManager {
 					}
 				}
 				if (apply) {
-					toProcess.add(rec.entry(userFile));
+					FolderWatcherEntry e = rec.entry(userFile);
+					if (previouslyApplied) {
+						this.unloadItem(e.getId(), false);
+					}
+					toProcess.add(e);
 					processed.put(filePath, userFile.getLastModified());
 				}
 			}
@@ -545,10 +634,16 @@ public class ProcessingManager {
 		while(buildComponentsToProcess.size()>0) {
 			//System.out.println("In processing and there are "+buildComponentsToProcess.size()+" build components to process");
 			BuildComponentEntry e = buildComponentsToProcess.get(0);
+			if (!e.preprocess()) {
+				this.logMessages(e.getMessages());
+				this.state = ProcessingState.ERROR;
+				return;
+			}
 			if (e.init()) {
 				e.commitChanges();
 				buildComponentsToProcess.remove(e);
 				buildComponentsInProcess.add(e);
+				e.getFolder().setBuildComponentEntry(e);
 			} else {
 				// Halt processing
 				this.logMessages(e.getMessages());
@@ -568,6 +663,11 @@ public class ProcessingManager {
 				String name = p.getName();
 				if (name!=null) {
 					System.out.println("Processing component "+name);					
+				}
+				if (!p.preprocess()) {
+					logMessages(p.getMessages());
+					state = ProcessingState.ERROR;
+					return;
 				}
 				if (p.process()) {
 					p.commitChanges();
@@ -593,7 +693,6 @@ public class ProcessingManager {
 			}
 			if (e.process()) {
 				e.commitChanges();
-				e.getFolder().setBuildComponentEntry(e);
 				buildComponentsInProcess.remove(e);
 				items.add(e);
 			} else {
@@ -623,10 +722,9 @@ public class ProcessingManager {
 		this.items.add(rec);
 		this.checkResourceWatchers();
 	}
-	public void addComponent(int originatorId, Component component, ComponentFile componentFile) throws PreprocessingException {
+	public void addComponent(int originatorId, Component component, ComponentFile componentFile) {
 		ComponentPattern pattern = patterns.getPattern(component.getClass());
 		ComponentEntry e = new ComponentEntry(jasperResources, componentFile, new ProcessingContext(this), component, pattern, newId(), originatorId);
-		e.preprocess();
 		toProcess.add(e);
 	}
 	

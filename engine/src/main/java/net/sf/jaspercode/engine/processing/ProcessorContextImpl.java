@@ -10,7 +10,6 @@ import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.ApplicationResource;
 import net.sf.jaspercode.api.resources.FileWatcher;
 import net.sf.jaspercode.api.resources.FolderWatcher;
-import net.sf.jaspercode.api.resources.ResourceWatcher;
 import net.sf.jaspercode.api.types.ListType;
 import net.sf.jaspercode.api.types.VariableType;
 import net.sf.jaspercode.engine.definitions.ApplicationFolderImpl;

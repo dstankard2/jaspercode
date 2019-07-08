@@ -10,7 +10,6 @@ import net.sf.jaspercode.api.resources.ApplicationFile;
 import net.sf.jaspercode.api.resources.FileWatcher;
 import net.sf.jaspercode.api.types.ServiceOperation;
 import net.sf.jaspercode.langsupport.javascript.JavascriptCode;
-import net.sf.jaspercode.langsupport.javascript.JavascriptUtils;
 import net.sf.jaspercode.langsupport.javascript.ModuleImport;
 import net.sf.jaspercode.langsupport.javascript.modules.ModuleFunction;
 import net.sf.jaspercode.langsupport.javascript.modules.ModuleSourceFile;
@@ -50,9 +49,10 @@ public class TemplateFileWatcher implements FileWatcher {
 		String ruleName = applicationFile.getName();
 		ruleName = ruleName.substring(0, ruleName.indexOf(".htm"));
 		StandardModuleSource mod = (StandardModuleSource)src.getModule(module);
-		handleFile(applicationFile, ruleName, type, mod, "obj", src);
+		handleFile(applicationFile, ruleName, type, mod, "templates.pages", src);
 	}
 
+	// TODO: objRef should probably come from a config property
 	protected void handleFile(ApplicationFile file,String ruleName, JavascriptServiceType folderType, StandardModuleSource mod, String objRef, ModuleSourceFile src) throws JasperException {
 		int c = 0;
 		StringBuilder templateString = new StringBuilder();

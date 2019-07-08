@@ -10,25 +10,25 @@ import net.sf.jaspercode.api.types.ServiceOperation;
 
 public interface DirectiveContext {
 	
-	public ProcessorContext getProcessorContext();
-	public CodeExecutionContext getExecCtx();
-	public String getElementName();
+	ProcessorContext getProcessorContext();
+	CodeExecutionContext getExecCtx();
+	String getElementName();
 
-	public Map<String,String> getDomAttributes();
-	public Map<String,String> getTemplateAttributes();
+	Map<String,String> getDomAttributes();
+	Map<String,String> getTemplateAttributes();
 	
-	public StringBuilder getCode();
-	public String getElementVarName();
-	public String getContainerVarName();
-	public String newVarName(String baseName,String type,CodeExecutionContext execCtx);
-	public void continueRenderElement(CodeExecutionContext execCtx) throws JasperException;
-	public void continueRenderElement() throws JasperException;
-	public String getInnerHtml();
-	public String getTemplateObj();
-	public ServiceOperation getFunction();
-	public List<String> getPreviousEltVars();
+	StringBuilder getCode();
+	String getElementVarName();
+	String getContainerVarName();
+	String newVarName(String baseName,String type,CodeExecutionContext execCtx);
+	void continueRenderElement(CodeExecutionContext execCtx) throws JasperException;
+	void continueRenderElement() throws JasperException;
+	String getInnerHtml();
+	String getTemplateObj();
+	ServiceOperation getFunction();
+	List<String> getPreviousEltVars();
 	
 	void addModule(String location, String...moduleNames);
-
+	
 }
 

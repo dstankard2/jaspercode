@@ -7,7 +7,7 @@ import javax.xml.bind.annotation.XmlType;
 
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name="subfolder",propOrder={  })
-public class Subfolder {
+public class TemplateFolder {
 
 	@XmlAttribute
 	private String path = "";

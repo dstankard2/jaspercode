@@ -55,9 +55,11 @@ public class MonitorPlugin implements ApplicationPlugin {
 		}
 	}
 
+	/*
 	private void outputComponents(FileWriter writer, ApplicationSnapshot snapshot) throws IOException {
 		writer.write("Items:\n");
 	}
+	*/
 
 	private void outputSystemAttributes(FileWriter writer, ApplicationSnapshot snapshot) throws IOException {
 		writer.write("System Attributes\n");

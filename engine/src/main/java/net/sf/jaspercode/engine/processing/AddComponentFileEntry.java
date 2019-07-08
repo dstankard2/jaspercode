@@ -7,16 +7,22 @@ import net.sf.jaspercode.api.plugin.ProcessorLogMessage;
 import net.sf.jaspercode.engine.application.ProcessingManager;
 import net.sf.jaspercode.engine.definitions.ApplicationFolderImpl;
 import net.sf.jaspercode.engine.definitions.ComponentFile;
-import net.sf.jaspercode.engine.exception.PreprocessingException;
+import net.sf.jaspercode.engine.exception.EngineException;
 
 public class AddComponentFileEntry implements FileToProcess {
 
 	private ComponentFile componentFile = null;
 	private ProcessingManager processingManager = null;
+	private ProcessorLog processorLog = null;
 
-	public AddComponentFileEntry(ComponentFile componentFile, ProcessingManager processingManager) {
+	public AddComponentFileEntry(ComponentFile componentFile, ProcessingManager processingManager, ProcessorLog applicationLog) {
 		this.componentFile = componentFile;
 		this.processingManager = processingManager;
+	}
+
+	@Override
+	public int getId() {
+		return 0;
 	}
 
 	@Override
@@ -34,7 +40,8 @@ public class AddComponentFileEntry implements FileToProcess {
 		return new ArrayList<>();
 	}
 
-	public void preprocess() throws PreprocessingException {
+	public boolean preprocess() {
+		return true;
 	}
 
 	@Override
@@ -43,8 +50,9 @@ public class AddComponentFileEntry implements FileToProcess {
 		try {
 			processingManager.addComponentFile(componentFile);
 			ret = true;
-		} catch(PreprocessingException e) {
-			e.printStackTrace();
+		} catch(EngineException e) {
+			// The file contains more than one build component
+			processorLog.error(e.getMessage());
 		}
 		return ret;
 	}
@@ -71,7 +79,7 @@ public class AddComponentFileEntry implements FileToProcess {
 
 	@Override
 	public String getName() {
-		return null;
+		return componentFile.getPath();
 	}
 	
 }

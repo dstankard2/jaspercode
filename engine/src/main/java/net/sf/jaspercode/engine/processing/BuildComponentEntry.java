@@ -1,7 +1,10 @@
 package net.sf.jaspercode.engine.processing;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,20 +14,20 @@ import java.util.Map.Entry;
 import net.sf.jaspercode.api.ApplicationContext;
 import net.sf.jaspercode.api.BuildComponentProcessor;
 import net.sf.jaspercode.api.BuildContext;
+import net.sf.jaspercode.api.Command;
 import net.sf.jaspercode.api.SourceFile;
-import net.sf.jaspercode.api.annotation.ConfigProperty;
 import net.sf.jaspercode.api.config.BuildComponent;
 import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.plugin.ProcessorLogMessage;
 import net.sf.jaspercode.engine.BuildComponentPattern;
+import net.sf.jaspercode.engine.application.ProcessContainer;
 import net.sf.jaspercode.engine.application.ProcessingContext;
 import net.sf.jaspercode.engine.definitions.ApplicationFolderImpl;
 import net.sf.jaspercode.engine.definitions.ComponentFile;
-import net.sf.jaspercode.engine.exception.PreprocessingException;
-import net.sf.jaspercode.engine.exception.RequiredConfigurationException;
+import net.sf.jaspercode.engine.definitions.DefaultBuildContext;
 
-public class BuildComponentEntry implements Processable,Tracked {
+public class BuildComponentEntry extends ConfigurableProcessable implements Tracked {
 
 	private ProcessingContext processingContext = null;
 
@@ -36,6 +39,8 @@ public class BuildComponentEntry implements Processable,Tracked {
 	private int originatorId = 0;
 	private BuildProcessorContextImpl buildProcessorContext = null;
 	private ComponentFile componentFile = null;
+	private List<ProcessContainer> deployProcesses = new ArrayList<>();
+	private ProcessorLog applicationLog = null;
 
 	Map<String,Object> objects = new HashMap<>();
 	List<String> objectDependencies = new ArrayList<>();
@@ -48,7 +53,9 @@ public class BuildComponentEntry implements Processable,Tracked {
 	
 	private BuildComponentProcessor processor = null;
 	
-	public BuildComponentEntry(ComponentFile componentFile,ProcessingContext processingContext, ApplicationContext applicationContext,BuildComponent buildComponent,BuildComponentPattern pattern, int id, int originatorId) {
+	private File outputRoot = null;
+	
+	public BuildComponentEntry(ComponentFile componentFile,ProcessingContext processingContext, ApplicationContext applicationContext,BuildComponent buildComponent,BuildComponentPattern pattern, int id, int originatorId, File outputRoot, ProcessorLog applicationLog) {
 		this.componentFile = componentFile;
 		this.processingContext = processingContext;
 		if (componentFile!=null) {
@@ -60,6 +67,8 @@ public class BuildComponentEntry implements Processable,Tracked {
 		this.originatorId = originatorId;
 		this.log = new ProcessorLog(getName());
 		this.buildProcessorContext = new BuildProcessorContextImpl(folder, this, buildComponent, applicationContext, log);
+		this.outputRoot = outputRoot;
+		this.applicationLog = applicationLog;
 	}
 
 	public BuildComponent getBuildComponent() {
@@ -75,7 +84,8 @@ public class BuildComponentEntry implements Processable,Tracked {
 		return componentFile.getFolder().getProperties().get(name);
 	}
 
-	protected Object handleConfigProperty(ConfigProperty property, Class<?>[] params) throws PreprocessingException {
+	/*
+	protected boolean handleConfigProperty(ConfigProperty property, Class<?>[] params) throws PreprocessingException {
 		Object ret = null;
 		String configValue = null;
 
@@ -121,60 +131,36 @@ public class BuildComponentEntry implements Processable,Tracked {
 
 		return ret;
 	}
+	*/
 
 	// Pattern will be null if the build component is the default build
-	public void preprocess() throws PreprocessingException {
+	public boolean preprocess() {
+		boolean ret = false;
+		
 		this.state = ProcessingState.PREPROCESSING;
-		if (pattern!=null) {
-			processor = pattern.getProcessor(buildComponent);
-			/*
-			try {
-				//processor.initialize(buildComponent, buildProcessorContext);
-				//this.buildContext = processor.createBuildContext();
-				//folder.setBuildComponentEntry(this);
-			} catch(JasperException e) {
-				this.log.error(e.getMessage(), e);
-				throw new PreprocessingException();
-			}
-		} else {
-			this.buildContext = new DefaultBuildContext(log,buildProcessorContext);
-			*/
-		}
-		
-		Class<?> compClass = buildComponent.getClass();
-		Method[] methods = compClass.getMethods();
-		
-		for(Method method : methods) {
-			ConfigProperty prop = method.getDeclaredAnnotation(ConfigProperty.class);
-			if (prop!=null) {
-				try {
-					Object value = handleConfigProperty(prop, method.getParameterTypes());
-					if (value!=null)
-						method.invoke(buildComponent, value);
-				} catch(IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-					log.error("Unable to set configuration '"+prop.name()+"'",e);
-					throw new PreprocessingException();
-				}
-			}
-		}
+		ret = super.populateConfigurations(buildComponent);
 		this.state = ProcessingState.PREPROCESSED;
+
+		return ret;
 	}
 	
 	public boolean init() {
 		boolean ret = true;
 
-		try {
-			processor.initialize(buildComponent, buildProcessorContext);
-			this.buildContext = processor.createBuildContext();
-			folder.setBuildComponentEntry(this);
-		} catch(JasperException e) {
-			this.log.error("Exception while initializing build", e);
-			ret = false;
+		if (pattern!=null) {
+			try {
+				processor = pattern.getProcessor(buildComponent);
+				processor.initialize(buildComponent, buildProcessorContext);
+				this.buildContext = processor.createBuildContext();
+			} catch(JasperException e) {
+				this.log.error("Exception while initializing build", e);
+				ret = false;
+			}
+		} else {
+			this.buildContext = new DefaultBuildContext(this.log, this.buildProcessorContext);
 		}
+		folder.setBuildComponentEntry(this);
 		
-		//if (pattern!=null) {
-		//	processor = pattern.getProcessor(buildComponent);
-		//}
 		return ret;
 	}
 
@@ -234,7 +220,7 @@ public class BuildComponentEntry implements Processable,Tracked {
 		for(Component comp : addedComponents) {
 			try {
 				processingContext.addComponent(id, comp, componentFile);
-			} catch(PreprocessingException | JasperException e) {
+			} catch(JasperException e) {
 				if (e.getCause()!=null) {
 					log.error(e.getMessage(), e.getCause());
 				} else {
@@ -299,6 +285,107 @@ public class BuildComponentEntry implements Processable,Tracked {
 	}
 	public void saveSourceFile(SourceFile sourceFile) {
 		this.sourceFiles.add(sourceFile);
+	}
+	
+	// Handle engine build commands
+
+	protected void handleSynchronousProcess(Process p) throws IOException,InterruptedException {
+		InputStream outputIn = p.getInputStream();
+		InputStreamReader reader = new InputStreamReader(outputIn);
+		BufferedReader b = new BufferedReader(reader);
+
+		while((p.isAlive()) || (outputIn.available()>0)) {
+			if (outputIn.available()>0) {
+				String line = b.readLine();
+				applicationLog.info(line);
+				applicationLog.flushToSystem();
+			} else {
+				try {
+					Thread.sleep(50);
+				} catch(Exception e) { }
+			}
+		}
+		
+	}
+	
+	protected Process runCommand(Command command) {
+		ApplicationFolderImpl workspaceFolder = this.getFolder();
+		String cmd = command.getCommandString();
+		String path = workspaceFolder.getPath();
+		File workingFolder = new File(outputRoot, path);
+		boolean asynch = command.asynch();
+		Process ret = null;
+		
+		if (cmd==null) return null;
+		
+		log.info("Running command '"+cmd+"' for path '"+getFolder().getPath()+"'");
+		
+		try {
+			if (asynch) {
+				//cmd = "cmd.exe /C start cmd.exe /K " + cmd+"";
+				//cmd = cmd + " /c start";
+			}
+			Runtime r = Runtime.getRuntime();
+			Process proc = r.exec(cmd, null, workingFolder);
+			if (!asynch) {
+				handleSynchronousProcess(proc);
+			} else {
+				//proc.destroyForcibly();
+				//handleCommandLine(cmd,workingFolder);
+				//handleSynchronousProcess(proc);
+				ret = proc;
+			}
+		} catch(IOException e) {
+			e.printStackTrace();
+		} catch(InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		return ret;
+	}
+	
+	@Override
+	public void finalize() {
+		for(ProcessContainer p : deployProcesses) {
+			p.terminate();
+		}
+		deployProcesses.clear();
+	}
+	
+	public void build() {
+		//lastBuildMillis = System.currentTimeMillis();
+ 		List<Command> cmds = processor.build();
+		
+		for(Command cmd : cmds) {
+			runCommand(cmd);
+		}
+	}
+	
+	public void deploy() {
+		undeploy();
+		if (buildContext.getRuntimePlatform()==null) return;
+
+		List<Command> cmds = buildContext.getRuntimePlatform().deploy();
+
+		for(Command cmd : cmds) {
+			Process proc = runCommand(cmd);
+			if (proc!=null) {
+				ProcessContainer cont = ProcessContainer.create(cmd.getCommandString(), proc);
+				deployProcesses.add(cont);
+			}
+		}
+	}
+	
+	public void undeploy() {
+		System.err.println("*** Build Component undeploy");
+	}
+	
+	public void clean() {
+ 		List<Command> cmds = processor.clean();
+		
+		for(Command cmd : cmds) {
+			runCommand(cmd);
+		}
 	}
 
 }

@@ -16,7 +16,7 @@ public class JavascriptUtils {
 		ModuleSourceFile ret = null;
 		String base = ctx.getBuildContext().getOutputRootPath("js");
 		String path = ctx.getProperty("javascript.module.source");
-		
+
 		if (path==null) {
 			throw new JasperException("Couldn't find required property 'javascript.module.source'");
 		}

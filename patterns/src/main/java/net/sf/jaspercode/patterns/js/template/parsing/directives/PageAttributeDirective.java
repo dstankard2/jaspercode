@@ -56,9 +56,14 @@ public class PageAttributeDirective extends AttributeDirectiveBase {
 			fnCode.append("var "+modelRef+" = _page.model;\n");
 			execCtx.addVariable(modelRef, pageInfo.getModelType().getName());
 		}
-		
 		// Get the page renderer
-		String ref = ctx.getTemplateObj();
+		String ref = ctx.getProcessorContext().getProperty("page.template.objRef");
+		
+		if (ref==null) {
+			throw new JasperException("Page Attribute directive requires config property 'page.template.objRef' which should be a reference to an object on the window that will render the page");
+		}
+		
+		//String ref = ctx.getTemplateObj();
 		pageInfo.setPageRendererObj(ref);
 		pageInfo.setPageRendererRule(op);
 		

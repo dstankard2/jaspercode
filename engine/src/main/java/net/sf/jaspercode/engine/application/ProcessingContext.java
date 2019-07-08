@@ -1,7 +1,6 @@
 package net.sf.jaspercode.engine.application;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -11,10 +10,8 @@ import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.FileWatcher;
 import net.sf.jaspercode.api.resources.FolderWatcher;
-import net.sf.jaspercode.api.resources.ResourceWatcher;
 import net.sf.jaspercode.api.types.VariableType;
 import net.sf.jaspercode.engine.definitions.ComponentFile;
-import net.sf.jaspercode.engine.exception.PreprocessingException;
 
 /**
  * Manipulates properties of the processingManager in a way that makes sense for the processable.<br/>
@@ -139,7 +136,7 @@ public class ProcessingContext {
 		return processingManager.getVariableTypes(lang).get(name);
 	}
 
-	public void addComponent(int id, Component component, ComponentFile componentFile) throws JasperException,PreprocessingException {
+	public void addComponent(int id, Component component, ComponentFile componentFile) throws JasperException {
 		if (component instanceof BuildComponent) {
 			throw new JasperException("JasperCode does not support dynamically added build components");
 			//throw new IllegalArgumentException("JasperCode does not support dynamically added build components");

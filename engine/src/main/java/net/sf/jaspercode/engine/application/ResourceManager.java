@@ -22,7 +22,7 @@ import net.sf.jaspercode.engine.definitions.JasperPropertiesFile;
 import net.sf.jaspercode.engine.definitions.SystemAttributesFile;
 import net.sf.jaspercode.engine.definitions.UserFile;
 import net.sf.jaspercode.engine.definitions.WatchedResource;
-import net.sf.jaspercode.engine.processing.EngineException;
+import net.sf.jaspercode.engine.exception.EngineException;
 
 public class ResourceManager {
 	private ApplicationFolderImpl applicationFolder;
@@ -36,6 +36,10 @@ public class ResourceManager {
 		this.applicationManager = applicationManager;
 		this.componentFileReader = new ComponentFileReader(applicationContext.getXmlConfigClasses());
 		this.applicationContext = applicationContext;
+	}
+
+	public ApplicationFolderImpl getRootFolder() {
+		return applicationFolder;
 	}
 
 	public WatchedResource getResource(String path) {
@@ -120,15 +124,10 @@ public class ResourceManager {
 		}
 		
 		// If there is no commands.txt and if the application has commands for this folder, then set them null
-		if (applicationManager.getCommands(folder.getPath())!=null) {
-			boolean found = false;
-			for(File f : files) {
-				if (f.getName().equals("commands.txt")) {
-					found = true;
-					break;
-				}
+		if (applicationManager.getStandingCommands(folder.getPath())!=null) {
+			if (getFile(files, "commands.txt")==null) {
+				applicationManager.setCommands(folder.getPath(), null);
 			}
-			if (!found) applicationManager.setCommands(folder.getPath(), null);
 		}
 
 		for(Entry<String,WatchedResource> entry : folder.getFiles().entrySet()) {
@@ -316,6 +315,8 @@ public class ResourceManager {
 		// First, check jasper properties and systemAttributes.properties file in this directory
 		File jasperPropsFile = null;
 		File attributesFile = null;
+		File commandsFile = null;
+
 		for(int i=0;i<files.length;i++) {
 			File f = files[i];
 			if (f.getName().equals(JasperPropertiesFile.JASPER_PROPERTIES_FILE)) {
@@ -328,12 +329,20 @@ public class ResourceManager {
 					files[i] = null;
 				}
 			}
-			else if ((jasperPropsFile!=null) && (attributesFile!=null)) {
-				// Stop if we've found both files
+			else if (f.getName().equals("commands.txt")) {
+				commandsFile = f;
+				files[i] = null;
+			}
+			else if ((jasperPropsFile!=null) && (attributesFile!=null) && (commandsFile!=null)) {
+				// Stop if we've found all files
 				break;
 			}
 		}
-		
+
+		if ((applicationManager.getStandingCommands(folder.getPath())!=null) && (commandsFile!=null)) {
+			List<String> cmds = this.getCommands(commandsFile);
+			applicationManager.setCommands(folder.getPath(), cmds);
+		}
 		if ((applicationManager.getSystemAttributesFile()==null) 
 				&& (folder.getParent()==null) && (attributesFile!=null)) {
 			SystemAttributesFile systemAttributesFile = createSystemAttributesFile(attributesFile, folder);

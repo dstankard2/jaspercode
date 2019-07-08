@@ -9,7 +9,6 @@ import java.util.Map;
 import net.sf.jaspercode.api.ApplicationContext;
 import net.sf.jaspercode.api.BuildContext;
 import net.sf.jaspercode.api.resources.ApplicationFolder;
-import net.sf.jaspercode.engine.exception.PreprocessingException;
 import net.sf.jaspercode.engine.processing.BuildComponentEntry;
 
 public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder {
@@ -254,13 +253,9 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 				ret = parent.getCurrentBuildComponent();
 			} else {
 				ComponentFile componentFile = new ComponentFile(null,null,this);
-				ret = new BuildComponentEntry(componentFile, null, applicationContext, new DefaultBuildComponent(), null, 0, 0);
-				try {
-					ret.init();
-					ret.preprocess();
-				} catch(PreprocessingException e) {
-					// no-op
-				}
+				ret = new BuildComponentEntry(componentFile, null, applicationContext, new DefaultBuildComponent(), null, 0, 0, null, null);
+				ret.preprocess();
+				ret.init();
 			}
 		}
 		

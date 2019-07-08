@@ -3,7 +3,6 @@ package net.sf.jaspercode.example1.util;
 import net.sf.jaspercode.patterns.java.handwritten.BusinessRule;
 import net.sf.jaspercode.patterns.java.handwritten.BusinessService;
 import net.sf.jaspercode.example1.obj.Book;
-import net.sf.jaspercode.example1.obj.User;
 
 @BusinessService(group = "Service", ref = "bookUtil", priority = 17500)
 public class BookUtil {

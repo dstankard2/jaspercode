@@ -11,7 +11,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import net.sf.jaspercode.api.ApplicationContext;
 import net.sf.jaspercode.api.BuildContext;
 import net.sf.jaspercode.api.SourceFile;
-import net.sf.jaspercode.api.annotation.ConfigProperty;
 import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.plugin.ProcessorLogMessage;
@@ -21,15 +20,13 @@ import net.sf.jaspercode.api.types.VariableType;
 import net.sf.jaspercode.engine.application.ProcessingContext;
 import net.sf.jaspercode.engine.definitions.ApplicationFolderImpl;
 import net.sf.jaspercode.engine.definitions.ComponentFile;
-import net.sf.jaspercode.engine.exception.PreprocessingException;
-import net.sf.jaspercode.engine.exception.RequiredConfigurationException;
 
 /**
  * This Processable is the processableContext for the underlying processor
  * @author DCS
  *
  */
-public abstract class ProcessableBase implements Processable,ProcessableContext {
+public abstract class ProcessableBase extends ConfigurableProcessable implements ProcessableContext {
 
 	protected ApplicationContext applicationContext = null;
 	//protected ApplicationFolderImpl folder = null;
@@ -75,55 +72,7 @@ public abstract class ProcessableBase implements Processable,ProcessableContext 
 		return componentFile.getFolder().getProperties().get(name);
 	}
 
-	protected Object handleConfigProperty(ConfigProperty property, Class<?>[] params) throws PreprocessingException {
-		Object ret = null;
-		String configValue = null;
-
-		if (params.length!=1) {
-			throw new PreprocessingException("A method annotated with @ConfigProperty must take a single parameter which is either string or integer");
-		}
-		
-		boolean required = property.required();
-		String name = property.name();
-
-		configValue = getProperty(name);
-		if ((configValue==null) && (required)) {
-			throw new RequiredConfigurationException(name);
-		}
-
-		if (configValue==null) {
-			ret = null;
-		}
-		if (configValue!=null) {
-			if (params[0]==String.class) {
-				ret = configValue;
-			}
-			else if (params[0]==Integer.class) {
-				try {
-					ret = Integer.parseInt(configValue);
-				} catch(NumberFormatException e) {
-					throw new PreprocessingException("Configuration '"+name+"' must be an integer");
-				}
-			}
-			else if (params[0]==Boolean.class) {
-				ret = Boolean.FALSE;
-				if (configValue.equalsIgnoreCase("true")) ret = Boolean.TRUE;
-				else if (configValue.equalsIgnoreCase("T")) ret = Boolean.TRUE;
-				else if (configValue.equalsIgnoreCase("Y")) ret = Boolean.TRUE;
-				else if (configValue.equalsIgnoreCase("false")) ret = Boolean.FALSE;
-				else if (configValue.equalsIgnoreCase("F")) ret = Boolean.TRUE;
-				else if (configValue.equalsIgnoreCase("N")) ret = Boolean.TRUE;
-				else {
-					throw new PreprocessingException("Found invalid value '"+configValue+"' for boolean configuration '"+name+"'");
-				}
-			}
-		}
-
-		return ret;
-	}
-
-	// Id of the resourceWatcherEntry
-	//@Override
+	@Override
 	public int getId() {
 		return id;
 	}
@@ -167,31 +116,39 @@ public abstract class ProcessableBase implements Processable,ProcessableContext 
 		for(Component comp : this.componentsAdded) {
 			try {
 				processingContext.addComponent(id, comp, componentFile);
-			} catch(PreprocessingException | JasperException e) {
+			} catch(JasperException e) {
 				log.error(e.getMessage(), e.getCause());
 				return false;
 			}
 		}
+		componentsAdded.clear();
 		
 		// Objects
 		// Commit dependencies to processingContext
 		for(String obj : objectDependencies) {
 			processingContext.originateObject(id, obj);
 		}
+		// Don't clear these
+		objectDependencies.clear();
+
 		// Commit object updates to processingContext
 		for(Entry<String,Object> ob : objects.entrySet()) {
 			processingContext.setObject(id, ob.getKey(), ob.getValue());
 		}
+		objects.clear();
 		
 		// System attributes
 		// Commit attributes to processingContext
 		for(Entry<String,String> attr : attributesOriginated.entrySet()) {
 			processingContext.originateSystemAttribute(id, attr.getKey(), attr.getValue());
 		}
+		attributesOriginated.clear();
+		
 		// Commit dependencies to processingContext
 		for(String attr : attributeDependencies) {
 			processingContext.dependOnSystemAttribute(id, attr);
 		}
+		attributeDependencies.clear();
 
 		// Variable Types
 		// Commit Dependencies to processingContext
@@ -200,6 +157,8 @@ public abstract class ProcessableBase implements Processable,ProcessableContext 
 			String typeName = dep.getRight();
 			processingContext.dependOnType(id, lang, typeName);
 		}
+		typeDependencies.clear();
+		
 		// Commit variable type changes to processingContext
 		for(Pair<String,VariableType> p : this.typesOriginated) {
 			processingContext.originateType(id, p.getLeft(), p.getRight());
@@ -210,14 +169,18 @@ public abstract class ProcessableBase implements Processable,ProcessableContext 
 		for(SourceFile src : sourceFiles) {
 			processingContext.saveSourceFile(id, src);
 		}
+		sourceFiles.clear();
 		
 		// Added Resource Watchers
 		for(Pair<String,FileWatcher> w : this.fileWatchersAdded) {
 			processingContext.addFileWatcher(id, componentFile, w.getKey(), w.getRight());
 		}
+		fileWatchersAdded.clear();
+		
 		for(Pair<String,FolderWatcher> w : this.folderWatchersAdded) {
 			processingContext.addFolderWatcher(id, componentFile, w.getKey(), w.getRight());
 		}
+		folderWatchersAdded.clear();
 		
 		return true;
 	}
@@ -250,6 +213,7 @@ public abstract class ProcessableBase implements Processable,ProcessableContext 
 	@Override
 	public void setObject(String name, Object value) {
 		objects.put(name, value);
+		objectDependencies.add(name);
 	}
 
 	@Override
@@ -257,8 +221,8 @@ public abstract class ProcessableBase implements Processable,ProcessableContext 
 		Object ret = objects.get(objectName);
 		if (ret==null) {
 			ret = processingContext.getObject(id, objectName);
-			objectDependencies.add(objectName);
 		}
+		objectDependencies.add(objectName);
 		return ret;
 	}
 

@@ -67,12 +67,12 @@ public class FolderWatcherRecord implements Tracked {
 		return entry != null;
 	}
 
-	public void deactivate() {
-		this.entry = null;
-	}
-
 	public FolderWatcherEntry entry(ApplicationFile applicationFile) {
 		return new FolderWatcherEntry(path, applicationContext, originatorFile, processingContext, id, watcher, this, applicationFile);
+	}
+	
+	public void clearFilesProcessed() {
+		this.filesProcessed.clear();
 	}
 
 }

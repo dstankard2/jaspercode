@@ -3,13 +3,11 @@ package net.sf.jaspercode.patterns.js.template;
 import java.util.HashMap;
 import java.util.Map;
 
-import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.ApplicationFile;
 import net.sf.jaspercode.api.resources.ApplicationFolder;
 import net.sf.jaspercode.api.resources.FolderWatcher;
-import net.sf.jaspercode.langsupport.javascript.modules.ModuleSourceFile;
 import net.sf.jaspercode.patterns.PatternPriority;
 
 public class TemplateDirectoryWatcher implements FolderWatcher {

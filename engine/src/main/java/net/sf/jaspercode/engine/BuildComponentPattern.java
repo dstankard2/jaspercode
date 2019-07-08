@@ -2,7 +2,6 @@ package net.sf.jaspercode.engine;
 
 import net.sf.jaspercode.api.BuildComponentProcessor;
 import net.sf.jaspercode.api.config.BuildComponent;
-import net.sf.jaspercode.engine.exception.PreprocessingException;
 
 public class BuildComponentPattern {
 
@@ -20,13 +19,13 @@ public class BuildComponentPattern {
 		this.processorClass = processorClass;
 	}
 
-	public BuildComponentProcessor getProcessor(BuildComponent comp) throws PreprocessingException {
+	public BuildComponentProcessor getProcessor(BuildComponent comp) {
 		BuildComponentProcessor ret = null;
 		
 		try {
 			ret = processorClass.newInstance();
 		} catch(Exception e) {
-			throw new PreprocessingException("Exception while getting processor", e);
+			ret = null;
 		}
 		
 		return ret;

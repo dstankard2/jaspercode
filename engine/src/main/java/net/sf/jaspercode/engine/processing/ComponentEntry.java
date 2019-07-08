@@ -12,7 +12,6 @@ import net.sf.jaspercode.engine.ComponentPattern;
 import net.sf.jaspercode.engine.RegisteredProcessor;
 import net.sf.jaspercode.engine.application.ProcessingContext;
 import net.sf.jaspercode.engine.definitions.ComponentFile;
-import net.sf.jaspercode.engine.exception.PreprocessingException;
 
 public class ComponentEntry extends ProcessableBase implements Tracked {
 
@@ -41,26 +40,15 @@ public class ComponentEntry extends ProcessableBase implements Tracked {
 	public Component getComponent() {
 		return component;
 	}
-	
-	public void preprocess() throws PreprocessingException {
-		Class<?> compClass = component.getClass();
-		Method[] methods = compClass.getMethods();
-		
+
+	@Override
+	public boolean preprocess() {
 		this.state = ProcessingState.PREPROCESSING;
-		for(Method method : methods) {
-			ConfigProperty prop = method.getDeclaredAnnotation(ConfigProperty.class);
-			if (prop!=null) {
-				try {
-					Object value = super.handleConfigProperty(prop, method.getParameterTypes());
-					if (value!=null)
-						method.invoke(component, value);
-				} catch(IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-					log.error("Unable to set configuration '"+prop.name()+"'",e);
-					throw new PreprocessingException();
-				}
-			}
+		if (!populateConfigurations(component)) {
+			return false;
 		}
 		this.state = ProcessingState.PREPROCESSED;
+		return true;
 	}
 	
 	@Override

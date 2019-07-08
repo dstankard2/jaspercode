@@ -12,5 +12,6 @@ public interface BuildComponentProcessor {
 	public BuildContext createBuildContext();
 	public void generateBuild() throws JasperException;
 	public List<Command> build();
+	public List<Command> clean();
 
 }

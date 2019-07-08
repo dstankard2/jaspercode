@@ -36,6 +36,10 @@ public class OutputManager {
 		this.jasperResources = jasperResources;
 	}
 
+	public File getOutputDirectory() {
+		return outputDir;
+	}
+
 	// Returns snapshots of source files that have been persisted
 	public List<SourceFileSnapshot> getSourceFileSnapshots() {
 		List<SourceFileSnapshot> ret = new ArrayList<>();

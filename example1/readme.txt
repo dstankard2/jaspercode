@@ -8,3 +8,4 @@ mvn package
 java -jar target\example1-jar-with-dependencies.jar
 
 Then open your web browser to URL: http://localhost:8080/index.html
+

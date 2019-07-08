@@ -1,0 +1,3 @@
+cleanAlways
+buildAlways
+deployAlways

@@ -1,9 +1,5 @@
 package net.sf.jaspercode.patterns.js.template;
 
-import java.io.InputStreamReader;
-import java.util.List;
-
-import net.sf.jaspercode.api.CodeExecutionContext;
 import net.sf.jaspercode.api.ComponentProcessor;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
@@ -11,32 +7,26 @@ import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.annotation.Processor;
 import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.exception.JasperException;
-import net.sf.jaspercode.api.resources.ApplicationFile;
 import net.sf.jaspercode.api.resources.ApplicationFolder;
 import net.sf.jaspercode.api.resources.ApplicationResource;
-import net.sf.jaspercode.api.types.ServiceOperation;
-import net.sf.jaspercode.langsupport.javascript.JavascriptCode;
 import net.sf.jaspercode.langsupport.javascript.JavascriptUtils;
-import net.sf.jaspercode.langsupport.javascript.ModuleImport;
-import net.sf.jaspercode.langsupport.javascript.modules.ModuleFunction;
 import net.sf.jaspercode.langsupport.javascript.modules.ModuleSourceFile;
 import net.sf.jaspercode.langsupport.javascript.modules.StandardModuleSource;
 import net.sf.jaspercode.langsupport.javascript.types.JavascriptServiceType;
 import net.sf.jaspercode.patterns.js.template.parsing.DirectiveUtils;
-import net.sf.jaspercode.patterns.js.template.parsing.TemplateParser;
-import net.sf.jaspercode.patterns.xml.js.template.Subfolder;
-import net.sf.jaspercode.patterns.xml.js.template.TemplateDirectory;
+import net.sf.jaspercode.patterns.xml.js.template.TemplateFolder;
+import net.sf.jaspercode.patterns.xml.js.template.TemplateSets;
 
 @Plugin
-@Processor(componentClass=TemplateDirectory.class)
-public class TemplateDirectoryProcessor implements ComponentProcessor {
+@Processor(componentClass=TemplateSets.class)
+public class TemplateSetsProcessor implements ComponentProcessor {
 
-	private TemplateDirectory comp = null;
+	private TemplateSets comp = null;
 	private ProcessorContext ctx = null;
 
 	@Override
 	public void init(Component component, ProcessorContext ctx) {
-		this.comp = (TemplateDirectory)component;
+		this.comp = (TemplateSets)component;
 		this.ctx = ctx;
 	}
 
@@ -62,39 +52,41 @@ public class TemplateDirectoryProcessor implements ComponentProcessor {
 		ctx.addSystemAttribute(ref, serviceName);
 		ctx.addVariableType(type);
 
-		ApplicationResource res = ctx.getBuildContext().getApplicationResource(comp.getFolder());
-		if (res==null) {
-			throw new JasperException("Could not find template folder '"+comp.getFolder()+"'");
-		}
-		if (!(res instanceof ApplicationFolder)) {
-			throw new JasperException("Resource '"+comp.getFolder()+"' specified as template folder is not a folder");
-		}
-		ApplicationFolder root = (ApplicationFolder)res;
-
 		StandardModuleSource rootModule = new StandardModuleSource(serviceName);
 		src.addModule(rootModule);
-		
-		TemplateRootWatcher watcher = new TemplateRootWatcher(root, serviceName);
-		ctx.addFolderWatcher(root.getPath(), watcher);
-		/*
-		// Each subfolder has a template directory watcher
-		for(Subfolder sub : comp.getSubfolder()) {
-			String path = sub.getPath();
-			String r = sub.getRef();
-			String fullRef = ref+'.'+r;
-			ApplicationResource templateFolder = root.getResource(path);
-			if (templateFolder==null) {
-				throw new JasperException("Couldn't find subfolder '"+path+"'");
+
+		for(TemplateFolder folder : comp.getFolder()) {
+			// Create a type for the folder
+			String folderRef = folder.getRef();
+			String folderTypeName = serviceName+"_"+folderRef;
+			
+			// Add folder type to the service type
+			type.addAttribute(folderRef, folderTypeName);
+			ApplicationResource res = ctx.getResource(folder.getPath());
+			if (res==null) {
+				throw new JasperException("Couldn't find folder directory at path '"+folder.getPath()+"'");
 			}
-			if (!(templateFolder instanceof ApplicationFolder)) {
-				throw new JasperException("Resource '"+templateFolder.getPath()+"' is not a folder");
+			if (!(res instanceof ApplicationFolder)) {
+				throw new JasperException("Resource '"+folder.getPath()+"' is not an application resource");
 			}
-			TemplateDirectoryWatcher folderWatcher = new TemplateDirectoryWatcher((ApplicationFolder)templateFolder);
-			ctx.addFolderWatcher(templateFolder.getPath(), folderWatcher);
-			//handleApplicationFolder((ApplicationFolder)templateFolder, fullRef, path, type, src, rootModule);
+			TemplateFolderWatcher watcher = new TemplateFolderWatcher((ApplicationFolder)res, folderTypeName, folderRef);
+			ctx.addFolderWatcher(folder.getPath(), watcher);
+			
+			//ModuleSourceFile src = JavascriptUtils.getModuleSource(ctx);
+			//StandardModuleSource rootModule = (StandardModuleSource)src.getModule(rootServiceTypeName);
+			rootModule.addProperty(folderRef, folderTypeName);
+			rootModule.getInitCode().append("_" + folderRef + " = " + folderTypeName+"();\n");
+			
+			StandardModuleSource mod = new StandardModuleSource(folderTypeName);
+			src.addModule(mod);
+			// Templating framework
+			mod.addInternalFunction(DirectiveUtils.getInvokeRem());
+			mod.addInternalFunction(DirectiveUtils.getRem());
+			mod.addInternalFunction(DirectiveUtils.getIns());
+			
+			JavascriptServiceType folderType = new JavascriptServiceType(folderTypeName,true,ctx);
+			ctx.addVariableType(folderType);
 		}
-		 */
-		//ctx.getLog().info("Test");
 	}
 
 	/*

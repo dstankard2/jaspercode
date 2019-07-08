@@ -21,18 +21,18 @@ public interface Processable extends Comparable<Processable> {
 	List<ProcessorLogMessage> getMessages();
 
 	/**
+	 * Initialize this processable.<br/>
+	 * initialize jasper properties
+	 */
+	boolean preprocess();
+	
+	/**
 	 * Processes this component, handling exceptions.
 	 * @return true if successful, false otherwise.
 	 */
 	boolean process();
 
 	ApplicationFolderImpl getFolder();
-
-	/**
-	 * Perform any logic that should be done when the processable is removed from the system.
-	 * @throws JasperException If there is a problem
-	 */
-	//void remove() throws JasperException;
 
 	/**
 	 * After a component is done processing, this method is invoked to commit application 
@@ -59,6 +59,12 @@ public interface Processable extends Comparable<Processable> {
 	 * @return
 	 */
 	String getName();
+
+	/**
+	 * The item that this processable comes from, or 0 if not applicable.
+	 * @return
+	 */
+	int getId();
 
 }
 
