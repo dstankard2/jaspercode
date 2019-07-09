@@ -13,6 +13,7 @@ import net.sf.jaspercode.langsupport.javascript.JavascriptUtils;
 import net.sf.jaspercode.langsupport.javascript.modules.ModuleSourceFile;
 import net.sf.jaspercode.langsupport.javascript.modules.StandardModuleSource;
 import net.sf.jaspercode.langsupport.javascript.types.JavascriptServiceType;
+import net.sf.jaspercode.patterns.PatternPriority;
 import net.sf.jaspercode.patterns.js.template.parsing.DirectiveUtils;
 import net.sf.jaspercode.patterns.xml.js.template.TemplateFolder;
 import net.sf.jaspercode.patterns.xml.js.template.TemplateSets;
@@ -54,8 +55,12 @@ public class TemplateSetsProcessor implements ComponentProcessor {
 
 		StandardModuleSource rootModule = new StandardModuleSource(serviceName);
 		src.addModule(rootModule);
-
+		int priority = PatternPriority.HTML_TEMPLATE;
+		
 		for(TemplateFolder folder : comp.getFolder()) {
+
+			priority++;
+
 			// Create a type for the folder
 			String folderRef = folder.getRef();
 			String folderTypeName = serviceName+"_"+folderRef;
@@ -69,7 +74,7 @@ public class TemplateSetsProcessor implements ComponentProcessor {
 			if (!(res instanceof ApplicationFolder)) {
 				throw new JasperException("Resource '"+folder.getPath()+"' is not an application resource");
 			}
-			TemplateFolderWatcher watcher = new TemplateFolderWatcher((ApplicationFolder)res, folderTypeName, folderRef);
+			TemplateFolderWatcher watcher = new TemplateFolderWatcher((ApplicationFolder)res, folderTypeName, folderRef, priority);
 			ctx.addFolderWatcher(folder.getPath(), watcher);
 			
 			//ModuleSourceFile src = JavascriptUtils.getModuleSource(ctx);
@@ -89,50 +94,5 @@ public class TemplateSetsProcessor implements ComponentProcessor {
 		}
 	}
 
-	/*
-	protected void handleApplicationFolder(ApplicationFolder templateFolder,String ref, String path, JavascriptServiceType type, ModuleSourceFile src, StandardModuleSource rootModule) throws JasperException {
-		List<String> names =  templateFolder.getContentNames();
-		JavascriptServiceType folderType = null;
-		String subName = path.replace('/', '_');
-		subName = subName.replace('-', '_');
-		String folderName = JasperUtils.getUpperCamelName(subName);
-		String identifier = ref.substring(ref.indexOf('.')+1);
-
-		String folderTypeName = null;
-		if (ctx.getVariableType(subName)!=null) {
-			folderTypeName = type.getName() + '_' + folderName;
-		} else {
-			folderTypeName = folderName;
-		}
-		rootModule.addProperty(identifier, "object");
-		rootModule.getInitCode().append("_"+identifier+" = "+folderName+"();\n");
-		
-		StandardModuleSource mod = new StandardModuleSource(folderTypeName);
-		folderType = new JavascriptServiceType(folderTypeName, true, ctx);
-		type.addAttribute(identifier, folderTypeName);
-		ctx.addVariableType(folderType);
-		ctx.addSystemAttribute(ref, folderTypeName);
-		src.addModule(mod);
-
-		addStandardFunctions(mod);
-
-		for(String name : names) {
-			//if (!name.equals("movementMode.html")) continue;
-			if (!name.endsWith(".html")) continue;
-			String ruleName = JasperUtils.getLowerCamelName(name.substring(0,name.indexOf(".html")));
-			ApplicationResource res = templateFolder.getResource(name);
-			if (res instanceof ApplicationFile) {
-				handleFile((ApplicationFile)res, ruleName, folderType, mod, ref, src);
-			}
-		}
-	}
-
-	protected void addStandardFunctions(StandardModuleSource mod) {
-		mod.addInternalFunction(DirectiveUtils.getInvokeRem());
-		mod.addInternalFunction(DirectiveUtils.getRem());
-		mod.addInternalFunction(DirectiveUtils.getIns());
-	}
-	*/
-	
 }
 

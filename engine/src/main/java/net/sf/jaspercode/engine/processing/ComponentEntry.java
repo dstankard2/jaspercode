@@ -1,12 +1,9 @@
 package net.sf.jaspercode.engine.processing;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 
 import net.sf.jaspercode.api.ApplicationContext;
 import net.sf.jaspercode.api.ComponentProcessor;
-import net.sf.jaspercode.api.annotation.ConfigProperty;
 import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.engine.ComponentPattern;
 import net.sf.jaspercode.engine.RegisteredProcessor;

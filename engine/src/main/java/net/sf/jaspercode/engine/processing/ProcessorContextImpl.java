@@ -8,7 +8,6 @@ import net.sf.jaspercode.api.SourceFile;
 import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.ApplicationResource;
-import net.sf.jaspercode.api.resources.FileWatcher;
 import net.sf.jaspercode.api.resources.FolderWatcher;
 import net.sf.jaspercode.api.types.ListType;
 import net.sf.jaspercode.api.types.VariableType;
@@ -140,11 +139,6 @@ public class ProcessorContextImpl implements ProcessorContext {
 	@Override
 	public Log getLog() {
 		return log;
-	}
-
-	@Override
-	public void addFileWatcher(String path,FileWatcher watcher) {
-		ctx.addFileWatcher(path, watcher);
 	}
 
 	@Override

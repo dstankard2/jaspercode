@@ -5,10 +5,10 @@ import java.io.IOException;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.ApplicationFile;
-import net.sf.jaspercode.api.resources.FileWatcher;
 
-public class HandwrittenCodeFileWatcher implements FileWatcher {
+public class HandwrittenCodeFileWatcher {//implements FileWatcher {
 
+	/*
 	ProcessorContext ctx = null;
 	int priority = 0;
 	FileProcessor proc = null;
@@ -61,5 +61,6 @@ public class HandwrittenCodeFileWatcher implements FileWatcher {
 		return priority;
 	}
 	
+	*/
 }
 

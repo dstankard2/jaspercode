@@ -42,6 +42,10 @@ public class FolderWatcherEntry extends ProcessableBase {
 	public boolean preprocess() {
 		return populateConfigurations(folderWatcher);
 	}
+	
+	public FolderWatcherRecord getRecord() {
+		return record;
+	}
 
 	@Override
 	public boolean process() {

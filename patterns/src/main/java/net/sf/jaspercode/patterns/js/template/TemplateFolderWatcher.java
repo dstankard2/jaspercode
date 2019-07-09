@@ -26,10 +26,12 @@ public class TemplateFolderWatcher implements FolderWatcher {
 	private ProcessorContext ctx = null;
 	String folderTypeName = null;
 	//private Map<String,TemplateFileWatcher> templates = new HashMap<>();
+	int priority = 0;
 	
-	public TemplateFolderWatcher(ApplicationFolder folder, String folderTypeName, String ref) {
+	public TemplateFolderWatcher(ApplicationFolder folder, String folderTypeName, String ref, int prirority) {
 		this.folder = folder;
 		this.folderTypeName = folderTypeName;
+		this.priority = priority;
 	}
 
 	@Override
@@ -38,15 +40,15 @@ public class TemplateFolderWatcher implements FolderWatcher {
 
 	}
 
+	// This watcher is processed just after the template set component
 	@Override
 	public int getPriority() {
-		return PatternPriority.HTML_TEMPLATE - 2;
+		return priority;
 	}
 
 	@Override
 	public void process(ApplicationFile changedFile) throws JasperException {
 		ctx.setLanguageSupport("Javascript");
-		//JavascriptServiceType rootServiceType = JasperUtils.getType(JavascriptServiceType.class, rootServiceTypeName, ctx);
 		String filename = changedFile.getName();
 		String ruleName = null;
 
@@ -66,34 +68,10 @@ public class TemplateFolderWatcher implements FolderWatcher {
 		JavascriptServiceType serviceType = JasperUtils.getType(JavascriptServiceType.class, this.folderTypeName, ctx);
 		String objRef = "templates.pages";
 		StandardModuleSource module = (StandardModuleSource)src.getModule(folderTypeName);
-		
+		ctx.originateVariableType(serviceType);
+
 		handleFile(changedFile,ruleName,serviceType,module,objRef,src);
-		//StandardModuleSource rootModule = (StandardModuleSource)src.getModule(rootServiceTypeName);
 
-
-		/*
-		String folderName = subName.substring(0, i);
-		if (templateSets.get(folderName)==null) {
-			String typeName = rootServiceTypeName + "_" + JasperUtils.getUpperCamelName(folderName);
-			ModuleSourceFile src = JavascriptUtils.getModuleSource(ctx);
-			StandardModuleSource rootModule = (StandardModuleSource)src.getModule(rootServiceTypeName);
-			String path = rootPath+folderName;
-			ApplicationFolder templateFolder = (ApplicationFolder)rootFolder.getResource(folderName);
-			TemplateDirectoryWatcher w = new TemplateDirectoryWatcher(templateFolder, src.getPath(), typeName, typeName);
-			ctx.addFolderWatcher(path, w);
-			StandardModuleSource mod = new StandardModuleSource(typeName);
-			src.addModule(mod);
-			rootModule.addProperty(folderName, typeName);
-			rootModule.getInitCode().append("_" + folderName + " = " + typeName+"();\n");
-			templateSets.put(folderName, w);
-			JavascriptServiceType srv = new JavascriptServiceType(typeName, true, ctx);
-			ctx.addVariableType(srv);
-
-			mod.addInternalFunction(DirectiveUtils.getInvokeRem());
-			mod.addInternalFunction(DirectiveUtils.getRem());
-			mod.addInternalFunction(DirectiveUtils.getIns());
-		}
-			*/
 	}
 
 	// TODO: objRef should probably come from a config property

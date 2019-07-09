@@ -13,7 +13,6 @@ import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.langsupport.LanguageSupport;
 import net.sf.jaspercode.api.logging.ProcessorLogLevel;
 import net.sf.jaspercode.api.plugin.ProcessorLogMessage;
-import net.sf.jaspercode.api.resources.FileWatcher;
 import net.sf.jaspercode.api.resources.FolderWatcher;
 import net.sf.jaspercode.api.snapshot.ComponentSnapshot;
 import net.sf.jaspercode.api.snapshot.ItemSnapshot;
@@ -33,7 +32,6 @@ import net.sf.jaspercode.engine.processing.AddComponentFileEntry;
 import net.sf.jaspercode.engine.processing.BuildComponentEntry;
 import net.sf.jaspercode.engine.processing.ComponentEntry;
 import net.sf.jaspercode.engine.processing.FileToProcess;
-import net.sf.jaspercode.engine.processing.FileWatcherRecord;
 import net.sf.jaspercode.engine.processing.FolderWatcherEntry;
 import net.sf.jaspercode.engine.processing.Processable;
 import net.sf.jaspercode.engine.processing.ProcessableBase;
@@ -163,18 +161,6 @@ public class ProcessingManager {
 		
 		return ret;
 	}
-	private List<FileWatcherRecord> getFileWatcherRecords() {
-		List<FileWatcherRecord> ret = new ArrayList<>();
-		
-		for(Tracked item : items) {
-			if (item instanceof FileWatcherRecord) {
-				ret.add((FileWatcherRecord)item);
-			}
-		}
-		
-		return ret;
-	}
-
 	protected Tracked getItem(int id) {
 		for(Tracked item : items) {
 			if (item.getId()==id) {
@@ -250,7 +236,7 @@ public class ProcessingManager {
 		if (state!=ProcessingState.ERROR) {
 
 			if (userFileCheckRequired) {
-				this.checkResourceWatchers();
+				this.checkFolderWatchers();
 				userFileCheckRequired = false;
 			}
 			
@@ -356,9 +342,14 @@ public class ProcessingManager {
 		List<Integer> toRemove = new ArrayList<>();
 		items.remove(item);
 
+		boolean isFolderWatcher = item instanceof FolderWatcherRecord;
+		
 		// Unload this item's originator
-		if (item.getOriginatorId() > 0) {
-			toRemove.add(item.getOriginatorId());
+		//  TODO: Determine if this makes sense
+		if ((item.getOriginatorId() > 0) && (!isFolderWatcher)) {
+			System.err.println("To remove or not to remove originator - currently not removing");
+			//System.err.println("To remove or not to remove originator - currently removing");
+			//toRemove.add(item.getOriginatorId());
 		}
 
 		// Unload items that originate from this item
@@ -381,6 +372,24 @@ public class ProcessingManager {
 			this.toProcess.remove((Processable)item);
 		}
 		
+		if (item instanceof FolderWatcherRecord) {
+			FolderWatcherRecord e = (FolderWatcherRecord)item;
+			e.clearFilesProcessed();
+
+			// Clear folder watcher entries from toProcess, re-evaluate what folder watchers 
+			// to call
+			List<FolderWatcherEntry> r = new ArrayList<>();
+			for(Processable p : toProcess) {
+				if (p instanceof FolderWatcherEntry) {
+					FolderWatcherEntry en = (FolderWatcherEntry)p;
+					if (en.getRecord()==e) {
+						r.add(en);
+					}
+				}
+			}
+			toProcess.removeAll(r);
+		}
+		
 		if (item instanceof BuildComponentEntry) {
 			BuildComponentEntry e = (BuildComponentEntry)item;
 			ApplicationFolderImpl folder = e.getFolder();
@@ -395,12 +404,8 @@ public class ProcessingManager {
 				buildComponentsToProcess.add((BuildComponentEntry)item);
 			} else if (item instanceof Processable) {
 				toProcess.add((Processable)item);
-			} else if (item instanceof FileWatcherRecord) {
-				FileWatcherRecord rec = (FileWatcherRecord)item;
-				toProcess.add(rec.currentEntry());
 			} else if (item instanceof FolderWatcherRecord) {
-				FolderWatcherRecord rec = (FolderWatcherRecord)item;
-				rec.clearFilesProcessed();
+				this.checkFolderWatchers();
 				System.out.println("TODO: Determine what to do on folder watcher re-add");
 			} else {
 				System.err.println("Couldn't re-add item to processing");
@@ -434,11 +439,6 @@ public class ProcessingManager {
 	protected void removeResourceWatchersFromOriginator(int id, boolean remove) {
 		List<Integer> toRemove = new ArrayList<>();
 		for(FolderWatcherRecord record : this.getFolderWatcherRecords()) {
-			if (record.getOriginatorId()==id) {
-				toRemove.add(record.getId());
-			}
-		}
-		for(FileWatcherRecord record : this.getFileWatcherRecords()) {
 			if (record.getOriginatorId()==id) {
 				toRemove.add(record.getId());
 			}
@@ -583,8 +583,9 @@ public class ProcessingManager {
 		return nextId++;
 	}
 	
-	private void checkResourceWatchers() {
+	private void checkFolderWatchers() {
 		Map<String,UserFile> userFiles = applicationManager.getUserFiles();
+
 		for(FolderWatcherRecord rec : this.getFolderWatcherRecords()) {
 			String path = rec.getPath();
 			Map<String,Long> processed = rec.getFilesProcessed();
@@ -611,18 +612,6 @@ public class ProcessingManager {
 					}
 					toProcess.add(e);
 					processed.put(filePath, userFile.getLastModified());
-				}
-			}
-		}
-		for(FileWatcherRecord rec : getFileWatcherRecords()) {
-			String path = rec.getPath();
-			for(Entry<String,UserFile> entry : userFiles.entrySet()) {
-				String filePath = entry.getKey();
-				UserFile userFile = entry.getValue();
-				if ((path.equals(filePath)) && (rec.getLastRun() < userFile.getLastModified())) {
-					toProcess.add(rec.entry(userFile));
-					// Since we are adding the file to process, set last run time to now
-					rec.setLastRun(userFile.getLastModified());
 				}
 			}
 		}
@@ -715,12 +704,7 @@ public class ProcessingManager {
 	public void addFolderWatcher(int originatorId, ComponentFile componentFile,String path,FolderWatcher watcher) {
 		FolderWatcherRecord rec = new FolderWatcherRecord(path,jasperResources, new ProcessingContext(this), watcher,componentFile,newId(),originatorId);
 		this.items.add(rec);
-		this.checkResourceWatchers();
-	}
-	public void addFileWatcher(int originatorId, ComponentFile componentFile,String path,FileWatcher fileWatcher) {
-		FileWatcherRecord rec = new FileWatcherRecord(path, jasperResources, new ProcessingContext(this), fileWatcher,componentFile,newId(),originatorId);
-		this.items.add(rec);
-		this.checkResourceWatchers();
+		this.checkFolderWatchers();
 	}
 	public void addComponent(int originatorId, Component component, ComponentFile componentFile) {
 		ComponentPattern pattern = patterns.getPattern(component.getClass());
@@ -829,11 +813,8 @@ public class ProcessingManager {
 				
 				if (item instanceof ComponentEntry) {
 					e = (ProcessableBase)item;
-				} else if (item instanceof FileWatcherRecord) {
-					FileWatcherRecord rec = (FileWatcherRecord)item;
-					if (rec.isActive()) {
-						e = rec.currentEntry();
-					}
+				} else if (item instanceof FolderWatcherRecord) {
+					System.err.println("Could not create snapshot for Tracked class "+item.getClass().getCanonicalName());
 				} else {
 					System.err.println("Could not create snapshot for Tracked class "+item.getClass().getCanonicalName());
 				}
