@@ -23,6 +23,10 @@ public class StandardModuleSource implements ModuleSource {
 	public void addProperty(String name,String type) {
 		properties.put(name, type);
 	}
+	
+	public String getProperty(String name) {
+		return properties.get(name);
+	}
 
 	public void addInternalFunction(ModuleFunction fn) {
 		internalFunctions.put(fn.getName(), fn);

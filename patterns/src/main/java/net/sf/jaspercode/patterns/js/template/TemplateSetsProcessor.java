@@ -9,12 +9,7 @@ import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.ApplicationFolder;
 import net.sf.jaspercode.api.resources.ApplicationResource;
-import net.sf.jaspercode.langsupport.javascript.JavascriptUtils;
-import net.sf.jaspercode.langsupport.javascript.modules.ModuleSourceFile;
-import net.sf.jaspercode.langsupport.javascript.modules.StandardModuleSource;
-import net.sf.jaspercode.langsupport.javascript.types.JavascriptServiceType;
 import net.sf.jaspercode.patterns.PatternPriority;
-import net.sf.jaspercode.patterns.js.template.parsing.DirectiveUtils;
 import net.sf.jaspercode.patterns.xml.js.template.TemplateFolder;
 import net.sf.jaspercode.patterns.xml.js.template.TemplateSets;
 
@@ -34,7 +29,6 @@ public class TemplateSetsProcessor implements ComponentProcessor {
 	@Override
 	public void process() throws JasperException {
 		ctx.setLanguageSupport("Javascript");
-		ModuleSourceFile src = JavascriptUtils.getModuleSource(ctx);
 
 		String serviceName = comp.getServiceName();
 		if (serviceName.trim().isEmpty()) {
@@ -49,14 +43,12 @@ public class TemplateSetsProcessor implements ComponentProcessor {
 			throw new JasperException("Could not determine ref for serviceName = '"+serviceName+"'");
 		}
 
-		JavascriptServiceType type = new JavascriptServiceType(serviceName,true,ctx);
-		ctx.addSystemAttribute(ref, serviceName);
-		ctx.addVariableType(type);
+		//JavascriptServiceType type = new JavascriptServiceType(serviceName,true,ctx);
+		//ctx.addSystemAttribute(ref, serviceName);
+		//ctx.addVariableType(type);
 
-		StandardModuleSource rootModule = new StandardModuleSource(serviceName);
-		src.addModule(rootModule);
 		int priority = PatternPriority.HTML_TEMPLATE;
-		
+
 		for(TemplateFolder folder : comp.getFolder()) {
 
 			priority++;
@@ -64,9 +56,9 @@ public class TemplateSetsProcessor implements ComponentProcessor {
 			// Create a type for the folder
 			String folderRef = folder.getRef();
 			String folderTypeName = serviceName+"_"+folderRef;
-			
+
 			// Add folder type to the service type
-			type.addAttribute(folderRef, folderTypeName);
+			//type.addAttribute(folderRef, folderTypeName);
 			ApplicationResource res = ctx.getResource(folder.getPath());
 			if (res==null) {
 				throw new JasperException("Couldn't find folder directory at path '"+folder.getPath()+"'");
@@ -74,14 +66,10 @@ public class TemplateSetsProcessor implements ComponentProcessor {
 			if (!(res instanceof ApplicationFolder)) {
 				throw new JasperException("Resource '"+folder.getPath()+"' is not an application resource");
 			}
-			TemplateFolderWatcher watcher = new TemplateFolderWatcher((ApplicationFolder)res, folderTypeName, folderRef, priority);
+			TemplateFolderWatcher watcher = new TemplateFolderWatcher(ref, serviceName, folderRef, folderTypeName, priority, (ApplicationFolder)res);
 			ctx.addFolderWatcher(folder.getPath(), watcher);
-			
-			//ModuleSourceFile src = JavascriptUtils.getModuleSource(ctx);
-			//StandardModuleSource rootModule = (StandardModuleSource)src.getModule(rootServiceTypeName);
-			rootModule.addProperty(folderRef, folderTypeName);
-			rootModule.getInitCode().append("_" + folderRef + " = " + folderTypeName+"();\n");
-			
+
+			/*
 			StandardModuleSource mod = new StandardModuleSource(folderTypeName);
 			src.addModule(mod);
 			// Templating framework
@@ -91,6 +79,7 @@ public class TemplateSetsProcessor implements ComponentProcessor {
 			
 			JavascriptServiceType folderType = new JavascriptServiceType(folderTypeName,true,ctx);
 			ctx.addVariableType(folderType);
+			*/
 		}
 	}
 

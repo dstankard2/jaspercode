@@ -127,7 +127,10 @@ public class FileProcessor {
 		JavaClassSource src = null;
 		
 		try {
-			src = (JavaClassSource)parseType();
+			JavaType<?> type = parseType();
+			if (!(type instanceof JavaClassSource)) return;
+			src = (JavaClassSource)type;
+			//src = (JavaClassSource)parseType();
 		} catch(IOException e) {
 			// Should be impossible
 		}

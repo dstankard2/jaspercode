@@ -34,6 +34,7 @@ public class BuildManager {
 	
 	private void checkChanges() {
 		for(String path : changesToCheck) {
+			if (rootFolder.getResource(path)==null) continue;
 			ApplicationFolderImpl folder = rootFolder.getResource(path).getFolder();
 			BuildComponentEntry currentBuild = folder.getCurrentBuildComponent();
 			String buildFolderPath = currentBuild.getFolder().getPath();

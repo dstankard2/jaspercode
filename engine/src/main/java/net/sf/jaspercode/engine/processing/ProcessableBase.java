@@ -54,7 +54,7 @@ public abstract class ProcessableBase extends ConfigurableProcessable implements
 	
 	protected ProcessingState state = null;
 	
-	protected ProcessorLog log = null;
+	//protected ProcessorLog log = null;
 	
 	public ProcessableBase(ApplicationContext applicationContext,ComponentFile componentFile,ProcessingContext processingContext,int id,String name,Map<String,String> configOverride) {
 		this.applicationContext = applicationContext;
