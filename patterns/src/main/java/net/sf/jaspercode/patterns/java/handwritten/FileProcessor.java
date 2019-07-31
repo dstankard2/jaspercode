@@ -3,6 +3,7 @@ package net.sf.jaspercode.patterns.java.handwritten;
 import java.io.IOException;
 import java.util.List;
 
+import org.jboss.forge.roaster.ParserException;
 import org.jboss.forge.roaster.Roaster;
 import org.jboss.forge.roaster.model.JavaType;
 import org.jboss.forge.roaster.model.source.AnnotationSource;
@@ -42,9 +43,13 @@ public class FileProcessor {
 		return priority;
 	}
 	
-	private JavaType<?> parseType() throws IOException {
+	private JavaType<?> parseType() throws IOException,JasperException {
 		if (javaType==null) {
+			try {
 			javaType = Roaster.parse(file.getInputStream());
+			} catch(ParserException e) {
+				throw new JasperException("Couldn't parse Java file", e);
+			}
 		}
 		return javaType;
 	}
@@ -64,7 +69,7 @@ public class FileProcessor {
 		}
 	}
 	
-	private void findPriority() throws IOException {
+	private void findPriority() throws IOException,JasperException {
 		AnnotationSource<JavaClassSource> an = null;
 		JavaClassSource src = null;
 
@@ -125,6 +130,8 @@ public class FileProcessor {
 	
 	public void process() throws JasperException {
 		JavaClassSource src = null;
+
+		this.ctx.setLanguageSupport("Java8");
 		
 		try {
 			JavaType<?> type = parseType();

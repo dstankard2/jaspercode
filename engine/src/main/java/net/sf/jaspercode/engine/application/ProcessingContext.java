@@ -8,6 +8,7 @@ import net.sf.jaspercode.api.SourceFile;
 import net.sf.jaspercode.api.config.BuildComponent;
 import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.exception.JasperException;
+import net.sf.jaspercode.api.resources.FileWatcher;
 import net.sf.jaspercode.api.resources.FolderWatcher;
 import net.sf.jaspercode.api.types.VariableType;
 import net.sf.jaspercode.engine.definitions.ComponentFile;
@@ -145,6 +146,10 @@ public class ProcessingContext {
 	
 	public void addFolderWatcher(int originatorId, ComponentFile componentFile,String path,FolderWatcher watcher) {
 		processingManager.addFolderWatcher(originatorId, componentFile, path, watcher);
+	}
+
+	public void addFileWatcher(int originatorId, ComponentFile componentFile,String path,FileWatcher watcher) {
+		processingManager.addFileWatcher(originatorId, componentFile, path, watcher);
 	}
 
 }

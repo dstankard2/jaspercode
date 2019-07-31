@@ -3,6 +3,7 @@ package net.sf.jaspercode.api;
 import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.ApplicationResource;
+import net.sf.jaspercode.api.resources.FileWatcher;
 import net.sf.jaspercode.api.resources.FolderWatcher;
 import net.sf.jaspercode.api.types.VariableType;
 
@@ -16,7 +17,7 @@ public interface ProcessorContext {
 	public String getSystemAttribute(String name);
 
 	public void addVariableType(VariableType variableType) throws JasperException;
-	public void originateVariableType(VariableType variableType);
+	public void originateVariableType(VariableType variableType) throws JasperException;
 	public void dependOnVariableType(VariableType variableType);
 	public VariableType getVariableType(String name) throws JasperException;
 
@@ -37,6 +38,8 @@ public interface ProcessorContext {
 	Log getLog();
 
 	void addFolderWatcher(String folderPath,FolderWatcher folderWatcher);
+	
+	void addFileWatcher(String filePath,FileWatcher fileWatcher);
 	
 	ApplicationContext getApplicationContext();
 	

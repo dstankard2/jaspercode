@@ -207,9 +207,13 @@ public class WsClientsProcessor implements ComponentProcessor {
 			ctx.getLog().info("No request preprocessing defined for web service");
 		}
 
+		// TODO: This should probably be fetch
+		final String DefaultAjaxProvider = "XMLHttpRequest";
 		// Ajax Provider
-		if (ajaxProvider.trim().length() == 0) {
-			ajaxProvider = "XMLHttpRequest";
+		if (ajaxProvider==null) {
+			ajaxProvider = DefaultAjaxProvider;
+		} else if (ajaxProvider.trim().length() == 0) {
+			ajaxProvider = DefaultAjaxProvider;
 		}
 		fnBody.append("var _promise;\n");
 		AjaxClientProvider provider = JavascriptPatternUtils.getAjaxClientProvider(ajaxProvider, ctx);

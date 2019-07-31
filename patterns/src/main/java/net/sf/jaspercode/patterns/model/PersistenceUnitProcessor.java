@@ -63,7 +63,7 @@ public class PersistenceUnitProcessor implements ComponentProcessor {
 		} else if (!jpaImplementations.contains(jpaImplementation)) {
 			throw new JasperException("Configuration property 'java.model.jpaImplementation' must be set to one of: "+jpaImplementations.toString());
 		}
-		
+
 		pu = root.addElement("persistence-unit");
 		pu.addAttribute("transaction-type", "RESOURCE_LOCAL");
 		pu.addAttribute("name", puName);

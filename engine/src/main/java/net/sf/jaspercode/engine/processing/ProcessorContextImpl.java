@@ -8,6 +8,7 @@ import net.sf.jaspercode.api.SourceFile;
 import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.ApplicationResource;
+import net.sf.jaspercode.api.resources.FileWatcher;
 import net.sf.jaspercode.api.resources.FolderWatcher;
 import net.sf.jaspercode.api.types.ListType;
 import net.sf.jaspercode.api.types.VariableType;
@@ -60,11 +61,17 @@ public class ProcessorContextImpl implements ProcessorContext {
 
 	@Override
 	public void addVariableType(VariableType variableType) throws JasperException {
+		if (lang==null) {
+			throw new JasperException("Tried to add type '"+variableType.getName()+"' but there is no selected language");
+		}
 		ctx.originateType(lang, variableType);
 	}
 
 	@Override
-	public void originateVariableType(VariableType variableType) {
+	public void originateVariableType(VariableType variableType) throws JasperException {
+		if (lang==null) {
+			throw new JasperException("Tried to originate type '"+variableType.getName()+"' but there is no selected language");
+		}
 		ctx.originateType(lang,  variableType);
 	}
 
@@ -144,6 +151,11 @@ public class ProcessorContextImpl implements ProcessorContext {
 	@Override
 	public void addFolderWatcher(String path,FolderWatcher watcher) {
 		ctx.addFolderWatcher(path, watcher);
+	}
+
+	@Override
+	public void addFileWatcher(String path,FileWatcher watcher) {
+		ctx.addFileWatcher(path, watcher);
 	}
 
 	@Override

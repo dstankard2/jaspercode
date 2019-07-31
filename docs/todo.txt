@@ -1,4 +1,13 @@
 
+TODO: Update Java handwritten code processing.
+
+Bug: 
+When there is an uncaught runtime exception in processing, the scan should complete
+Consider: Delegating scan start, complete to the ApplicationManager instead of invoking it to 
+complete the whole thing.
+
+
+
 Maven build should not require maven.java.version.  Evaluate that at preprocessing time.
 Processables should have preprocess method?
 

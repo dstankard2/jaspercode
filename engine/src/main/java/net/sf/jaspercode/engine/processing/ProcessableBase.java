@@ -14,6 +14,7 @@ import net.sf.jaspercode.api.SourceFile;
 import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.plugin.ProcessorLogMessage;
+import net.sf.jaspercode.api.resources.FileWatcher;
 import net.sf.jaspercode.api.resources.FolderWatcher;
 import net.sf.jaspercode.api.types.VariableType;
 import net.sf.jaspercode.engine.application.ProcessingContext;
@@ -48,13 +49,12 @@ public abstract class ProcessableBase extends ConfigurableProcessable implements
 	protected Map<String,String> configOverride = null;
 	
 	protected List<Pair<String,FolderWatcher>> folderWatchersAdded = new ArrayList<>();
+	protected List<Pair<String,FileWatcher>> fileWatchersAdded = new ArrayList<>();
 	protected List<Component> componentsAdded = new ArrayList<>();
 
 	protected String name = null;
 	
 	protected ProcessingState state = null;
-	
-	//protected ProcessorLog log = null;
 	
 	public ProcessableBase(ApplicationContext applicationContext,ComponentFile componentFile,ProcessingContext processingContext,int id,String name,Map<String,String> configOverride) {
 		this.applicationContext = applicationContext;
@@ -175,6 +175,12 @@ public abstract class ProcessableBase extends ConfigurableProcessable implements
 		}
 		folderWatchersAdded.clear();
 		
+		// Added File Watchers
+		for(Pair<String,FileWatcher> w : this.fileWatchersAdded) {
+			processingContext.addFileWatcher(id, componentFile, w.getKey(), w.getRight());
+		}
+		fileWatchersAdded.clear();
+		
 		return true;
 	}
 
@@ -279,6 +285,11 @@ public abstract class ProcessableBase extends ConfigurableProcessable implements
 	@Override
 	public void addFolderWatcher(String path,FolderWatcher folderWatcher) {
 		this.folderWatchersAdded.add(Pair.of(path, folderWatcher));
+	}
+
+	@Override
+	public void addFileWatcher(String path,FileWatcher fileWatcher) {
+		this.fileWatchersAdded.add(Pair.of(path, fileWatcher));
 	}
 
 	@Override

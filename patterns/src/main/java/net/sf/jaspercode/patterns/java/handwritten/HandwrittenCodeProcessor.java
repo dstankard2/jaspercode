@@ -36,11 +36,7 @@ public class HandwrittenCodeProcessor implements ComponentProcessor {
 		}
 		
 		if (res instanceof ApplicationFile) {
-			if (!path.endsWith(".java")) {
-				throw new JasperException("Invalid Java resource to watch '"+path+"'");
-			}
-			ApplicationFile file = (ApplicationFile)res;
-			watchFile(file);
+			throw new JasperException("Handwritten Java code component can only watch a directory");
 		} else {
 			ApplicationFolder folder = (ApplicationFolder)res;
 			watchDirectory(folder);
@@ -52,8 +48,5 @@ public class HandwrittenCodeProcessor implements ComponentProcessor {
 		ctx.addFolderWatcher(folder.getPath(),folderWatcher);
 	}
 
-	protected void watchFile(ApplicationFile file) {
-		
-	}
-	
 }
+
