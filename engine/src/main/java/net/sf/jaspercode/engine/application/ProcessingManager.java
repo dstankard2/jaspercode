@@ -402,7 +402,7 @@ public class ProcessingManager {
 				}
 			}
 			toProcess.removeAll(r);
-			folderWatchersUpdated = true;
+			fileWatchersUpdated = true;
 		}
 		
 		if (item instanceof BuildComponentEntry) {
@@ -431,11 +431,13 @@ public class ProcessingManager {
 	protected void removeSourceFile(String path) {
 		List<Integer> origs = this.sourceFileOriginators.get(path);
 		List<Integer> todo = new ArrayList<>(origs);
+
+		applicationManager.removeSourceFile(path);
+		this.sourceFileOriginators.remove(path);
+		
 		for(Integer i : todo) {
 			this.unloadItem(i, false);
 		}
-		applicationManager.removeSourceFile(path);
-		this.sourceFileOriginators.remove(path);
 	}
 
 	// Remove the resource watchers that originate from the given ID
@@ -538,14 +540,23 @@ public class ProcessingManager {
 	// Unloads the item.  Re-adds it if remove is false
 	protected void unloadItem(int id, boolean remove) {
 		Tracked tracked = getItem(id);
+		boolean processedAlready = true;
 
 		if ((tracked==null) || (id<1)) return;
 
-		jasperResources.engineDebug("Removing item id "+id+" with name '"+tracked.getName()+"' with remove = "+remove);
+		// A file watcher that has not been processed already does not need to be removed (?)
+		if (tracked instanceof FileWatcherRecord) {
+			FileWatcherRecord r = (FileWatcherRecord)tracked;
+			if (r.getLastProcessed()==0) processedAlready = false;
+		}
+		
 		removeItem(tracked, remove);
-		removeTrackingEntries(id);
-		removeResourceWatchersFromOriginator(id);
-		removeSourceFilesFromOriginator(id);
+		if (processedAlready) {
+			jasperResources.engineDebug("Removing item id "+id+" with name '"+tracked.getName()+"' with remove = "+remove);
+			removeTrackingEntries(id);
+			removeResourceWatchersFromOriginator(id);
+			removeSourceFilesFromOriginator(id);
+		}
 
 		if (!remove) {
 			if (tracked instanceof BuildComponentEntry) {
@@ -558,8 +569,10 @@ public class ProcessingManager {
 				//this.checkFolderWatchers();
 				System.out.println("TODO: Determine what to do on folder watcher re-add");
 			} else if (tracked instanceof FileWatcherRecord) {
+				FileWatcherRecord rec = (FileWatcherRecord)tracked;
 				items.add((FileWatcherRecord)tracked);
 				fileWatchersUpdated = true;
+				rec.resetLastProcessed();
 			} else {
 				System.err.println("Couldn't re-add item to processing");
 			}
@@ -606,9 +619,15 @@ public class ProcessingManager {
 			String path = rec.getPath();
 			long lastProcessed = rec.getLastProcessed();
 			UserFile userFile = userFiles.get(path);
-			if (userFile==null) continue;
+			if (userFile==null) {
+				// Need to unload this file watcher?
+				continue;
+			}
 			long fileLastModified = userFile.getLastModified();
 			if (fileLastModified > lastProcessed) {
+				if (lastProcessed>0) {
+					this.unloadItem(rec.getId(), false);					
+				}
 				try {
 					FileWatcherEntry e = rec.entry(userFile);
 					toProcess.add(e);
@@ -619,24 +638,6 @@ public class ProcessingManager {
 					return false;
 				}
 			}
-			/*
-			for(Entry<String,UserFile> entry : userFiles.entrySet()) {
-				String filePath = entry.getKey();
-				UserFile userFile = entry.getValue();
-				if (!filePath.equals(path)) continue;
-				long fileLastModified = userFile.getLastModified();
-				if (fileLastModified <= lastProcessed) continue;
-				try {
-					FileWatcherEntry e = rec.entry(userFile);
-					toProcess.add(e);
-					this.jasperResources.engineDebug("Item '"+e.getId()+"' is adding file watcher to process for file '"+userFile.getPath()+"'");
-				} catch(JasperException e) {
-					this.state = ProcessingState.ERROR;
-					this.applicationLog.error("Couldn't initialize file watcher", e);
-					return false;
-				}
-			}
-			*/
 		}
 		fileWatchersUpdated = false;
 

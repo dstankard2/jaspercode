@@ -65,6 +65,10 @@ public abstract class ProcessableBase extends ConfigurableProcessable implements
 		this.configOverride = configOverride;
 	}
 	
+	public ProcessorContextImpl getProcessorContext() {
+		return processorContext;
+	}
+
 	protected String getProperty(String name) {
 		if (configOverride.get(name)!=null) return configOverride.get(name);
 		return componentFile.getFolder().getProperties().get(name);

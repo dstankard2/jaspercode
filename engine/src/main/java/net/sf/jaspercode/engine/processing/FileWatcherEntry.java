@@ -54,7 +54,7 @@ public class FileWatcherEntry extends ProcessableBase {
 		
 		this.state = ProcessingState.PROCESSING;
 		try {
-			fileWatcher.init(processorContext);
+			//fileWatcher.init(processorContext);
 			fileWatcher.processUpdates();
 			//fileWatcher.process(applicationFile);
 			this.state = ProcessingState.COMPLETE;

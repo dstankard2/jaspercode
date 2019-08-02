@@ -15,7 +15,6 @@ public class FileWatcherRecord implements Tracked {
 	protected int id = 0;
 	protected ApplicationContext applicationContext = null;
 	protected ProcessingContext processingContext = null;
-	protected long lastRun = 0;
 	protected FolderWatcherEntry entry = null;
 	protected String path = null;
 	//protected Map<String,Long> filesProcessed = new HashMap<>();
@@ -31,6 +30,10 @@ public class FileWatcherRecord implements Tracked {
 		this.path = path;
 	}
 
+	public void resetLastProcessed() {
+		lastProcessed = 0;
+	}
+
 	public long getLastProcessed() {
 		return lastProcessed;
 	}
@@ -42,7 +45,7 @@ public class FileWatcherRecord implements Tracked {
 
 	@Override
 	public String getName() {
-		return "FolderWatcher["+getPath()+"]";
+		return "FileWatcher["+getPath()+"]";
 	}
 
 	@Override
@@ -60,6 +63,7 @@ public class FileWatcherRecord implements Tracked {
 
 	public FileWatcherEntry entry(UserFile userFile) throws JasperException {
 		FileWatcherEntry ret = new FileWatcherEntry(path, applicationContext, originatorFile, processingContext, id, watcher, this, userFile);
+		watcher.init(ret.getProcessorContext());
 		watcher.fileUpdated(userFile);
 		lastProcessed = userFile.getLastModified();
 		//return new FileWatcherEntry(path, applicationContext, originatorFile, processingContext, id, watcher, this, userFile);
