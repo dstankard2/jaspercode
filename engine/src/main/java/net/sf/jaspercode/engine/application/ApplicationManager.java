@@ -145,18 +145,20 @@ public class ApplicationManager {
 			scanForModifiedFiles(changes);
 		}
 		scanForAddedFiles(changes);
-		if (changes.size()>0) {
+
+		boolean changeDetected = (changes.size()>0) || (userFileChangeDetected) || (jasperPropertiesChanged);
+
+		if (changeDetected) {
 			if (!firstScan) {
 				System.out.println("*** Begin scan of application '"+this.getApplicationName()+"'");
 			}
 			
 		} else if (firstScan) {
 			System.out.println("*** Initial scan found no files - Ending ***");
-			return;
+			//firstScan = false;
+			//return;
 		}
 		
-		boolean changeDetected = (changes.size()>0) || (userFileChangeDetected) || (jasperPropertiesChanged);
-
 		if (changeDetected) {
 			jasperPropertiesChanged = false;
 			for(ResourceChange change : changes) {
@@ -277,7 +279,7 @@ public class ApplicationManager {
 	public void handleSystemAttributesFileChange(SystemAttributesFile f) {
 		Map<String,String> newAttributes = new HashMap<>();
 		Map<String,String> oldAttributes = new HashMap<>();
-		
+
 		if (f!=null) {
 			newAttributes = f.getSystemAttributes();
 		}
