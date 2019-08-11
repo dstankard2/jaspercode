@@ -67,7 +67,7 @@ public class TemplateSetsProcessor implements ComponentProcessor {
 				throw new JasperException("Resource '"+folder.getPath()+"' is not an application resource");
 			}
 			TemplateFolderWatcher watcher = new TemplateFolderWatcher(ref, serviceName, folderRef, folderTypeName, priority, (ApplicationFolder)res);
-			ctx.addFolderWatcher(folder.getPath(), watcher);
+			ctx.addFolderWatcher(res.getPath(), watcher);
 
 			/*
 			StandardModuleSource mod = new StandardModuleSource(folderTypeName);

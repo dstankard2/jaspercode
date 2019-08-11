@@ -1,7 +1,5 @@
 package net.sf.jaspercode.engine.processing;
 
-import java.util.HashMap;
-
 import net.sf.jaspercode.api.ApplicationContext;
 import net.sf.jaspercode.api.resources.ApplicationFile;
 import net.sf.jaspercode.api.resources.FolderWatcher;
@@ -20,7 +18,7 @@ public class FolderWatcherEntry extends ProcessableBase {
 	private ApplicationFile applicationFile = null;
 
 	public FolderWatcherEntry(String path, ApplicationContext applicationContext, ComponentFile componentFile,ProcessingContext processingContext, int id, FolderWatcher folderWatcher,FolderWatcherRecord record, ApplicationFile applicationFile) {
-		super(applicationContext, componentFile, processingContext, id, path, new HashMap<String,String>());
+		super(applicationContext, componentFile, processingContext, id, path, componentFile.getComponentSet().getProperty());
 		this.folderWatcher = folderWatcher;
 		this.applicationFile = applicationFile;
 		this.record = record;

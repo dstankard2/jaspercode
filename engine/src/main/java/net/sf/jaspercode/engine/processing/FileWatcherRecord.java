@@ -62,12 +62,16 @@ public class FileWatcherRecord implements Tracked {
 	}
 
 	public FileWatcherEntry entry(UserFile userFile) throws JasperException {
-		FileWatcherEntry ret = new FileWatcherEntry(path, applicationContext, originatorFile, processingContext, id, watcher, this, userFile);
+		FileWatcherEntry ret = new FileWatcherEntry(path, applicationContext, originatorFile, processingContext, id, watcher, this);
 		watcher.init(ret.getProcessorContext());
 		watcher.fileUpdated(userFile);
 		lastProcessed = userFile.getLastModified();
 		//return new FileWatcherEntry(path, applicationContext, originatorFile, processingContext, id, watcher, this, userFile);
 		return ret;
+	}
+	
+	public boolean removeOnUnload() {
+		return watcher.removeOnUnload();
 	}
 	
 }

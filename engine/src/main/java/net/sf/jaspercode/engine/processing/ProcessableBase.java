@@ -12,6 +12,7 @@ import net.sf.jaspercode.api.ApplicationContext;
 import net.sf.jaspercode.api.BuildContext;
 import net.sf.jaspercode.api.SourceFile;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.config.Property;
 import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.plugin.ProcessorLogMessage;
 import net.sf.jaspercode.api.resources.FileWatcher;
@@ -56,13 +57,18 @@ public abstract class ProcessableBase extends ConfigurableProcessable implements
 	
 	protected ProcessingState state = null;
 	
-	public ProcessableBase(ApplicationContext applicationContext,ComponentFile componentFile,ProcessingContext processingContext,int id,String name,Map<String,String> configOverride) {
+	public ProcessableBase(ApplicationContext applicationContext,ComponentFile componentFile,ProcessingContext processingContext,int id,String name,List<Property> fileProperties) {
 		this.applicationContext = applicationContext;
 		this.componentFile = componentFile;
 		this.name = name;
 		this.processingContext = processingContext;
 		this.id = id;
-		this.configOverride = configOverride;
+		configOverride = new HashMap<>();
+		if (fileProperties!=null) {
+			for(Property prop : fileProperties) {
+				configOverride.put(prop.getName(), prop.getValue());
+			}
+		}
 	}
 	
 	public ProcessorContextImpl getProcessorContext() {

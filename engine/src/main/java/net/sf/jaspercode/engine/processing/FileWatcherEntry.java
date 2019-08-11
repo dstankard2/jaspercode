@@ -1,7 +1,5 @@
 package net.sf.jaspercode.engine.processing;
 
-import java.util.HashMap;
-
 import net.sf.jaspercode.api.ApplicationContext;
 import net.sf.jaspercode.api.resources.ApplicationFile;
 import net.sf.jaspercode.api.resources.FileWatcher;
@@ -18,12 +16,10 @@ public class FileWatcherEntry extends ProcessableBase {
 	private FileWatcher fileWatcher = null;
 	private FileWatcherRecord record = null;
 	private String path = null;
-	private ApplicationFile applicationFile = null;
 
-	public FileWatcherEntry(String path, ApplicationContext applicationContext, ComponentFile componentFile,ProcessingContext processingContext, int id, FileWatcher fileWatcher,FileWatcherRecord record, UserFile applicationFile) {
-		super(applicationContext, componentFile, processingContext, id, path, new HashMap<String,String>());
+	public FileWatcherEntry(String path, ApplicationContext applicationContext, ComponentFile componentFile,ProcessingContext processingContext, int id, FileWatcher fileWatcher,FileWatcherRecord record) {
+		super(applicationContext, componentFile, processingContext, id, path, componentFile.getComponentSet().getProperty());
 		this.fileWatcher = fileWatcher;
-		this.applicationFile = applicationFile;
 		this.record = record;
 		this.path = path;
 		this.log = new ProcessorLog(getName());

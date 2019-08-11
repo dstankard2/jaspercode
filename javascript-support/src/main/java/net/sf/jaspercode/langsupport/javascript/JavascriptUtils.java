@@ -20,7 +20,12 @@ public class JavascriptUtils {
 		if (path==null) {
 			throw new JasperException("Couldn't find required property 'javascript.module.source'");
 		}
-		String fullPath = base + '/' + path;
+		String fullPath;
+		if ((base.endsWith("/")) || (path.startsWith("/"))) {
+			fullPath = base+path;
+		} else {
+			fullPath = base+'/'+path;
+		}
 
 		ctx.getLog().info("Found Javascript module sourcefile as '"+fullPath+"'");
 		ret = (ModuleSourceFile)ctx.getSourceFile(fullPath);

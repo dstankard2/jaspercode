@@ -617,6 +617,36 @@ public class ProcessingManager {
 		
 		Map<String,UserFile> userFiles = applicationManager.getUserFiles();
 
+		for(FileWatcherRecord rec : this.getFileWatcherRecords()) {
+			String path = rec.getPath();
+			long lastProcessed = rec.getLastProcessed();
+			UserFile userFile = userFiles.get(path);
+			if (userFile==null) {
+				// Need to unload this file watcher?
+				continue;
+			}
+			long fileLastModified = userFile.getLastModified();
+			if (fileLastModified > lastProcessed) {
+				boolean remove = rec.removeOnUnload();
+				boolean alreadyProcessed = lastProcessed > 0;
+				if (lastProcessed>0) {
+					this.unloadItem(rec.getId(), remove);
+				}
+				if ((!remove) || (!alreadyProcessed)) {
+					try {
+						FileWatcherEntry e = rec.entry(userFile);
+						toProcess.add(e);
+						this.jasperResources.engineDebug("Item '"+e.getId()+"' is adding file watcher to process for file '"+userFile.getPath()+"'");
+					} catch(JasperException e) {
+						this.state = ProcessingState.ERROR;
+						this.applicationLog.error("Couldn't initialize file watcher", e);
+						return false;
+					}
+				}
+			}
+		}
+		fileWatchersUpdated = false;
+
 		for(FolderWatcherRecord rec : this.getFolderWatcherRecords()) {
 			String path = rec.getPath();
 			Map<String,Long> processed = rec.getFilesProcessed();
@@ -648,32 +678,6 @@ public class ProcessingManager {
 			}
 		}
 		folderWatchersUpdated = false;
-
-		for(FileWatcherRecord rec : this.getFileWatcherRecords()) {
-			String path = rec.getPath();
-			long lastProcessed = rec.getLastProcessed();
-			UserFile userFile = userFiles.get(path);
-			if (userFile==null) {
-				// Need to unload this file watcher?
-				continue;
-			}
-			long fileLastModified = userFile.getLastModified();
-			if (fileLastModified > lastProcessed) {
-				if (lastProcessed>0) {
-					this.unloadItem(rec.getId(), false);					
-				}
-				try {
-					FileWatcherEntry e = rec.entry(userFile);
-					toProcess.add(e);
-					this.jasperResources.engineDebug("Item '"+e.getId()+"' is adding file watcher to process for file '"+userFile.getPath()+"'");
-				} catch(JasperException e) {
-					this.state = ProcessingState.ERROR;
-					this.applicationLog.error("Couldn't initialize file watcher", e);
-					return false;
-				}
-			}
-		}
-		fileWatchersUpdated = false;
 
 		userFileCheckRequired = false;
 		return true;

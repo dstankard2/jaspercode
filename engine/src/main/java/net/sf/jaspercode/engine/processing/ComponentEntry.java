@@ -1,7 +1,5 @@
 package net.sf.jaspercode.engine.processing;
 
-import java.util.HashMap;
-
 import net.sf.jaspercode.api.ApplicationContext;
 import net.sf.jaspercode.api.ComponentProcessor;
 import net.sf.jaspercode.api.config.Component;
@@ -17,7 +15,7 @@ public class ComponentEntry extends ProcessableBase implements Tracked {
 	private int originatorId = -1;
 
 	public ComponentEntry(ApplicationContext applicationContext,ComponentFile componentFile, ProcessingContext processingContext, Component component, ComponentPattern pattern, int id, int originatorId) {
-		super(applicationContext, componentFile, processingContext,id,component.getComponentName(), new HashMap<>());
+		super(applicationContext, componentFile, processingContext,id,component.getComponentName(), componentFile.getComponentSet().getProperty());
 		this.component = component;
 		this.pattern = pattern;
 		this.originatorId = originatorId;

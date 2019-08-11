@@ -13,5 +13,11 @@ public interface FileWatcher {
 	void fileUpdated(ApplicationFile changedFile) throws JasperException;
 
 	void processUpdates() throws JasperException;
+
+	/**
+	 * Temporary - should we remove this file watcher when the file is updated?
+	 * @return
+	 */
+	boolean removeOnUnload();
 	
 }
