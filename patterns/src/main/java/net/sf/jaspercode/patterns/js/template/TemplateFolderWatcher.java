@@ -110,9 +110,6 @@ public class TemplateFolderWatcher implements FolderWatcher {
 			module = (StandardModuleSource)src.getModule(folderTypeName);
 		}
 
-
-		//src.addModule(module);
-
 		return Pair.of(folderType,module);
 	}
 

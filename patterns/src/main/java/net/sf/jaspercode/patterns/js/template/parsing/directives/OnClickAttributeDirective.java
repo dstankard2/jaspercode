@@ -21,13 +21,13 @@ public class OnClickAttributeDirective extends AttributeDirectiveBase {
 		ctx.continueRenderElement(ctx.getExecCtx());
 		String var = ctx.getElementVarName();
 
-		b.append(var+".onclick = function($event) {\n");
+		b.append(var+".addEventListener('click', function($event) {\n");
 		b.append("$event.stopPropagation();\n");
 		b.append(click);
 		if (!click.endsWith(";")) {
 			b.append(";");
 		}
-		b.append("\n}\n");
+		b.append("\n});\n");
 	}
 
 }

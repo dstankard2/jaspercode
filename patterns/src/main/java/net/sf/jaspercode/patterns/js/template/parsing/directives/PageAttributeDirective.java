@@ -56,13 +56,14 @@ public class PageAttributeDirective extends AttributeDirectiveBase {
 			fnCode.append("var "+modelRef+" = _page.model;\n");
 			execCtx.addVariable(modelRef, pageInfo.getModelType().getName());
 		}
+
 		// Get the page renderer
 		String ref = ctx.getProcessorContext().getProperty("page.template.objRef");
-		
+
 		if (ref==null) {
 			throw new JasperException("Page Attribute directive requires config property 'page.template.objRef' which should be a reference to an object on the window that will render the page");
 		}
-		
+
 		//String ref = ctx.getTemplateObj();
 		pageInfo.setPageRendererObj(ref);
 		pageInfo.setPageRendererRule(op);
@@ -72,65 +73,7 @@ public class PageAttributeDirective extends AttributeDirectiveBase {
 		fnCode.append("var "+DirectiveUtils.EVENT_DISPATCHER_FN_VAR+" = _page.event;\n");
 		
 		ctx.continueRenderElement(execCtx);
-
-		/* TODO: Move appropriate code to page builder
-
-		String typeName = ctx.getProcessorContext().getSystemAttribute(pageName);
-		if (typeName==null) {
-			throw new JasperException("Could not find a page called '"+pageName+"'");
-		}
-		JavascriptServiceType pageType = JasperUtils.getType(JavascriptServiceType.class, typeName, ctx.getProcessorContext());
-		if (DirectiveUtils.getPageName(ctx)!=null) {
-			throw new JasperException("Only one page may be defined for any element - pages must be in separate locations");
-		}
-		String pageVar = DirectiveUtils.PAGE_VAR;
-		b.append(pageType.declare(pageVar, execCtx).getCodeText());
-		b.append(pageType.instantiate(pageVar).getCodeText());
-		execCtx.addVariable(pageVar, pageType.getName());
-		
-		if (pageRef!=null) {
-			if (execCtx.getVariableType(pageRef)!=null) {
-				throw new JasperException("Couldn't make a page ref called '"+pageRef+"' - that variable already exists");
-			}
-			b.append("var "+pageRef+" = "+DirectiveUtils.PAGE_VAR+";\n");
-			execCtx.addVariable(pageRef, pageType.getName());
-		}
-
-		ctx.continueRenderElement(execCtx);
-		String var = ctx.getElementVarName();
-		b.append(var+".id = '"+pageName+"';\n");
-		StringBuilder init = PageUtils.getInitFunction(ctx.getProcessorContext(), pageName);
-		init.append("var _page;\n");
-		execCtx.addVariable("_page", pageName);
-		init.append("var "+ctx.getTemplateObj()+" = window."+ctx.getTemplateObj()+";\n");
-		init.append(JavascriptUtils.callJavascriptOperation(resultName, objName, op, execCtx, explicitParams, addSemicolon))
-		init.append(JavascriptUtils.invokeFunction("_page", ctx.getTemplateObj(), ctx.getFunction(), execCtx).getCodeText());
-		init.append("this.view.page.parentNode.replaceChild(_page,this.view.page);\n");
-		init.append("this.view.page = _page;\n");
-*/
 	}
-
-	/*
-	public static String getPageName(DirectiveContext ctx) {
-		String ret = null;
-		
-		if (ctx.getExecCtx().getVariableType("_page")!=null) {
-			ret = ctx.getExecCtx().getVariableType("_page");
-		}
-		
-		return ret;
-	}
-	
-	public static PageModelType getPageModelType(DirectiveContext ctx) throws JavascribeException {
-		PageModelType ret = null;
-		
-		PageType page = (PageType)ctx.getExecCtx().getTypeForVariable("_page");
-		String modelTypeName = page.getAttributeType("model");
-		ret = (PageModelType)ctx.getProcessorContext().getType(modelTypeName);
-		
-		return ret;
-	}
-	*/
 
 }
 
