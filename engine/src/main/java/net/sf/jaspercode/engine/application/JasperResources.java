@@ -44,9 +44,13 @@ public class JasperResources implements ApplicationContext {
 	}
 	
 	public void engineDebug(String message) {
-		if (engineProperties.getDebug()) {
+		if (debug()) {
 			System.out.println("[Engine-Debug] "+message);
 		}
+	}
+	
+	public boolean debug() {
+		return engineProperties.getDebug();
 	}
 }
 

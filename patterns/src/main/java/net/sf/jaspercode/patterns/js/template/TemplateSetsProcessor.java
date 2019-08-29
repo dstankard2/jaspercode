@@ -69,17 +69,6 @@ public class TemplateSetsProcessor implements ComponentProcessor {
 			TemplateFolderWatcher watcher = new TemplateFolderWatcher(ref, serviceName, folderRef, folderTypeName, priority, (ApplicationFolder)res);
 			ctx.addFolderWatcher(res.getPath(), watcher);
 
-			/*
-			StandardModuleSource mod = new StandardModuleSource(folderTypeName);
-			src.addModule(mod);
-			// Templating framework
-			mod.addInternalFunction(DirectiveUtils.getInvokeRem());
-			mod.addInternalFunction(DirectiveUtils.getRem());
-			mod.addInternalFunction(DirectiveUtils.getIns());
-			
-			JavascriptServiceType folderType = new JavascriptServiceType(folderTypeName,true,ctx);
-			ctx.addVariableType(folderType);
-			*/
 		}
 	}
 

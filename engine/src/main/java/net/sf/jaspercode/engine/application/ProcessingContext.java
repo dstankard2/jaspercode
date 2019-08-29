@@ -1,8 +1,8 @@
 package net.sf.jaspercode.engine.application;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import net.sf.jaspercode.api.SourceFile;
 import net.sf.jaspercode.api.config.BuildComponent;
@@ -30,9 +30,9 @@ public class ProcessingContext {
 	}
 
 	public void objectDependency(int id,String key) {
-		List<Integer> ids = processingManager.getObjectOriginators().get(key);
+		Set<Integer> ids = processingManager.getObjectOriginators().get(key);
 		if (ids==null) {
-			ids = new ArrayList<>();
+			ids = new HashSet<>();
 			processingManager.getObjectOriginators().put(key, ids);
 		}
 		if (!ids.contains(id))
@@ -42,9 +42,9 @@ public class ProcessingContext {
 		return processingManager.getObjects().get(key);
 	}
 	public void setObject(int id,String key,Object value) {
-		List<Integer> ids = processingManager.getObjectOriginators().get(key);
+		Set<Integer> ids = processingManager.getObjectOriginators().get(key);
 		if (ids==null) {
-			ids = new ArrayList<>();
+			ids = new HashSet<>();
 			processingManager.getObjectOriginators().put(key, ids);
 		}
 		if (!ids.contains(id))
@@ -56,9 +56,9 @@ public class ProcessingContext {
 	// Originate means that the item is saved in the processing manager
 	public void originateSystemAttribute(int id,String name,String type) {
 		processingManager.getSystemAttributes().put(name, type);
-		List<Integer> ids = processingManager.getSystemAttributeOriginators().get(name);
+		Set<Integer> ids = processingManager.getSystemAttributeOriginators().get(name);
 		if (ids==null) {
-			ids = new ArrayList<>();
+			ids = new HashSet<>();
 			processingManager.getSystemAttributeOriginators().put(name, ids);
 		}
 		if (!ids.contains(id))
@@ -66,18 +66,18 @@ public class ProcessingContext {
 	}
 	public void originateObject(int id,String name,Object value) {
 		processingManager.getObjects().put(name, value);
-		List<Integer> ids = processingManager.getObjectOriginators().get(name);
+		Set<Integer> ids = processingManager.getObjectOriginators().get(name);
 		if (ids==null) {
-			ids = new ArrayList<>();
+			ids = new HashSet<>();
 			processingManager.getObjectOriginators().put(name, ids);
 		}
 		if (!ids.contains(id))
 			ids.add(id);
 	}
 	public void originateObject(int id,String name) {
-		List<Integer> ids = processingManager.getObjectOriginators().get(name);
+		Set<Integer> ids = processingManager.getObjectOriginators().get(name);
 		if (ids==null) {
-			ids = new ArrayList<>();
+			ids = new HashSet<>();
 			processingManager.getObjectOriginators().put(name, ids);
 		}
 		if (!ids.contains(id))
@@ -85,10 +85,10 @@ public class ProcessingContext {
 	}
 	public void originateType(int id,String lang,VariableType variableType) {
 		String name = variableType.getName();
-		Map<String,List<Integer>> origs = processingManager.getVariableTypeOriginators(lang);
-		List<Integer> ids = origs.get(name);
+		Map<String,Set<Integer>> origs = processingManager.getVariableTypeOriginators(lang);
+		Set<Integer> ids = origs.get(name);
 		if (ids==null) {
-			ids = new ArrayList<>();
+			ids = new HashSet<>();
 			origs.put(name, ids);
 		}
 		if (!ids.contains(id))
@@ -104,20 +104,20 @@ public class ProcessingContext {
 	// Depend on items: system attributes, objects, variable types
 	// Dependency means that the item is referenced
 	public void dependOnSystemAttribute(int id,String name) {
-		Map<String,List<Integer>> deps = processingManager.getSystemAttributeDependencies();
-		List<Integer> ids = deps.get(name);
+		Map<String,Set<Integer>> deps = processingManager.getSystemAttributeDependencies();
+		Set<Integer> ids = deps.get(name);
 		if (ids==null) {
-			ids = new ArrayList<>();
+			ids = new HashSet<>();
 			deps.put(name, ids);
 		}
 		if (!ids.contains(id))
 			ids.add(id);
 	}
 	public void dependOnType(int id,String lang,String typeName) {
-		Map<String,List<Integer>> deps = processingManager.getVariableTypeDependencies(lang);
-		List<Integer> ids = deps.get(typeName);
+		Map<String,Set<Integer>> deps = processingManager.getVariableTypeDependencies(lang);
+		Set<Integer> ids = deps.get(typeName);
 		if (ids==null) {
-			ids = new ArrayList<>();
+			ids = new HashSet<>();
 			deps.put(typeName, ids);
 		}
 		if (!ids.contains(id))

@@ -3,9 +3,13 @@ package net.sf.jaspercode.engine.application;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+
+import org.apache.commons.lang3.tuple.Pair;
 
 import net.sf.jaspercode.api.SourceFile;
 import net.sf.jaspercode.api.config.BuildComponent;
@@ -48,6 +52,7 @@ import net.sf.jaspercode.engine.processing.UnloadComponentFileEntry;
 
 public class ProcessingManager {
 	
+	private DependencyManager dependencyManager = null;
 	private ApplicationManager applicationManager = null;
 	private EnginePatterns patterns = null;
 	private EngineLanguages languages = null;
@@ -68,24 +73,6 @@ public class ProcessingManager {
 	// Variable Types
 	private Map<String,Map<String,VariableType>> variableTypes = new HashMap<>();
 
-	// Originators
-	// Variable Types
-	private Map<String,Map<String,List<Integer>>> variableTypeOriginators = new HashMap<>();
-	// System attributes
-	private Map<String,List<Integer>> systemAttributeOriginators = new HashMap<>();
-	//  Source Files
-	private Map<String,List<Integer>> sourceFileOriginators = new HashMap<>();
-	// Objects
-	private Map<String,List<Integer>> objectOriginators = new HashMap<>();
-
-	// Dependencies.  
-	// Source Files don't have dependents, only originators
-	// Objects don't have dependents, only originators
-	// Variable Types
-	private Map<String,Map<String,List<Integer>>> variableTypeDependencies = new HashMap<>();
-	// System attributes
-	private Map<String,List<Integer>> systemAttributeDependencies = new HashMap<>();
-
 	// Build components, components and resource watcher records
 	private List<Tracked> items = new ArrayList<>();
 
@@ -101,6 +88,17 @@ public class ProcessingManager {
 	// Should we check file watchers at the start of processing?
 	private boolean fileWatchersUpdated = false;
 	
+	public ProcessingManager(ApplicationManager applicationManager, EnginePatterns patterns,
+			EngineLanguages languages, JasperResources resourceContext,
+			ProcessorLog applicationLog) {
+		this.applicationManager = applicationManager;
+		this.patterns = patterns;
+		this.languages = languages;
+		this.jasperResources = resourceContext;
+		this.applicationLog = applicationLog;
+		this.dependencyManager = new DependencyManager(globalSystemAttributes, jasperResources);
+	}
+
 	public void addGlobalSystemAttribute(String name, String type) {
 		if (globalSystemAttributes.get(name)==null) {
 			globalSystemAttributes.put(name, type);
@@ -112,47 +110,20 @@ public class ProcessingManager {
 	public void removeGlobalSystemAttribute(String name) {
 		// TODO: Might need to do something else here
 		globalSystemAttributes.remove(name);
-		List<Integer> deps = this.systemAttributeDependencies.get(name);
-		List<Integer> originators = systemAttributeOriginators.get(name);
+		boolean used = dependencyManager.systemAttributeHasDependencies(name);
 
-		if (originators.size()==0) {
-			this.systemAttributes.remove(name);
+		if (!used) {
+			systemAttributes.remove(name);
+			return;
 		}
-		
-		for(Integer id : deps) {
-			unloadItem(id, false);
-		}
-		for(Integer id : originators) {
+		Set<Integer> items = dependencyManager.removeSystemAttribute(name);
+		for(Integer id : items) {
 			unloadItem(id, false);
 		}
 	}
-
-	/*
-	protected void unloadItemsForAttribute(String systemAttribute) {
-		List<Integer> deps = this.systemAttributeDependencies.get(systemAttribute);
-		List<Integer> originators = systemAttributeOriginators.get(systemAttribute);
-
-		for(Integer id : deps) {
-			unloadItem(id, false);
-		}
-		for(Integer id : originators) {
-			unloadItem(id, false);
-		}
-	}
-	*/
 
 	public ProcessingState getState() {
 		return state;
-	}
-
-	public ProcessingManager(ApplicationManager applicationManager, EnginePatterns patterns,
-			EngineLanguages languages, JasperResources resourceContext,
-			ProcessorLog applicationLog) {
-		this.applicationManager = applicationManager;
-		this.patterns = patterns;
-		this.languages = languages;
-		this.jasperResources = resourceContext;
-		this.applicationLog = applicationLog;
 	}
 
 	/**
@@ -417,31 +388,25 @@ public class ProcessingManager {
 	}
 
 	protected void removeSourceFilesFromOriginator(int id) {
-		List<String> toRemove = new ArrayList<>();
-		
-		for(Entry<String,List<Integer>> entry : sourceFileOriginators.entrySet()) {
-			if (entry.getValue().contains(id)) {
-				toRemove.add(entry.getKey());
-			}
-		}
+		Set<String> toRemove = dependencyManager.getSourceFilesFromOriginator(id);
+
 		for(String s : toRemove) {
 			removeSourceFile(s);
 		}
 	}
 	protected void removeSourceFile(String path) {
-		List<Integer> origs = this.sourceFileOriginators.get(path);
-		List<Integer> todo = new ArrayList<>(origs);
+		Set<Integer> toUnload = dependencyManager.removeSourceFile(path);
 
 		applicationManager.removeSourceFile(path);
-		this.sourceFileOriginators.remove(path);
-		
-		for(Integer i : todo) {
+
+		for(Integer i : toUnload) {
 			this.unloadItem(i, false);
 		}
 	}
 
 	// Remove the resource watchers that originate from the given ID
 	// They are to be removed permanently
+	// They should be removed from toProcess as well.
 	protected void removeResourceWatchersFromOriginator(int id) {
 		List<Integer> toRemove = new ArrayList<>();
 		for(FolderWatcherRecord record : this.getFolderWatcherRecords()) {
@@ -524,23 +489,46 @@ public class ProcessingManager {
 		}
 	}
 
-	protected void removeTrackingEntries(int id) {
+	// Returns list of items that should also be unloaded due to common dependencies
+	protected Set<Integer> removeTrackingEntries(int id) {
 		// System attributes
-		removeItemEntries(this.systemAttributeDependencies, id, false, false, null);
-		removeItemEntries(this.systemAttributeOriginators, id, false, true, this.systemAttributes);
+		jasperResources.engineDebug("Remove tracking entries for id "+id);
+		dependencyManager.removeSystemAttributeDependencies(id);
+		Set<Integer> toUnload = dependencyManager.removeSystemAttributeOriginators(id);
+		Set<String> attributesToRemove = dependencyManager.purgeOrphanAttributeOriginators();
+		for(String attr : attributesToRemove) {
+			jasperResources.engineDebug("Remove system attribute "+attr);
+			this.systemAttributes.remove(attr);
+		}
 
 		// Objects
-		removeItemEntries(this.objectOriginators, id, true, false, this.objects);
+		Set<String> objs = dependencyManager.getObjectDependencies(id);
+		Set<Integer> alsoUnload = dependencyManager.removeObjectDependencies(id);
+		toUnload.addAll(alsoUnload);
+		for(String obj : objs) {
+			this.objects.remove(obj);
+		}
 
 		// Types
-		unloadItemFromTypes(this.variableTypeDependencies, id, false);
-		unloadItemFromTypes(this.variableTypeOriginators, id, true);
+		dependencyManager.removeVariableTypeDependencies(id);
+		alsoUnload = dependencyManager.removeVariableTypeOriginators(id);
+		toUnload.addAll(alsoUnload);
+		Set<Pair<String,String>> orphanTypes = dependencyManager.purgeOrphanTypes();
+		for(Pair<String,String> orphan : orphanTypes) {
+			String lang = orphan.getLeft();
+			String typeName = orphan.getRight();
+			this.variableTypes.get(lang).remove(typeName);
+			jasperResources.engineDebug("Remove orphan type '"+typeName+"' for lang '"+lang+"'");
+		}
+		
+		return toUnload;
 	}
 
 	// Unloads the item.  Re-adds it if remove is false
 	protected void unloadItem(int id, boolean remove) {
 		Tracked tracked = getItem(id);
 		boolean processedAlready = true;
+		Set<Integer> toUnload = null;
 
 		if ((tracked==null) || (id<1)) return;
 
@@ -553,7 +541,7 @@ public class ProcessingManager {
 		removeItem(tracked, remove);
 		if (processedAlready) {
 			jasperResources.engineDebug("Removing item id "+id+" with name '"+tracked.getName()+"' with remove = "+remove);
-			removeTrackingEntries(id);
+			toUnload = removeTrackingEntries(id);
 			removeResourceWatchersFromOriginator(id);
 			removeSourceFilesFromOriginator(id);
 		}
@@ -577,6 +565,11 @@ public class ProcessingManager {
 				rec.resetLastProcessed();
 			} else {
 				System.err.println("Couldn't re-add item to processing");
+			}
+		}
+		if (toUnload!=null) {
+			for(Integer i : toUnload) {
+				unloadItem(i, false);
 			}
 		}
 	}
@@ -793,8 +786,9 @@ public class ProcessingManager {
 		toProcess.add(e);
 	}
 	
-	public Map<String,List<Integer>> getObjectOriginators() {
-		return objectOriginators;
+	public Map<String,Set<Integer>> getObjectOriginators() {
+		return dependencyManager.getObjectOriginators();
+		//return objectOriginators;
 	}
 	public Map<String,Object> getObjects() {
 		return objects;
@@ -802,23 +796,23 @@ public class ProcessingManager {
 	public Map<String,String> getSystemAttributes() {
 		return systemAttributes;
 	}
-	public Map<String,List<Integer>> getSystemAttributeOriginators() {
-		return systemAttributeOriginators;
+	public Map<String,Set<Integer>> getSystemAttributeOriginators() {
+		return dependencyManager.getSystemAttributeOriginators();
 	}
-	public Map<String,List<Integer>> getVariableTypeOriginators(String lang) {
-		Map<String,List<Integer>> ret = variableTypeOriginators.get(lang);
+	public Map<String,Set<Integer>> getVariableTypeOriginators(String lang) {
+		Map<String,Set<Integer>> ret = dependencyManager.getVariableTypeOriginators().get(lang);
 		if (ret==null) {
-			ret = new HashMap<String,List<Integer>>();
-			variableTypeOriginators.put(lang, ret);
+			ret = new HashMap<String,Set<Integer>>();
+			dependencyManager.getVariableTypeOriginators().put(lang, ret);
 		}
 		return ret;
 	}
-	public Map<String,List<Integer>> getVariableTypeDependencies(String lang) {
-		Map<String,List<Integer>> ret = this.variableTypeDependencies.get(lang);
+	public Map<String,Set<Integer>> getVariableTypeDependencies(String lang) {
+		Map<String,Set<Integer>> ret = this.dependencyManager.getVariableTypeDependencies().get(lang);
 
 		if (ret==null) {
 			ret = new HashMap<>();
-			this.variableTypeDependencies.put(lang, ret);
+			this.dependencyManager.getVariableTypeDependencies().put(lang, ret);
 		}
 		return ret;
 		//return this.variableTypeDependencies.get(lang);
@@ -835,18 +829,18 @@ public class ProcessingManager {
 		}
 		return ret;
 	}
-	public Map<String,List<Integer>> getSystemAttributeDependencies() {
-		return systemAttributeDependencies;
+	public Map<String,Set<Integer>> getSystemAttributeDependencies() {
+		return dependencyManager.getSystemAttributeDependencies();
 	}
 	public SourceFile getSourceFile(String path) {
 		return applicationManager.getSourceFile(path);
 	}
 	public void addSourceFile(int id,SourceFile sourceFile) {
 		applicationManager.addSourceFile(sourceFile);
-		List<Integer> ids = sourceFileOriginators.get(sourceFile.getPath());
+		Set<Integer> ids = dependencyManager.getSourceFileOriginators().get(sourceFile.getPath());
 		if (ids==null) {
-			ids = new ArrayList<>();
-			sourceFileOriginators.put(sourceFile.getPath(), ids);
+			ids = new HashSet<>();
+			dependencyManager.getSourceFileOriginators().put(sourceFile.getPath(), ids);
 		}
 		if (!ids.contains(id)) {
 			ids.add(id);
@@ -863,10 +857,10 @@ public class ProcessingManager {
 	 * Create application snapshot
 	 */
 
-	protected List<String> searchMapForId(Map<String,List<Integer>> map, int id) {
+	protected List<String> searchMapForId(Map<String,Set<Integer>> map, int id) {
 		List<String> ret = new ArrayList<>();
 		
-		for(Entry<String,List<Integer>> entry : map.entrySet()) {
+		for(Entry<String,Set<Integer>> entry : map.entrySet()) {
 			if (entry.getValue().contains(id)) {
 				ret.add(entry.getKey());
 			}
@@ -874,12 +868,12 @@ public class ProcessingManager {
 		
 		return ret;
 	}
-	protected List<TypeInfo> searchTypes(Map<String,Map<String,List<Integer>>> map,int id) {
+	protected List<TypeInfo> searchTypes(Map<String,Map<String,Set<Integer>>> map,int id) {
 		List<TypeInfo> ret = new ArrayList<>();
 		
-		for(Entry<String,Map<String,List<Integer>>> entry : map.entrySet()) {
+		for(Entry<String,Map<String,Set<Integer>>> entry : map.entrySet()) {
 			String lang = entry.getKey();
-			for(Entry<String,List<Integer>> e : entry.getValue().entrySet()) {
+			for(Entry<String,Set<Integer>> e : entry.getValue().entrySet()) {
 				if (e.getValue().contains(id)) {
 					ret.add(new TypeInfo(lang,e.getKey()));
 				}
@@ -914,11 +908,11 @@ public class ProcessingManager {
 					ret.add(sn);
 					sn.setId(e.getId());
 					sn.setName(e.getName());
-					sn.setSystemAttributesOriginated(searchMapForId(this.systemAttributeOriginators, e.getId()));
-					sn.setSystemAttributeDependencies(searchMapForId(this.systemAttributeDependencies, e.getId()));
-					sn.setTypesOriginated(searchTypes(this.variableTypeOriginators, e.getId()));
-					sn.setTypeDependencies(searchTypes(this.variableTypeDependencies, e.getId()));
-					sn.setSourceFilePaths(searchMapForId(this.sourceFileOriginators, e.getId()));
+					sn.setSystemAttributesOriginated(searchMapForId(dependencyManager.getSystemAttributeOriginators(), e.getId()));
+					sn.setSystemAttributeDependencies(searchMapForId(dependencyManager.getSystemAttributeDependencies(), e.getId()));
+					sn.setTypesOriginated(searchTypes(dependencyManager.getVariableTypeOriginators(), e.getId()));
+					sn.setTypeDependencies(searchTypes(dependencyManager.getVariableTypeDependencies(), e.getId()));
+					sn.setSourceFilePaths(searchMapForId(dependencyManager.getSourceFileOriginators(), e.getId()));
 				}
 			}
 		}
@@ -927,17 +921,19 @@ public class ProcessingManager {
 	}
 	public List<SystemAttributeSnapshot> getSystemAttributeSnapshots() {
 		List<SystemAttributeSnapshot> ret = new ArrayList<>();
+		Map<String,Set<Integer>> systemAttributeDependencies = dependencyManager.getSystemAttributeDependencies();
+		Map<String,Set<Integer>> systemAttributeOriginators = dependencyManager.getSystemAttributeOriginators();
 
 		for(Entry<String,String> entry : systemAttributes.entrySet()) {
 			String name = entry.getKey();
 			String type = entry.getValue();
 			List<Integer> origs = new ArrayList<>();
 			List<Integer> deps = new ArrayList<>();
-			if (this.systemAttributeOriginators.containsKey(name)) {
-				origs.addAll(this.systemAttributeOriginators.get(name));
+			if (systemAttributeOriginators.containsKey(name)) {
+				origs.addAll(systemAttributeOriginators.get(name));
 			}
-			if (this.systemAttributeDependencies.containsKey(name)) {
-				deps.addAll(this.systemAttributeDependencies.get(name));
+			if (systemAttributeDependencies.containsKey(name)) {
+				deps.addAll(systemAttributeDependencies.get(name));
 			}
 			ret.add(new SystemAttributeSnapshot(name, type, "Placeholder", origs, deps));
 		}
@@ -948,7 +944,7 @@ public class ProcessingManager {
 	public void populateSourceFileOriginators(List<SourceFileSnapshot> srcs) {
 		for(SourceFileSnapshot src : srcs) {
 			List<Integer> origs = new ArrayList<>();
-			origs.addAll(this.sourceFileOriginators.get(src.getPath()));
+			origs.addAll(dependencyManager.getSourceFileOriginators().get(src.getPath()));
 			src.setOriginators(origs);
 		}
 	}
