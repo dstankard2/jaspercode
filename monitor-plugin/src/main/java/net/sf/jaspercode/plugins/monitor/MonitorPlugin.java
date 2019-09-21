@@ -48,7 +48,7 @@ public class MonitorPlugin implements ApplicationPlugin {
 		return null;
 	}
 
-	private void outputsourceFiles(FileWriter writer, ApplicationSnapshot snapshot) throws IOException {
+	private void outputSourceFiles(FileWriter writer, ApplicationSnapshot snapshot) throws IOException {
 		writer.write("Source Files:\n");
 		for(SourceFileSnapshot src : snapshot.getSourceFiles()) {
 			writer.write("+- "+src.getPath()+"\n");
@@ -109,13 +109,15 @@ public class MonitorPlugin implements ApplicationPlugin {
 		}
 		
 		try (FileWriter writer = new FileWriter(file)) {
-			if (showSourceFiles) {
-				outputsourceFiles(writer, snapshot);
+			if (snapshot!=null) {
+				if (showSourceFiles) {
+					outputSourceFiles(writer, snapshot);
+				}
+				if (showAttributes) {
+					outputSystemAttributes(writer,snapshot);
+				}
+				writer.flush();
 			}
-			if (showAttributes) {
-				outputSystemAttributes(writer,snapshot);
-			}
-			writer.flush();
 		} catch(IOException e) {
 			throw new JasperException("Monitor plugin couldn't write file '"+location+"'",e);
 		}

@@ -37,6 +37,8 @@ public class PageFnProcessor implements ComponentProcessor {
 		if (info==null) {
 			throw new JasperException("Couldn't find page '"+pageName+"' for pageModel component");
 		}
+		
+		ctx.originateVariableType(info.getPageType());
 
 		String name = comp.getName();
 		String event = comp.getEvent();

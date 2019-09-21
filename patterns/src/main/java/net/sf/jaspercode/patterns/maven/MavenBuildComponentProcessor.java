@@ -84,6 +84,7 @@ public class MavenBuildComponentProcessor implements BuildComponentProcessor {
 			HandwrittenCode code = new HandwrittenCode();
 			String path = ctx.getFolder().getPath()+"src/main/java";
 			code.setPath(path);
+			code.setPriority(0);
 			ctx.addComponent(code);
 		}
 

@@ -46,14 +46,11 @@ public class PageUtils {
 		String name = getPageModelTypeName(pageName);
 		return JasperUtils.getType(PageModelType.class, name, ctx);
 	}
-	
+
 	public static void addModelAttribute(String pageName,String attrib,String type,ProcessorContext ctx) throws JasperException {
 		PageModelType t = getPageModelType(pageName,ctx);
 		t.addAttribute(attrib, type);
-	}
-	
-	public static JavascriptServiceType getPageType(String pageName,ProcessorContext ctx) throws JasperException {
-		return JasperUtils.getType(JavascriptServiceType.class, "Page_"+pageName, ctx);
+		ctx.originateVariableType(t);
 	}
 	
 }

@@ -6,10 +6,13 @@ import net.sf.jaspercode.api.exception.JasperException;
 public interface FolderWatcher {
 
 	// First method called in lifecycle
-	void init(ProcessorContext ctx);
+	//void init(ProcessorContext ctx);
 
 	int getPriority();
 
-	void process(ApplicationFile changedFile) throws JasperException;
+	void process(ProcessorContext ctx,ApplicationFile changedFile) throws JasperException;
+
+	String getName();
 
 }
+

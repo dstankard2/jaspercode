@@ -55,7 +55,16 @@ public class OutputManager {
 		File outputFile = null;
 		
 		outputFile = new File(outputDir, userFile.getPath());
-		outputFile.delete();
+		if (outputFile.exists()) {
+			File dir = outputFile.getParentFile();
+			outputFile.delete();
+			if (dir.isDirectory()) {
+				if (dir.listFiles().length==0) {
+					dir.delete();
+				}
+			}
+		}
+		
 	}
 
 	public void writeUserFile(UserFile userFile) {

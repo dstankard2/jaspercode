@@ -28,14 +28,12 @@ public class ResourceManager {
 	private ApplicationFolderImpl applicationFolder;
 	private ComponentFileReader componentFileReader = null;
 	private ApplicationManager applicationManager = null;
-	private JasperResources applicationContext = null;
 	private Map<String,UserFile> userFiles = new HashMap<>();
 
 	public ResourceManager(File rootFolder,ApplicationManager applicationManager,JasperResources applicationContext) throws EngineInitException {
-		this.applicationFolder = new ApplicationFolderImpl(rootFolder, null, applicationContext);
+		this.applicationFolder = new ApplicationFolderImpl(rootFolder, null);
 		this.applicationManager = applicationManager;
 		this.componentFileReader = new ComponentFileReader(applicationContext.getXmlConfigClasses());
-		this.applicationContext = applicationContext;
 	}
 
 	public ApplicationFolderImpl getRootFolder() {
@@ -97,7 +95,7 @@ public class ResourceManager {
 				}
 			}
 		}
-		
+
 		// Check systemAttributes.properties
 		if ((isRoot) && (applicationManager.getSystemAttributesFile()!=null)) {
 			File file = getFile(files, "systemAttributes.properties");
@@ -390,7 +388,7 @@ public class ResourceManager {
 			ApplicationFolderImpl sub = folder.getSubFolders().get(f.getName());
 			if (sub==null) {
 				// This is a new directory
-				sub = new ApplicationFolderImpl(f,folder, applicationContext);
+				sub = new ApplicationFolderImpl(f,folder);
 				//results.add(sub);
 				folder.getSubFolders().put(f.getName(), sub);
 			}

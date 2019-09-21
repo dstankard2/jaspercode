@@ -17,7 +17,7 @@ public class ProcessorLog implements Log {
 		this.name = name;
 	}
 
-	public void flushToSystem() {
+	public void outputToSystem() {
 		List<ProcessorLogMessage> msgs = getMessages(true);
 		for(ProcessorLogMessage msg : msgs) {
 			String b = String.format("[%s] %s - %s", name, msg.getLevel().name(), msg.getMessage());

@@ -87,7 +87,7 @@ public class JasperAgent {
 			}
 		}
 		this.engineLogger.info("Engine plugin scan complete");
-		this.engineLogger.flushToSystem();
+		this.engineLogger.outputToSystem();
 	}
 	
 	protected void scanSingleApp() throws EngineInitException {

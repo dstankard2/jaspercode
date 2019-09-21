@@ -98,7 +98,6 @@ public class DomainDataTranslatorProcessor implements ComponentProcessor {
 		methodSrc.setBody(code.getCodeText());
 		src.addImports(code);
 		serviceType.addOperation(op);
-		ctx.originateVariableType(serviceType);
 	}
 	
 	protected String findAttribute(String dataObjectRef, JavaDataObjectType dataObjectType, String attrib, 

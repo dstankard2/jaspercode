@@ -93,6 +93,13 @@ public class DomainRuleUtils {
 		serviceFile.getSrc().setName(className);
 		ctx.addSourceFile(serviceFile);
 		
+		ctx.getLog().debug("Initializing Java domain service "+className);
+		
+		if ((serviceGroup==null) || (serviceGroup.trim().isEmpty())) {
+			ctx.getLog().warn("Found no service group name - defaulting to '"+DEFAULT_SERVICE_GROUP_NAME+"'");
+			serviceGroup = DEFAULT_SERVICE_GROUP_NAME;
+		}
+
 		// Add located service for this type
 		serviceType = new LocatedServiceType(pkg, className,ctx.getBuildContext(),pkg+'.'+serviceGroup+"Locator", serviceGroup+"Locator");
 		ctx.addVariableType(serviceType);
@@ -100,10 +107,6 @@ public class DomainRuleUtils {
 		ServiceLocatorImpl serviceLocatorType = null;
 		JavaClassSourceFile locatorSource = null;
 		
-		if (serviceGroup.trim().isEmpty()) {
-			ctx.getLog().warn("Found no service group name - defaulting to '"+DEFAULT_SERVICE_GROUP_NAME+"'");
-			serviceGroup = DEFAULT_SERVICE_GROUP_NAME;
-		}
 		if (ctx.getVariableType(serviceGroup+"Locator")==null) {
 			serviceLocatorType = new ServiceLocatorImpl(serviceGroup+"Locator",serviceGroup+"Locator",pkg,ctx.getBuildContext());
 			ctx.addVariableType(serviceLocatorType);

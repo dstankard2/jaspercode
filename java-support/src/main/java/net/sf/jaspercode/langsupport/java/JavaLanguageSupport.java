@@ -13,6 +13,7 @@ import net.sf.jaspercode.langsupport.java.types.impl.DateJavaType;
 import net.sf.jaspercode.langsupport.java.types.impl.IntegerJavaType;
 import net.sf.jaspercode.langsupport.java.types.impl.JavaListType;
 import net.sf.jaspercode.langsupport.java.types.impl.LongJavaType;
+import net.sf.jaspercode.langsupport.java.types.impl.ObjectJavaType;
 import net.sf.jaspercode.langsupport.java.types.impl.StringJavaType;
 import net.sf.jaspercode.langsupport.java.types.impl.TimestampJavaType;
 
@@ -34,6 +35,7 @@ public class JavaLanguageSupport implements LanguageSupport {
 		ret.add(new DateJavaType());
 		ret.add(new JavaListType());
 		ret.add(new BooleanJavaType());
+		ret.add(new ObjectJavaType());
 		return ret;
 	}
 

@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import net.sf.jaspercode.engine.definitions.ApplicationFolderImpl;
-import net.sf.jaspercode.engine.processing.BuildComponentEntry;
+import net.sf.jaspercode.engine.processing.BuildComponentItem;
 
 public class BuildManager {
 
@@ -36,7 +36,7 @@ public class BuildManager {
 		for(String path : changesToCheck) {
 			if (rootFolder.getResource(path)==null) continue;
 			ApplicationFolderImpl folder = rootFolder.getResource(path).getFolder();
-			BuildComponentEntry currentBuild = folder.getCurrentBuildComponent();
+			BuildComponentItem currentBuild = folder.getCurrentBuildComponent();
 			String buildFolderPath = currentBuild.getFolder().getPath();
 			if ((cleanAlways.contains(buildFolderPath)) && (!toClean.contains(buildFolderPath))) {
 				toClean.add(buildFolderPath);
@@ -96,7 +96,7 @@ public class BuildManager {
 
 	private void runClean(String path) {
 		ApplicationFolderImpl folder = (ApplicationFolderImpl)rootFolder.getResource(path);
-		BuildComponentEntry build = folder.getBuildComponent();
+		BuildComponentItem build = folder.getBuildComponent();
 
 		if (build!=null) {
 			build.clean();
@@ -105,7 +105,7 @@ public class BuildManager {
 	
 	private void runBuild(String path) {
 		ApplicationFolderImpl folder = (ApplicationFolderImpl)rootFolder.getResource(path);
-		BuildComponentEntry build = folder.getBuildComponent();
+		BuildComponentItem build = folder.getBuildComponent();
 
 		if (build!=null) {
 			build.build();
@@ -114,7 +114,7 @@ public class BuildManager {
 	
 	private void runDeploy(String path) {
 		ApplicationFolderImpl folder = (ApplicationFolderImpl)rootFolder.getResource(path);
-		BuildComponentEntry build = folder.getBuildComponent();
+		BuildComponentItem build = folder.getBuildComponent();
 
 		if (build!=null) {
 			build.deploy();
@@ -123,7 +123,7 @@ public class BuildManager {
 	
 	private void runUndeploy(String path) {
 		ApplicationFolderImpl folder = (ApplicationFolderImpl)rootFolder.getResource(path);
-		BuildComponentEntry build = folder.getBuildComponent();
+		BuildComponentItem build = folder.getBuildComponent();
 
 		if (build!=null) {
 			build.undeploy();

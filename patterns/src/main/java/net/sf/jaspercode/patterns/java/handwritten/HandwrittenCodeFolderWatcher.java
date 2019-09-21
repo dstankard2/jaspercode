@@ -6,26 +6,34 @@ import net.sf.jaspercode.api.resources.ApplicationFile;
 import net.sf.jaspercode.api.resources.FolderWatcher;
 
 public class HandwrittenCodeFolderWatcher implements FolderWatcher {
-	private ProcessorContext ctx = null;
-	//Map<String,HandwrittenCodeFileWatcher> fileWatchers = new HashMap<>();
+	//private ProcessorContext ctx = null;
+	private String path = null;
 	
-	public HandwrittenCodeFolderWatcher() {
+	public HandwrittenCodeFolderWatcher(String path) {
+		this.path = path;
 	}
 
+	@Override
+	public String getName() {
+		return "HandwrittenCodeFolderWatcher["+path+"]";
+	}
+
+	/*
 	@Override
 	public void init(ProcessorContext ctx) {
 		this.ctx = ctx;
 	}
+	*/
 
 	@Override
-	public void process(ApplicationFile applicationFile) throws JasperException {
+	public void process(ProcessorContext ctx, ApplicationFile applicationFile) throws JasperException {
 		String name = applicationFile.getName();
 		if (!name.endsWith(".java")) return;
 		
 		String path = applicationFile.getPath();
 		
-		HandwrittenCodeFileWatcher w = new HandwrittenCodeFileWatcher(path);
-		ctx.addFileWatcher(path, w);
+		HandwrittenCodeFileProcessor w = new HandwrittenCodeFileProcessor(path);
+		ctx.addFileProcessor(path, w);
 	}
 
 	@Override

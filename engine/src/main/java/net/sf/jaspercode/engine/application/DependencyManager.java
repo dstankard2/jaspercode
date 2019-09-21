@@ -10,14 +10,12 @@ import org.apache.commons.lang3.tuple.Pair;
 
 public class DependencyManager {
 
-	public DependencyManager(Map<String,String> globalSystemAttributes,JasperResources jasperResources) {
-		this.globalAttributes = globalSystemAttributes;
-		this.jasperResources = jasperResources;
+	private Map<String,String> globalAttributes = null;
+	
+	public DependencyManager(Map<String,String> globalAttributes) {
+		this.globalAttributes = globalAttributes;
 	}
 
-	private JasperResources jasperResources = null;
-	private Map<String,String> globalAttributes = new HashMap<>();
-	
 	// Originators
 	// Variable Types
 	private Map<String,Map<String,Set<Integer>>> variableTypeOriginators = new HashMap<>();
@@ -60,27 +58,7 @@ public class DependencyManager {
 		if (systemAttributeOriginators.get(name)!=null) return true;
 		return false;
 	}
-	
-	// Removes the record of the system attribute.
-	// Returns all the ids that originate and depend on the system attribute.
-	public Set<Integer> removeSystemAttribute(String name) {
-		Set<Integer> ret = new HashSet<>();
 
-		if (systemAttributeOriginators.containsKey(name)) {
-			ret.addAll(systemAttributeOriginators.get(name));
-			systemAttributeOriginators.remove(name);
-		}
-		if (systemAttributeDependencies.containsKey(name)) {
-			Set<Integer> ids = systemAttributeDependencies.get(name);
-			systemAttributeDependencies.remove(name);
-			for(Integer id : ids) {
-				if (!ret.contains(id)) ret.add(id);
-			}
-		}
-		
-		return ret;
-	}
-	
 	public Set<String> getSourceFilesFromOriginator(Integer id) {
 		Set<String> ret = new HashSet<>();
 		
@@ -209,6 +187,7 @@ public class DependencyManager {
 				}
 			}
 			for(String r : toRemove) {
+				ret.add(Pair.of(lang.getKey(), r));
 				lang.getValue().remove(r);
 			}
 		}

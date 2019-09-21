@@ -1,6 +1,7 @@
 package net.sf.jaspercode.engine.application;
 
 import net.sf.jaspercode.engine.definitions.ComponentFile;
+import net.sf.jaspercode.engine.definitions.JasperPropertiesFile;
 import net.sf.jaspercode.engine.definitions.UserFile;
 import net.sf.jaspercode.engine.definitions.WatchedResource;
 
@@ -24,6 +25,9 @@ public class ResourceChange {
 	}
 	public boolean isComponentFile() {
 		return newFile instanceof ComponentFile;
+	}
+	public boolean isJasperPropertiesFile() {
+		return newFile instanceof JasperPropertiesFile;
 	}
 
 

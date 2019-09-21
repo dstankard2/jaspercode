@@ -28,7 +28,7 @@ import net.sf.jaspercode.patterns.PatternPriority;
 import net.sf.jaspercode.patterns.java.http.JavaWebUtils;
 import net.sf.jaspercode.patterns.web.JavaWebappRuntimePlatform;
 
-public class FileProcessor {
+public class FileHandler {
 	
 	private ApplicationFile file = null;
 	private ProcessorContext ctx = null;
@@ -54,7 +54,7 @@ public class FileProcessor {
 		return javaType;
 	}
 	
-	public FileProcessor(ApplicationFile file,ProcessorContext ctx) throws IOException,JasperException {
+	public FileHandler(ApplicationFile file,ProcessorContext ctx) throws IOException,JasperException {
 		this.file = file;
 		this.ctx = ctx;
 

@@ -1,23 +1,38 @@
 package net.sf.jaspercode.engine.processing;
 
 import java.lang.reflect.Method;
+import java.util.Map;
 
 import net.sf.jaspercode.api.annotation.ConfigProperty;
+import net.sf.jaspercode.api.config.Property;
+import net.sf.jaspercode.engine.definitions.ApplicationFolderImpl;
+import net.sf.jaspercode.engine.definitions.ComponentFile;
 
-public abstract class ConfigurableProcessable implements Processable {
+public class ProcessingUtilities {
 
-	protected ProcessorLog log = null;
+	public static Map<String,String> getConfigs(ComponentFile file) {
+		Map<String,String> ret = null;
+		ApplicationFolderImpl folder = file.getFolder();
+		
+		ret = folder.getProperties();
+		//ret = folder.getJasperProperties();
 
-	protected abstract String getProperty(String name);
+		// Override folder properties with properties defined in the component file.
+		for(Property prop : file.getComponentSet().getProperty()) {
+			ret.put(prop.getName(), prop.getValue());
+		}
+		
+		return ret;
+	}
 	
-	protected boolean populateConfigurations(Object target) {
+	public static boolean populateConfigurations(Object target,ProcessorLog log,Map<String,String> configs) {
 		Class<?> compClass = target.getClass();
 		Method[] methods = compClass.getMethods();
 		
 		for(Method method : methods) {
 			ConfigProperty prop = method.getDeclaredAnnotation(ConfigProperty.class);
 			if (prop!=null) {
-				if (!handleConfigProperty(prop, method, target)) {
+				if (!handleConfigProperty(prop, method, target, log, configs)) {
 					return false;
 				}
 			}
@@ -25,23 +40,23 @@ public abstract class ConfigurableProcessable implements Processable {
 		return true;
 	}
 	// Returns true if preprocessing is successful, false otherwise
-	private boolean handleConfigProperty(ConfigProperty property, Method setter, Object target) {
+	private static boolean handleConfigProperty(ConfigProperty property, Method setter, Object target, ProcessorLog log, Map<String,String> configs) {
 		//boolean ret = false;
 		String configValue = null;
 		Class<?>[] params = setter.getParameterTypes();
 		Object valueObj = null;
 
 		if (params.length!=1) {
-			this.log.error("A method annotated with @ConfigProperty must take a single parameter which is either string or integer or boolean");
+			log.error("A method annotated with @ConfigProperty must take a single parameter which is either string or integer or boolean");
 			return false;
 		}
 		
 		boolean required = property.required();
 		String name = property.name();
 
-		configValue = getProperty(name);
+		configValue = configs.get(name);
 		if ((configValue==null) && (required)) {
-			this.log.error("Configuration property '"+name+"' is required");
+			log.error("Configuration property '"+name+"' is required");
 			return false;
 		}
 
@@ -53,7 +68,7 @@ public abstract class ConfigurableProcessable implements Processable {
 				try {
 					valueObj = Integer.parseInt(configValue);
 				} catch(NumberFormatException e) {
-					this.log.error("Configuration '"+name+"' must be an integer");
+					log.error("Configuration '"+name+"' must be an integer");
 					return false;
 				}
 			}
@@ -66,7 +81,7 @@ public abstract class ConfigurableProcessable implements Processable {
 				else if (configValue.equalsIgnoreCase("F")) valueObj = Boolean.TRUE;
 				else if (configValue.equalsIgnoreCase("N")) valueObj = Boolean.TRUE;
 				else {
-					this.log.error("Found invalid value '"+configValue+"' for boolean configuration '"+name+"'");
+					log.error("Found invalid value '"+configValue+"' for boolean configuration '"+name+"'");
 					return false;
 				}
 			}
@@ -75,10 +90,11 @@ public abstract class ConfigurableProcessable implements Processable {
 		try {
 			setter.invoke(target, valueObj);
 		} catch(Exception e) {
-			this.log.error("Couldn't call setter for config property '"+name+"'", e);
+			log.error("Couldn't call setter for config property '"+name+"'", e);
+			return false;
 		}
 
 		return true;
 	}
-
+	
 }

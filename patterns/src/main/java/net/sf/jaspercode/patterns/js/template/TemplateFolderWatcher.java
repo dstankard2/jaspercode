@@ -25,8 +25,6 @@ import net.sf.jaspercode.patterns.js.template.parsing.TemplateParser;
 public class TemplateFolderWatcher implements FolderWatcher {
 
 	private ApplicationFolder folder = null;
-	private ProcessorContext ctx = null;
-	//String folderTypeName = null;
 	int priority = 0;
 	
 	private String serviceRef = null;
@@ -45,9 +43,8 @@ public class TemplateFolderWatcher implements FolderWatcher {
 	}
 
 	@Override
-	public void init(ProcessorContext ctx) {
-		this.ctx = ctx;
-
+	public String getName() {
+		return "TemplateFolderWatcher["+folder.getPath()+"]";
 	}
 
 	// This watcher is processed just after the template set component
@@ -56,7 +53,7 @@ public class TemplateFolderWatcher implements FolderWatcher {
 		return priority;
 	}
 
-	protected Pair<JavascriptServiceType,StandardModuleSource> ensureTemplatesInfo() throws JasperException {
+	protected Pair<JavascriptServiceType,StandardModuleSource> ensureTemplatesInfo(ProcessorContext ctx) throws JasperException {
 		JavascriptServiceType templatesType = null;
 		ModuleSourceFile src = null;
 		StandardModuleSource rootModule = null;
@@ -81,7 +78,7 @@ public class TemplateFolderWatcher implements FolderWatcher {
 		return Pair.of(templatesType, rootModule);
 	}
 	
-	protected Pair<JavascriptServiceType,StandardModuleSource> ensureFolderInfo(JavascriptServiceType templatesType,StandardModuleSource rootModule) throws JasperException {
+	protected Pair<JavascriptServiceType,StandardModuleSource> ensureFolderInfo(ProcessorContext ctx,JavascriptServiceType templatesType,StandardModuleSource rootModule) throws JasperException {
 		JavascriptServiceType folderType = null;
 		StandardModuleSource module = null;
 		//new StandardModuleSource(folderTypeName);
@@ -125,7 +122,7 @@ public class TemplateFolderWatcher implements FolderWatcher {
 	}
 
 	@Override
-	public void process(ApplicationFile changedFile) throws JasperException {
+	public void process(ProcessorContext ctx, ApplicationFile changedFile) throws JasperException {
 		String filename = changedFile.getName();
 		String ruleName = null;
 		
@@ -144,26 +141,21 @@ public class TemplateFolderWatcher implements FolderWatcher {
 
 		ModuleSourceFile src = JavascriptUtils.getModuleSource(ctx);
 
-		Pair<JavascriptServiceType,StandardModuleSource> templatesInfo = ensureTemplatesInfo();
-		Pair<JavascriptServiceType,StandardModuleSource> folderInfo = ensureFolderInfo(templatesInfo.getKey(),templatesInfo.getRight());
+		Pair<JavascriptServiceType,StandardModuleSource> templatesInfo = ensureTemplatesInfo(ctx);
+		Pair<JavascriptServiceType,StandardModuleSource> folderInfo = ensureFolderInfo(ctx, templatesInfo.getKey(),templatesInfo.getRight());
 
 		JavascriptServiceType serviceType = folderInfo.getKey();
 		StandardModuleSource module = folderInfo.getRight();
 
-		/*
-		JavascriptServiceType serviceType = JasperUtils.getType(JavascriptServiceType.class, this.folderTypeName, ctx);
-		StandardModuleSource module = (StandardModuleSource)src.getModule(folderTypeName);
-		ctx.originateVariableType(serviceType);
-		*/
 		// TODO: Figure this out
 		String objRef = "templates.pages";
 
-		handleFile(changedFile,ruleName,serviceType,module,objRef,src);
+		handleFile(ctx, changedFile,ruleName,serviceType,module,objRef,src);
 
 	}
 
 	// TODO: objRef should probably come from a config property
-	protected void handleFile(ApplicationFile file,String ruleName, JavascriptServiceType folderType, StandardModuleSource mod, String objRef, ModuleSourceFile src) throws JasperException {
+	protected void handleFile(ProcessorContext ctx,ApplicationFile file,String ruleName, JavascriptServiceType folderType, StandardModuleSource mod, String objRef, ModuleSourceFile src) throws JasperException {
 		int c = 0;
 		StringBuilder templateString = new StringBuilder();
 
