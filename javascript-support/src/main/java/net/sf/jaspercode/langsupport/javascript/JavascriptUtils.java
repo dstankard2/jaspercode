@@ -84,4 +84,12 @@ public class JavascriptUtils {
 		return ret;
 	}
 
+	public static boolean isJavascriptDebug(ProcessorContext ctx) {
+		boolean ret = false;
+		String val = ctx.getProperty("javascript.debug");
+		if ((val.equalsIgnoreCase("true")) || (val.equalsIgnoreCase("T")) || (val.equalsIgnoreCase("Y"))) {
+			ret = true;
+		}
+		return ret;
+	}
 }

@@ -51,6 +51,7 @@ public class FolderWatcherProcessable extends ProcessableBase {
 				folderWatcher.process(c, userFile);
 			} catch(JasperException e) {
 				this.log.error(e.getMessage(), e);
+				ret = false;
 			}
 		}
 

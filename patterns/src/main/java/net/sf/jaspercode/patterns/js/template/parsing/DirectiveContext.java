@@ -29,6 +29,8 @@ public interface DirectiveContext {
 	List<String> getPreviousEltVars();
 	
 	void addModule(String location, String...moduleNames);
-	
+
+	boolean isJavascriptDebug();
+
 }
 

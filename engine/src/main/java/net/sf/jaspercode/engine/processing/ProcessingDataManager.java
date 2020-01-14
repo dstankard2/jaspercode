@@ -90,24 +90,30 @@ public class ProcessingDataManager {
 			} else if (!currentType.equals(type)) {
 				// Update an existing global system attribute
 				Set<Integer> ids = dependencyManager.getSystemAttributeDependencies().get(name);
-				ret.addAll(ids);
+				if (ids!=null)
+					ret.addAll(ids);
 				ids = dependencyManager.getSystemAttributeOriginators().get(name);
-				ret.addAll(ids);
+				if (ids!=null)
+					ret.addAll(ids);
 				globalSystemAttributes.put(name, type);
 				this.systemAttributes.put(name, type);
 			}
 		}
+		Set<String> toRemove = new HashSet<>();
 		for(Entry<String,String> entry : globalSystemAttributes.entrySet()) {
 			String name = entry.getKey();
 			if (attrs.get(name)==null) {
 				// Remove an existing global system attribute
 				Set<Integer> ids = dependencyManager.getSystemAttributeDependencies().get(name);
-				ret.addAll(ids);
 				ids = dependencyManager.getSystemAttributeOriginators().get(name);
-				ret.addAll(ids);
-				globalSystemAttributes.remove(name);
+				if (ids!=null)
+					ret.addAll(ids);
+				toRemove.add(name);
 				this.systemAttributes.remove(name);
 			}
+		}
+		for(String s : toRemove) {
+			globalSystemAttributes.remove(s);
 		}
 
 		Set<String> attributesToRemove = dependencyManager.purgeOrphanAttributeOriginators();

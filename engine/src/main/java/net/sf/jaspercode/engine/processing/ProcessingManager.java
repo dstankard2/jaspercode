@@ -124,9 +124,11 @@ public class ProcessingManager {
 
 	public void setGlobalSystemAttributes(Map<String,String> attributes) {
 		Set<Integer> toUnload = processingDataManager.setGlobalSystemAttributes(attributes);
+		Set<Item> itemsToAdd = new HashSet<>();
 		for(Integer i : toUnload) {
-			removeItem(i, false);
+			itemsToAdd.addAll(removeItem(i, false));
 		}
+		addItems(itemsToAdd);
 	}
 
 	// Unloads the component files and re-adds them for processing.
@@ -170,10 +172,37 @@ public class ProcessingManager {
 		return _currentId;
 	}
 
+	protected void addItems(Set<Item> itemsToAdd) {
+		if (itemsToAdd.size()==0) return;
+		for(Item item : itemsToAdd) {
+			// Re-add item
+			if (item instanceof ComponentItem) {
+				ComponentItem c = (ComponentItem)item;
+				if (!toProcess.contains(c))
+					toProcess.add(c);
+				if (!items.contains(c))
+					items.add(c);
+			}
+			else if (item instanceof FolderWatcherItem) {
+				FolderWatcherItem f = (FolderWatcherItem)item;
+				if (!items.contains(f)) {
+					items.add(f);
+				checkFilesForFolderWatcher(f);
+				}
+			}
+			else if (item instanceof BuildComponentItem) {
+				BuildComponentItem b = (BuildComponentItem)item;
+				if (!buildItemsToInit.contains(b))
+					buildItemsToInit.add(b);
+			}
+		}
+	}
+
 	public void processChanges() {
+		Set<Item> itemsToAdd = new HashSet<>();
 		// Look for userFiles removed
 		for(String f : userFilesRemoved) {
-			userFileRemoved(f);
+			itemsToAdd.addAll(userFileRemoved(f));
 		}
 		userFilesRemoved.clear();
 		// Look for component Files removed
@@ -181,7 +210,7 @@ public class ProcessingManager {
 			for(Component comp : file.getComponentSet().getComponent()) {
 				ComponentItem item = getComponentItem(comp);
 				if (item!=null) {
-					removeItem(item.getId(), true);
+					itemsToAdd.addAll(removeItem(item.getId(), true));
 				}
 			}
 		}
@@ -232,13 +261,17 @@ public class ProcessingManager {
 		if (userFilesChanged.size()>0) {
 			userFilesChanged.clear();
 		}
+
+		if (itemsToAdd.size()>0) {
+			addItems(itemsToAdd);
+		}
 		
 		runProcessables();
 	}
 	
 	protected void errorState(ProcessorLog log) {
 		this.state = ProcessingState.ERROR;
-		List<ProcessorLogMessage> msgs = log.getMessages(false);
+		List<ProcessorLogMessage> msgs = log.getMessages(true);
 		
 		for(ProcessorLogMessage msg : msgs) {
 			String m = String.format("[%s] %s", msg.getLevel().name(), msg.getMessage());
@@ -304,9 +337,11 @@ public class ProcessingManager {
 				}
 			}
 		}
+		Set<Item> itemsToAdd = new HashSet<>();
 		for(Integer id : idsToRemove) {
-			this.removeItem(id, true);
+			itemsToAdd.addAll(this.removeItem(id, true));
 		}
+		this.addItems(itemsToAdd);
 		
 		// Run processables
 		while(toProcess.size()>0) {
@@ -348,14 +383,16 @@ public class ProcessingManager {
 		this.state = ProcessingState.COMPLETE;
 	}
 
-	protected void userFileRemoved(String path) {
+	protected Set<Item> userFileRemoved(String path) {
 		boolean fileChanged = this.userFilesChanged.contains(path);
+		Set<Item> itemsToAdd = new HashSet<>();
+		
 		// If the file changed, we still want to run file processors
 		if (!fileChanged) {
 			// Remove file processors permanently
 			Set<Integer> fileProcessorIds = getFileProcessorIds(path);
 			for(Integer id : fileProcessorIds) {
-				removeItem(id, true);
+				itemsToAdd.addAll(removeItem(id, true));
 			}
 		}
 
@@ -365,57 +402,57 @@ public class ProcessingManager {
 			if (path.indexOf(item.getPath())==0) {
 				if (fileChanged) {
 					// If the file is changed then not permanent remove
-					removeItem(item.getId(), false);
+					itemsToAdd.addAll(removeItem(item.getId(), false));
 				} else {
 					// If the file is removed (not changed) then permanent remove
-					removeItem(item.getId(), true);
+					itemsToAdd.addAll(removeItem(item.getId(), true));
 				}
 			}
 		}
+		return itemsToAdd;
 	}
 
 	// When re-adding a folderWatcher, evaluate userFiles to process
-	protected void removeItem(int id,boolean permanent) {
+	protected Set<Item> removeItem(int id,boolean permanent) {
 		Item item = getItem(id);
 		boolean isFileProcessor = this.isFileProcessor(id);
+		Set<Item> ret = new HashSet<>();
 		
-		if ((item==null) && (!isFileProcessor)) return;
-
-		// TODO: Determine if we should unload the item's originator
+		if ((item==null) && (!isFileProcessor)) return ret;
 
 		if (item!=null) {
 			jasperResources.engineDebug("Removing item "+item.getName()+"("+id+") with perm = "+permanent);
 		} else {
-			jasperResources.engineDebug("Removing item ("+id+") with permr = "+permanent);
+			jasperResources.engineDebug("Removing item ("+id+") with perm = "+permanent);
 		}
-		unloadItem(id);
+		ret.addAll(unloadItem(id));
 		
 		jasperResources.engineDebug("Finished removing item "+id);
+		
+		// If an item is being removed, and it has an originator which is not an item or 
+		// file processor, the item should be removed permanently
+		if ((item!=null) && (item.getOriginatorId()>0) && (!permanent)) {
+			int orig = item.getOriginatorId();
+			//Item origItem = getItem(orig);
+			if ((getItem(orig)==null) && (fileProcessorItems.get(orig)==null)) {
+				permanent = true;
+			}
+		}
+		
+		if ((permanent) || (isFileProcessor)) {
+			ret.removeIf(i -> (
+				i.getId()==id
+			));
+			return ret;
+		}
 
-		if ((permanent) || (isFileProcessor)) return;
+		ret.add(item);
 
-		// Re-add item
-		if (item instanceof ComponentItem) {
-			ComponentItem c = (ComponentItem)item;
-			if (!toProcess.contains(c))
-				toProcess.add(c);
-			if (!items.contains(c))
-				items.add(c);
-		}
-		else if (item instanceof FolderWatcherItem) {
-			FolderWatcherItem f = (FolderWatcherItem)item;
-			if (!items.contains(f))
-				items.add(f);
-			checkFilesForFolderWatcher(f);
-		}
-		else if (item instanceof BuildComponentItem) {
-			BuildComponentItem b = (BuildComponentItem)item;
-			if (!buildItemsToInit.contains(b))
-				buildItemsToInit.add(b);
-		}
+		return ret;
 	}
 	
-	protected void unloadItem(int id) {
+	protected Set<Item> unloadItem(int id) {
+		Set<Item> ret = new HashSet<>();
 		Item item = getItem(id);
 		boolean isFileProcessor = this.isFileProcessor(id);
 		Set<Integer> toRemove = null;
@@ -431,15 +468,17 @@ public class ProcessingManager {
 			System.err.println("Couldn't determine how to remove item "+id);
 		}
 		
-		toRemove = processingDataManager.removeTrackingEntries(id);
-		
-		// Unload items that originate from this one
+		// Items that originate from this one should be permanently removed.
+		Set<Integer> removePerm = new HashSet<>();
 		for(Item i : items) {
 			if (i.getOriginatorId()==id) {
-				toRemove.add(i.getId());
+				jasperResources.engineDebug("Marking item "+i.getId()+" for permanent remove");
+				removePerm.add(i.getId());
 			}
 		}
 
+		toRemove = processingDataManager.removeTrackingEntries(id);
+		
 		toRemove.addAll(removeSourceFilesFromOriginator(id));
 
 		if (isFileProcessor) {
@@ -484,8 +523,17 @@ public class ProcessingManager {
 
 		// Remove other items that are marked to be removed
 		for(Integer i : toRemove) {
-			this.removeItem(i, false);
+			ret.addAll(this.removeItem(i, false));
 		}
+
+		// Permanently remove some items.  Make sure that they aren't in the list of items to add again
+		for(Integer i : removePerm) {
+			ret.addAll(removeItem(i, true));
+			ret.removeIf(it -> (
+					i.equals(it.getId())
+			));
+		}
+		return ret;
 	}
 
 	protected Set<Integer> removeSourceFilesFromOriginator(int id) {
@@ -504,12 +552,6 @@ public class ProcessingManager {
 		applicationManager.removeSourceFile(path);
 
 		return toUnload;
-		/*
-		for(Integer i : toUnload) {
-			//this.removeItem(i, true);
-			this.removeItem(i, false);
-		}
-		*/
 	}
 
 	// Required for ProcessingContext
@@ -528,7 +570,6 @@ public class ProcessingManager {
 		ComponentItem item = new ComponentItem(id, component, processingContext, componentFile, configs, originatorId, pattern, jasperResources);
 		toProcess.add(item);
 		items.add(item);
-		jasperResources.engineDebug("Added component "+component.getComponentName());
 	}
 
 	protected void checkFilesForFolderWatcher(FolderWatcherItem item) {

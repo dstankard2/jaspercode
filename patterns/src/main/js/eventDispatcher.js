@@ -1,4 +1,6 @@
 
+/** TODO: Make this a module **/
+
 function EventDispatcher() {
 	var _listeners = { };
 
@@ -58,6 +60,11 @@ function EventDispatcher() {
 						}
 						return;
 					}
+				}
+			},
+			removeAllListeners: function() {
+				for(var prop in _listeners) {
+					_listeners.delete prop;
 				}
 			}
 	};

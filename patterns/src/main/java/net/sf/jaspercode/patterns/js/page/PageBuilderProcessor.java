@@ -49,6 +49,7 @@ public class PageBuilderProcessor implements ComponentProcessor {
 		fnNames.add("init");
 		code.append("function _init(_parent,_element) {\n");
 		code.append("console.log('init page "+pageInfo.getName()+"');\n");
+		code.append("if ((!_parent) && (!_element)) {\nconsole.error('No parent or element passed to init()');\nreturn;\n}\n");
 		String renderObj = pageInfo.getPageRendererObj();
 		ServiceOperation renderOp = pageInfo.getPageRendererRule();
 		

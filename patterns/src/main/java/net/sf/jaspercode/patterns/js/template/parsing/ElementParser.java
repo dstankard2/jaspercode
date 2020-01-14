@@ -109,12 +109,20 @@ public class ElementParser implements DirectiveContext {
 		while(attributeDirectives.size()>0) {
 			AttributeDirective next = attributeDirectives.get(0);
 			attributeDirectives.remove(0);
-			if ((!elementCreated) && (next.getPriority()>=3) && (!isTemplateCall)) {
+			
+			if ((!elementCreated) && (next.getPriority()>=3)) {
 				elementCreated = true;
-				code.append(eltVar+" = "+DirectiveUtils.DOCUMENT_REF+
-						".createElement('"+elt.nodeName()+"');\n");
-				code.append(eltVar+"._elt = '"+eltVar+"';\n");
-				code.append(eltVar+".$$remove = [];\n");
+				if (!isTemplateCall) {
+					code.append(eltVar+" = "+DirectiveUtils.DOCUMENT_REF+
+							".createElement('"+elt.nodeName()+"');\n");
+					code.append(eltVar+"._elt = '"+eltVar+"';\n");
+					code.append(eltVar+".$$remove = [];\n");
+				} else {
+					code.append(processTemplateCall(elt.nodeName(),execCtx,this));
+					code.append(eltVar+"._elt = '"+eltVar+"';\n");
+					if (containerVar!=null)
+						code.append(containerVar+".appendChild("+eltVar+");\n");
+				}
 			}
 			String att = next.getAttributeName();
 			if (templateAttributes.get(att)!=null) {
@@ -124,10 +132,12 @@ public class ElementParser implements DirectiveContext {
 		}
 		if (!attributeDirectiveCalled) {
 			if (isTemplateCall) {
-				code.append(processTemplateCall(elt.nodeName(),execCtx,this));
-				code.append(eltVar+"._elt = '"+eltVar+"';\n");
-				if (containerVar!=null)
-					code.append(containerVar+".appendChild("+eltVar+");\n");
+				if (!elementCreated) {
+					code.append(processTemplateCall(elt.nodeName(),execCtx,this));
+					code.append(eltVar+"._elt = '"+eltVar+"';\n");
+					if (containerVar!=null)
+						code.append(containerVar+".appendChild("+eltVar+");\n");
+				}
 			} else {
 				if (!elementCreated) {
 					code.append(eltVar+" = "+DirectiveUtils.DOCUMENT_REF+
@@ -337,6 +347,10 @@ public class ElementParser implements DirectiveContext {
 	@Override
 	public ProcessorContext getProcessorContext() {
 		return ctx;
+	}
+	@Override
+	public boolean isJavascriptDebug() {
+		return  JavascriptUtils.isJavascriptDebug(ctx);
 	}
 
 	public void addModule(String location, String...moduleNames) {

@@ -14,5 +14,10 @@
 	<packaging>jar</packaging>
 
 	<name>Component Processor API</name>
+	
+	<build>
+		<finalName>api</finalName>
+	</build>
 
 </project>
+

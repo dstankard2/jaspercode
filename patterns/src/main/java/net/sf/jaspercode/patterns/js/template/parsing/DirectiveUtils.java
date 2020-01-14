@@ -210,7 +210,7 @@ public class DirectiveUtils {
 			+ "if (parent.childNodes[_i]._elt==toRemove) {\n"
 			+ "var node = parent.childNodes[_i];\n"
 			+ "_rem(node);\n"
-			+ "parent.removeChild(node);_i++;\n"
+			+ "parent.removeChild(node);_i--;\n"
 			+ "} // If\n"
 			+ "} // for\n"
 			+ "} // Else\n";
