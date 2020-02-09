@@ -22,8 +22,8 @@ public class LocalModelElementDirective implements ElementDirective {
 
 	@Override
 	public void generateCode(DirectiveContext ctx) throws JasperException {
-		String ref = ctx.getDomAttributes().get("ref");
-		String attribs = ctx.getDomAttributes().get("attribs");
+		String ref = ctx.getDomAttribute("ref");
+		String attribs = ctx.getDomAttribute("attribs");
 		CodeExecutionContext execCtx = ctx.getExecCtx();
 		
 		if ((attribs==null) || (attribs.trim().length()==0)) {

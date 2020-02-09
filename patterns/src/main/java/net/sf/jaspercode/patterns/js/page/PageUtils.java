@@ -4,7 +4,9 @@ import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.types.ServiceOperation;
-import net.sf.jaspercode.langsupport.javascript.types.JavascriptServiceType;
+import net.sf.jaspercode.langsupport.javascript.JavascriptUtils;
+import net.sf.jaspercode.langsupport.javascript.types.ExportedModuleType;
+import net.sf.jaspercode.langsupport.javascript.types.ModuleType;
 
 public class PageUtils {
 
@@ -25,7 +27,8 @@ public class PageUtils {
 		// Create model type for this page
 		PageModelType modelType = new PageModelType(pageName,false,ctx);
 		ctx.addVariableType(modelType);
-		JavascriptServiceType pageType = new JavascriptServiceType(pageName,true,ctx);
+		ModuleType pageType = new ModuleType(pageName,JavascriptUtils.getModulePath(ctx), ExportedModuleType.CONSTRUCTOR);
+		//JavascriptServiceType pageType = new JavascriptServiceType(pageName);
 		ctx.addVariableType(pageType);
 		pageInfo.setModelType(modelType);
 		pageInfo.setPageType(pageType);

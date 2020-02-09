@@ -19,7 +19,7 @@ public class VarAttributeDirective extends AttributeDirectiveBase {
 	@Override
 	public void generateCode(DirectiveContext ctx) throws JasperException {
 		StringBuilder b = ctx.getCode();
-		String name = ctx.getTemplateAttributes().get("js-var");
+		String name = ctx.getTemplateAttribute("js-var");
 
 		if (name.trim().length()==0) {
 			throw new JasperException("Found invalid js-var attribute value '"+name+"'");

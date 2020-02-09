@@ -19,7 +19,7 @@ public class EnabledAttributeDirective extends AttributeDirectiveBase {
 	@Override
 	public void generateCode(DirectiveContext ctx) throws JasperException {
 		StringBuilder code = ctx.getCode();
-		String value = ctx.getTemplateAttributes().get("js-enabled");
+		String value = ctx.getTemplateAttribute("js-enabled");
 		
 		ctx.continueRenderElement(ctx.getExecCtx());
 		

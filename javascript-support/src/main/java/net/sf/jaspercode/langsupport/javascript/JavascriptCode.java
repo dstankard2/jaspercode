@@ -3,13 +3,15 @@ package net.sf.jaspercode.langsupport.javascript;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 import net.sf.jaspercode.api.Code;
 
 public class JavascriptCode implements Code {
 
 	private StringBuilder code = new StringBuilder();
 	
-	private List<ModuleImport> modules = new ArrayList<>();
+	private List<Pair<String,String>> importedModules = new ArrayList<>();
 	
 	public JavascriptCode() {
 	}
@@ -44,12 +46,12 @@ public class JavascriptCode implements Code {
 		this.code = code;
 	}
 
-	public List<ModuleImport> getModules() {
-		return modules;
+	public List<Pair<String,String>> getImportedModules() {
+		return importedModules;
 	}
 
-	public void setModules(List<ModuleImport> modules) {
-		this.modules = modules;
+	public void setImportedModules(List<Pair<String,String>> importedModules) {
+		this.importedModules = importedModules;
 	}
 
 }

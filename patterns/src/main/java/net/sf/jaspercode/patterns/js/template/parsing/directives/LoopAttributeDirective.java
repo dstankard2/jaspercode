@@ -22,7 +22,7 @@ public class LoopAttributeDirective extends AttributeDirectiveBase {
 		StringBuilder b = ctx.getCode();
 		CodeExecutionContext execCtx = ctx.getExecCtx();
 		
-		String a = ctx.getTemplateAttributes().get("js-loop");
+		String a = ctx.getTemplateAttribute("js-loop");
 		int i = a.indexOf(" in ");
 		String eltVar = a.substring(0, i).trim();
 		String list = a.substring(i+4).trim();

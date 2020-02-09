@@ -1,20 +1,42 @@
 package net.sf.jaspercode.langsupport.javascript.modules;
 
+import net.sf.jaspercode.langsupport.javascript.types.ExportedModuleType;
+
 public class HandwrittenModuleSource implements ModuleSource {
-	private StringBuilder code = new StringBuilder();
+	private StringBuilder codeBuild = new StringBuilder();
 	private String name = null;
+	private ExportedModuleType exportType = null;
 
 	public HandwrittenModuleSource(String name) {
 		this.name = name;
 	}
 
-	public StringBuilder getCode() {
-		return code;
+	public ExportedModuleType getExportType() {
+		return exportType;
 	}
-	public void setCode(StringBuilder code) {
-		this.code = code;
+
+	public void setExportType(ExportedModuleType exportType) {
+		this.exportType = exportType;
 	}
-	public String getName() {
+
+	public StringBuilder getCodeBuild() {
+		return codeBuild;
+	}
+	public String getSource() {
+		StringBuilder b = new StringBuilder();
+		if (this.getExportType()==ExportedModuleType.CONST) {
+			b.append("export const "+getName()+" {\n");
+			b.append(codeBuild.toString());
+			b.append("\n};\n");
+		} else {
+			b.append("export function "+getName()+"() {\n");
+			b.append(codeBuild.toString());
+			b.append("\n};\n");
+		}
+		return b.toString();
+		//return codeBuild.toString();
+	}
+ 	public String getName() {
 		return name;
 	}
 	public void setName(String name) {
@@ -23,7 +45,8 @@ public class HandwrittenModuleSource implements ModuleSource {
 
 	public ModuleSource copy() {
 		HandwrittenModuleSource ret = new HandwrittenModuleSource(name);
-		ret.code = new StringBuilder(code.toString());
+		ret.exportType = exportType;
+		ret.codeBuild = new StringBuilder(codeBuild.toString());
 		return ret;
 	}
 

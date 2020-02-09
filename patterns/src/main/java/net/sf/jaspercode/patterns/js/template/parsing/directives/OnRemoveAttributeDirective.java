@@ -19,7 +19,7 @@ public class OnRemoveAttributeDirective extends AttributeDirectiveBase {
 
 	@Override
 	public void generateCode(DirectiveContext ctx) throws JasperException {
-		String code = ctx.getTemplateAttributes().get("js-onremove");
+		String code = ctx.getTemplateAttribute("js-onremove");
 
 		ctx.continueRenderElement();
 		StringBuilder fn = ctx.getCode();

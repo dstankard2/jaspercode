@@ -23,7 +23,7 @@ public class IfAttributeDirective extends AttributeDirectiveBase {
 	@Override
 	public void generateCode(DirectiveContext ctx) throws JasperException {
 		StringBuilder b = ctx.getCode();
-		String cond = ctx.getTemplateAttributes().get("js-if");
+		String cond = ctx.getTemplateAttribute("js-if");
 		CodeExecutionContext existingCtx = ctx.getExecCtx();
 
 		JavascriptParser eval = new JavascriptParser(cond,existingCtx);

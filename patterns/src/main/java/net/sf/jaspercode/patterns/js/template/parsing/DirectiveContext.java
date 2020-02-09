@@ -1,7 +1,6 @@
 package net.sf.jaspercode.patterns.js.template.parsing;
 
 import java.util.List;
-import java.util.Map;
 
 import net.sf.jaspercode.api.CodeExecutionContext;
 import net.sf.jaspercode.api.ProcessorContext;
@@ -14,8 +13,8 @@ public interface DirectiveContext {
 	CodeExecutionContext getExecCtx();
 	String getElementName();
 
-	Map<String,String> getDomAttributes();
-	Map<String,String> getTemplateAttributes();
+	String getDomAttribute(String name);
+	String getTemplateAttribute(String name);
 	
 	StringBuilder getCode();
 	String getElementVarName();
@@ -27,10 +26,10 @@ public interface DirectiveContext {
 	String getTemplateObj();
 	ServiceOperation getFunction();
 	List<String> getPreviousEltVars();
-	
-	void addModule(String location, String...moduleNames);
 
 	boolean isJavascriptDebug();
+
+	void importModule(String typeName,String jsPath);
 
 }
 

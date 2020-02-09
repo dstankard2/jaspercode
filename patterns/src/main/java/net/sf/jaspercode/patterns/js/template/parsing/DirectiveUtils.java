@@ -12,6 +12,7 @@ import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.langsupport.javascript.JavascriptCode;
 import net.sf.jaspercode.langsupport.javascript.modules.ModuleFunction;
+import net.sf.jaspercode.langsupport.javascript.modules.ModuleSourceFile;
 import net.sf.jaspercode.patterns.js.parsing.JavascriptParser;
 import net.sf.jaspercode.patterns.js.parsing.JavascriptParsingResult;
 
@@ -146,11 +147,11 @@ public class DirectiveUtils {
 
 	public static String getPageName(DirectiveContext ctx) {
 		CodeExecutionContext execCtx = ctx.getExecCtx();
-		
+
 		if (execCtx.getVariableType(PAGE_VAR)!=null) {
 			return execCtx.getVariableType(PAGE_VAR);
 		}
-		
+
 		return null;
 	}
 
@@ -160,37 +161,43 @@ public class DirectiveUtils {
 		if (i>0) {
 			ret = modelRef.substring(0, i)+"Changed";
 		}
-		
+
 		return ret;
 	}
 
-	public static ModuleFunction getInvokeRem() {
-		ModuleFunction fn = new ModuleFunction();
-		fn.setName("invokeRem");
-		fn.addParam("elt", "DOMElement");
-		fn.setCode(new JavascriptCode(INVOKE_REM_CODE));
-		return fn;
+	public static void ensureInvokeRem(ModuleSourceFile src) {
+		if (src.getModuleFunction("_invokeRem")==null) {
+			ModuleFunction fn = new ModuleFunction();
+			fn.setName("_invokeRem");
+			fn.addParam("elt", "DOMElement");
+			fn.setCode(new JavascriptCode(INVOKE_REM_CODE));
+			src.addFunction(fn);
+		}
 	}
-	
-	public static ModuleFunction getRem() {
-		ModuleFunction fn = new ModuleFunction();
-		fn.setName("rem");
-		fn.addParam("parent", "DOMElement");
-		fn.addParam("toRemove", "DOMElement");
-		fn.setCode(new JavascriptCode(REM_CODE));
-		return fn;
+
+	public static void ensureRem(ModuleSourceFile src) {
+		if (src.getModule("_rem")==null) {
+			ModuleFunction fn = new ModuleFunction();
+			fn.setName("_rem");
+			fn.addParam("parent", "DOMElement");
+			fn.addParam("toRemove", "DOMElement");
+			fn.setCode(new JavascriptCode(REM_CODE));
+			src.addFunction(fn);
+		}
 	}
-	
-	public static ModuleFunction getIns() {
-		ModuleFunction fn = new ModuleFunction();
-		fn.setName("ins");
-		fn.addParam("parent", "DOMElement");
-		fn.addParam("elt", "DOMElement");
-		fn.addParam("prev", "DOMElement");
-		fn.setCode(new JavascriptCode(INS_CODE));
-		return fn;
+
+	public static void ensureIns(ModuleSourceFile src) {
+		if (src.getModuleFunction("_ins")==null) {
+			ModuleFunction fn = new ModuleFunction();
+			fn.setName("_ins");
+			fn.addParam("parent", "DOMElement");
+			fn.addParam("elt", "DOMElement");
+			fn.addParam("prev", "DOMElement");
+			fn.setCode(new JavascriptCode(INS_CODE));
+			src.addFunction(fn);
+		}
 	}
-	
+
 	private static final String INVOKE_REM_CODE = "if (elt.$$remove && elt.$$remove.length) {\n"
 			+ "for(var i=0;i<elt.$$remove.length;i++) {\n"
 			+ "elt.$$remove[i]();\n"

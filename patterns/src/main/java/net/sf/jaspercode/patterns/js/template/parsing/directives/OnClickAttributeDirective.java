@@ -16,7 +16,7 @@ public class OnClickAttributeDirective extends AttributeDirectiveBase {
 	@Override
 	public void generateCode(DirectiveContext ctx) throws JasperException {
 		StringBuilder b = ctx.getCode();
-		String click = ctx.getTemplateAttributes().get("js-onclick");
+		String click = ctx.getTemplateAttribute("js-onclick");
 		
 		ctx.continueRenderElement(ctx.getExecCtx());
 		String var = ctx.getElementVarName();

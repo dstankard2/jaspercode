@@ -17,7 +17,7 @@ public class EventDispatcherElementDirective implements ElementDirective {
 
 	@Override
 	public void generateCode(DirectiveContext ctx) throws JasperException {
-		String ref = ctx.getDomAttributes().get("ref");
+		String ref = ctx.getDomAttribute("ref");
 		StringBuilder code = ctx.getCode();
 		CodeExecutionContext execCtx = ctx.getExecCtx();
 		String var = DirectiveUtils.EVENT_DISPATCHER_FN_VAR;

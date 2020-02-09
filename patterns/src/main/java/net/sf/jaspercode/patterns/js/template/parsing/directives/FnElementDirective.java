@@ -25,9 +25,9 @@ public class FnElementDirective implements ElementDirective {
 	public void generateCode(DirectiveContext ctx) throws JasperException {
 		//String html = DirectiveUtils.unescapeXml(ctx.getInnerHtml()).trim();
 		String html = ctx.getInnerHtml().trim();
-		String name = ctx.getDomAttributes().get("name");
-		String params = ctx.getDomAttributes().get("params");
-		String event = ctx.getDomAttributes().get("event");
+		String name = ctx.getDomAttribute("name");
+		String params = ctx.getDomAttribute("params");
+		String event = ctx.getDomAttribute("event");
 		StringBuilder code = ctx.getCode();
 		CodeExecutionContext execCtx = ctx.getExecCtx();
 		CodeExecutionContext newCtx = new CodeExecutionContext(execCtx);

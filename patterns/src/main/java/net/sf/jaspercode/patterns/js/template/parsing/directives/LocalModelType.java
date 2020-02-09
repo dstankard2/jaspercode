@@ -9,7 +9,7 @@ public class LocalModelType extends JavascriptType {
 	String templateName;
 
 	public LocalModelType(String templateName, ProcessorContext ctx) {
-		super(templateName+"_Model", false, ctx);
+		super(templateName+"_Model");
 		this.templateName = templateName;
 	}
 

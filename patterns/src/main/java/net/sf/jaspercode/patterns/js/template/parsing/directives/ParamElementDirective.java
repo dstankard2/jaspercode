@@ -16,8 +16,8 @@ public class ParamElementDirective implements ElementDirective {
 
 	@Override
 	public void generateCode(DirectiveContext ctx) throws JasperException {
-		String name = ctx.getDomAttributes().get("name");
-		String type = ctx.getDomAttributes().get("type");
+		String name = ctx.getDomAttribute("name");
+		String type = ctx.getDomAttribute("type");
 
 		if ((name==null) || (name.trim().length()==0)) {
 			throw new JasperException("Directive js-param requires a name");

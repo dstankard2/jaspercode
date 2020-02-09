@@ -9,7 +9,6 @@ import net.sf.jaspercode.api.config.BuildComponent;
 import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.FileProcessor;
-import net.sf.jaspercode.api.resources.FileWatcher;
 import net.sf.jaspercode.api.resources.FolderWatcher;
 import net.sf.jaspercode.api.types.VariableType;
 import net.sf.jaspercode.engine.definitions.ComponentFile;
@@ -160,16 +159,12 @@ public class ProcessingContext {
 		processingManager.addComponent(id, component, componentFile);
 	}
 	
-	public void addFolderWatcher(int originatorId, ComponentFile componentFile,String path,FolderWatcher watcher) {
-		processingManager.addFolderWatcher(originatorId, componentFile, path, watcher);
+	public void addFolderWatcher(int originatorId, ComponentFile componentFile,String path,FolderWatcher watcher,Map<String,String> configs) {
+		processingManager.addFolderWatcher(originatorId, componentFile, path, watcher, configs);
 	}
 
-	public void addFileProcessor(int originatorId, ComponentFile componentFile,String path,FileProcessor watcher) {
-		processingManager.addFileProcessor(originatorId, componentFile, path, watcher);
-	}
-
-	public void addFileWatcher(int originatorId, ComponentFile componentFile,String path,FileWatcher watcher) {
-		//processingDataManager.addFileWatcher(originatorId, componentFile, path, watcher);
+	public void addFileProcessor(int originatorId, ComponentFile componentFile,String path,FileProcessor watcher,Map<String,String> configs) {
+		processingManager.addFileProcessor(originatorId, componentFile, path, watcher, configs);
 	}
 
 }

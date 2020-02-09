@@ -20,9 +20,9 @@ public class PageAttributeDirective extends AttributeDirectiveBase {
 
 	@Override
 	public void generateCode(DirectiveContext ctx) throws JasperException {
-		String pageName = ctx.getTemplateAttributes().get("js-page");
-		String pageRef = ctx.getTemplateAttributes().get("js-page-ref");
-		String modelRef = ctx.getTemplateAttributes().get("js-model-ref");
+		String pageName = ctx.getTemplateAttribute("js-page");
+		String pageRef = ctx.getTemplateAttribute("js-page-ref");
+		String modelRef = ctx.getTemplateAttribute("js-model-ref");
 		CodeExecutionContext execCtx = ctx.getExecCtx();
 
 		PageInfo pageInfo = PageUtils.getPageInfo(pageName, ctx.getProcessorContext());

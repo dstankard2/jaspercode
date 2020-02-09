@@ -16,7 +16,7 @@ public class OnSubmitAttributeDirective extends AttributeDirectiveBase {
 	@Override
 	public void generateCode(DirectiveContext ctx) throws JasperException {
 		StringBuilder b = ctx.getCode();
-		String click = ctx.getTemplateAttributes().get("js-onsubmit");
+		String click = ctx.getTemplateAttribute("js-onsubmit");
 		
 		ctx.continueRenderElement(ctx.getExecCtx());
 		String var = ctx.getElementVarName();

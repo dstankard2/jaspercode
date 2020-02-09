@@ -3,15 +3,14 @@ package net.sf.jaspercode.langsupport.javascript.types;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.types.ServiceOperation;
 import net.sf.jaspercode.api.types.ServiceType;
 
 public class JavascriptServiceType extends JavascriptType implements ServiceType {
 	List<ServiceOperation> operations = new ArrayList<>();
 	
-	public JavascriptServiceType(String name,boolean module,ProcessorContext ctx) {
-		super(name,module,ctx);
+	public JavascriptServiceType(String name) {
+		super(name);
 	}
 
 	@Override

@@ -19,7 +19,7 @@ public class ModelAttributeDirective extends AttributeDirectiveBase {
 
 	@Override
 	public void generateCode(DirectiveContext ctx) throws JasperException {
-		String model = ctx.getTemplateAttributes().get("js-model");
+		String model = ctx.getTemplateAttribute("js-model");
 		StringBuilder b = ctx.getCode();
 		String eltName = ctx.getElementName();
 
@@ -43,7 +43,7 @@ public class ModelAttributeDirective extends AttributeDirectiveBase {
 			String fn = ctx.newVarName("_f", "function", ctx.getExecCtx());
 			templateParams.put("FN", fn);
 		} else if (eltName.equals("input")) {
-			String type = ctx.getDomAttributes().get("type");
+			String type = ctx.getDomAttribute("type");
 			String changeEvent;
 			if (type==null) changeEvent = "keyup";
 			else if (type.equals("text")) changeEvent = "keyup";

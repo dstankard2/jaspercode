@@ -1,5 +1,8 @@
 package net.sf.jaspercode.api.config;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -16,9 +19,19 @@ import net.sf.jaspercode.api.annotation.Plugin;
  */
 @Plugin
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name="component",propOrder={ })
+@XmlType(name="component",propOrder={ "property" })
 @XmlRootElement(name="component")
 public class Component {
+
+	private List<Property> property = new ArrayList<>();
+	
+	public List<Property> getProperty() {
+		return property;
+	}
+
+	public void setProperty(List<Property> property) {
+		this.property = property;
+	}
 
 	public int getPriority() {
 		return Integer.MAX_VALUE;

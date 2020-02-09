@@ -62,7 +62,7 @@ public class WsClientsProcessor implements ComponentProcessor {
 			String ref = service.getRef();
 			String module = service.getModule();
 
-			JavascriptServiceType type = new JavascriptServiceType(name, true, ctx);
+			JavascriptServiceType type = new JavascriptServiceType(name);
 
 			ctx.addSystemAttribute(ref, name);
 			ctx.addVariableType(type);
@@ -88,17 +88,17 @@ public class WsClientsProcessor implements ComponentProcessor {
 				appendOperation(op, src, type, urlPrefix, def.getUri());
 			}
 			src.setName(name);
-			src.getCode().append("return {\n");
+			src.getCodeBuild().append("return {\n");
 			boolean first = true;
 			for (WebServiceOperation op : ops) {
 				if (first)
 					first = false;
 				else
-					src.getCode().append(",\n");
+					src.getCodeBuild().append(",\n");
 				String n = getOperationName(op);
-				src.getCode().append(n + ": _" + n);
+				src.getCodeBuild().append(n + ": _" + n);
 			}
-			src.getCode().append("\n};\n");
+			src.getCodeBuild().append("\n};\n");
 		}
 
 	}
@@ -225,13 +225,13 @@ public class WsClientsProcessor implements ComponentProcessor {
 		fnBody.append("return _promise;\n");
 
 		fnDec.append(") =>");
-		src.getCode().append(fnDec);
-		src.getCode().append("{\n");
+		src.getCodeBuild().append(fnDec);
+		src.getCodeBuild().append("{\n");
 
 		// Append function body
-		src.getCode().append(fnBody);
+		src.getCodeBuild().append(fnBody);
 
-		src.getCode().append("}\n");
+		src.getCodeBuild().append("}\n");
 	}
 
 	private void processReturnType(ServiceOperation op, WebServiceOperation webOp) throws JasperException {

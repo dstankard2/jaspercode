@@ -18,12 +18,11 @@ import net.sf.jaspercode.langsupport.javascript.modules.ModuleFunction;
 import net.sf.jaspercode.langsupport.javascript.modules.ModuleSourceFile;
 import net.sf.jaspercode.langsupport.javascript.modules.StandardModuleSource;
 import net.sf.jaspercode.langsupport.javascript.types.ExportedModuleType;
-import net.sf.jaspercode.langsupport.javascript.types.JavascriptServiceType;
 import net.sf.jaspercode.langsupport.javascript.types.ModuleType;
 import net.sf.jaspercode.patterns.js.template.parsing.DirectiveUtils;
 import net.sf.jaspercode.patterns.js.template.parsing.TemplateParser;
 
-public class TemplateFolderWatcher implements FolderWatcher {
+public class TemplateSingleFolderWatcher implements FolderWatcher {
 
 	private ApplicationFolder folder = null;
 	int priority = 0;
@@ -31,21 +30,16 @@ public class TemplateFolderWatcher implements FolderWatcher {
 	private String serviceRef = null;
 	private String serviceName = null;
 	
-	private String folderRef = null;
-	private String folderTypeName = null;
-	
-	public TemplateFolderWatcher(String serviceRef, String serviceName, String folderRef, String folderTypeName, int priority, ApplicationFolder folder) {
+	public TemplateSingleFolderWatcher(String serviceRef, String serviceName, int priority, ApplicationFolder folder) {
 		this.serviceRef = serviceRef;
 		this.serviceName = serviceName;
-		this.folderRef = folderRef;
 		this.folder = folder;
-		this.folderTypeName = folderTypeName;
 		this.priority = priority;
 	}
 
 	@Override
 	public String getName() {
-		return "TemplateFolderWatcher["+folder.getPath()+"]";
+		return "TemplateSingleFolderWatcher["+folder.getPath()+"]";
 	}
 
 	// This watcher is processed just after the template set component
@@ -54,53 +48,26 @@ public class TemplateFolderWatcher implements FolderWatcher {
 		return priority;
 	}
 
-	protected Pair<JavascriptServiceType,StandardModuleSource> ensureTemplatesInfo(ProcessorContext ctx) throws JasperException {
-		JavascriptServiceType templatesType = null;
-		ModuleSourceFile src = null;
-		StandardModuleSource rootModule = null;
-
-		try {
-			templatesType = JasperUtils.getType(JavascriptServiceType.class, serviceName, ctx);
-		} catch(JasperException e) {
-		}
-		src = JavascriptUtils.getModuleSource(ctx);
-		if (templatesType==null) {
-			templatesType = new ModuleType(serviceName, JavascriptUtils.getModulePath(ctx), ExportedModuleType.CONST);
-			//templatesType = new JavascriptServiceType(serviceName,true,ctx);
-			ctx.addSystemAttribute(serviceRef, serviceName);
-			ctx.addVariableType(templatesType);
-			rootModule = new StandardModuleSource(serviceName);
-			src.addModule(rootModule);
-		} else {
-			rootModule = (StandardModuleSource)src.getModule(serviceName);
-			ctx.originateVariableType(templatesType);
-			ctx.originateSystemAttribute(serviceRef);
-		}
-
-		return Pair.of(templatesType, rootModule);
-	}
-	
-	protected Pair<JavascriptServiceType,StandardModuleSource> ensureFolderInfo(ProcessorContext ctx,JavascriptServiceType templatesType,StandardModuleSource rootModule) throws JasperException {
-		JavascriptServiceType folderType = null;
+	protected Pair<ModuleType,StandardModuleSource> ensureFolderInfo(ProcessorContext ctx) throws JasperException {
+		ModuleType folderType = null;
 		StandardModuleSource module = null;
 		//new StandardModuleSource(folderTypeName);
 		//JavascriptServiceType rootType = templatesInfo.getKey();
 		ModuleSourceFile src = JavascriptUtils.getModuleSource(ctx);
 
+		ctx.addSystemAttribute(serviceRef, serviceName);
 		try {
-			folderType = JasperUtils.getType(JavascriptServiceType.class, folderTypeName, ctx);
+			folderType = JasperUtils.getType(ModuleType.class, serviceName, ctx);
 		} catch(JasperException e) {
 		}
 		
 		if (folderType==null) {
-			folderType = new ModuleType(folderTypeName,JavascriptUtils.getModulePath(ctx), ExportedModuleType.CONST);
-			//folderType = new JavascriptServiceType(folderTypeName,true,ctx);
+			String webPath = JavascriptUtils.getModulePath(ctx);
+			folderType = new ModuleType(serviceName,webPath, ExportedModuleType.CONST);
+			//folderType = new JavascriptServiceType(serviceName,true,ctx);
 			ctx.addVariableType(folderType);
-			rootModule.addProperty(folderRef, folderTypeName);
-			templatesType.addAttribute(folderRef, folderTypeName);
-			templatesType.addAttribute(folderRef, folderTypeName);
-			rootModule.getInitCode().append("_" + folderRef + " = " + folderTypeName+"();\n");
-			module = new StandardModuleSource(folderTypeName);
+			module = new StandardModuleSource(serviceName);
+			module.setExportType(ExportedModuleType.CONST);
 			src.addModule(module);
 			ctx.addVariableType(folderType);
 			DirectiveUtils.ensureIns(src);
@@ -108,9 +75,10 @@ public class TemplateFolderWatcher implements FolderWatcher {
 			DirectiveUtils.ensureInvokeRem(src);
 		} else {
 			ctx.originateVariableType(folderType);
-			module = (StandardModuleSource)src.getModule(folderTypeName);
+			module = (StandardModuleSource)src.getModule(serviceName);
 			if (module==null) {
-				module = new StandardModuleSource(folderTypeName);
+				module = new StandardModuleSource(serviceName);
+				module.setExportType(ExportedModuleType.CONST);
 				src.addModule(module);
 				ctx.addVariableType(folderType);
 				DirectiveUtils.ensureIns(src);
@@ -144,10 +112,9 @@ public class TemplateFolderWatcher implements FolderWatcher {
 
 		ModuleSourceFile src = JavascriptUtils.getModuleSource(ctx);
 
-		Pair<JavascriptServiceType,StandardModuleSource> templatesInfo = ensureTemplatesInfo(ctx);
-		Pair<JavascriptServiceType,StandardModuleSource> folderInfo = ensureFolderInfo(ctx, templatesInfo.getKey(),templatesInfo.getRight());
+		Pair<ModuleType,StandardModuleSource> folderInfo = ensureFolderInfo(ctx);
 
-		JavascriptServiceType serviceType = folderInfo.getKey();
+		ModuleType serviceType = folderInfo.getKey();
 		StandardModuleSource module = folderInfo.getRight();
 
 		// TODO: Figure this out
@@ -158,7 +125,7 @@ public class TemplateFolderWatcher implements FolderWatcher {
 	}
 
 	// TODO: objRef should probably come from a config property
-	protected void handleFile(ProcessorContext ctx,ApplicationFile file,String ruleName, JavascriptServiceType folderType, StandardModuleSource mod, String objRef, ModuleSourceFile src) throws JasperException {
+	protected void handleFile(ProcessorContext ctx,ApplicationFile file,String ruleName, ModuleType folderType, StandardModuleSource mod, String objRef, ModuleSourceFile src) throws JasperException {
 		int c = 0;
 		StringBuilder templateString = new StringBuilder();
 
@@ -183,8 +150,8 @@ public class TemplateFolderWatcher implements FolderWatcher {
 		mod.addFunction(fn);
 		folderType.addOperation(op);
 		ctx.originateVariableType(folderType);
-		for(Pair<String,String> im : code.getImportedModules()) {
-			src.importModule(im);
+		for(Pair<String,String> s : code.getImportedModules()) {
+			src.importModule(s);
 		}
 	}
 

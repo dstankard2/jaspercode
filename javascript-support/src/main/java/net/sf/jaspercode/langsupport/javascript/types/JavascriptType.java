@@ -13,12 +13,9 @@ import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.types.DataObjectType;
 import net.sf.jaspercode.api.types.VariableType;
 import net.sf.jaspercode.langsupport.javascript.JavascriptCode;
-import net.sf.jaspercode.langsupport.javascript.JavascriptUtils;
 
 public abstract class JavascriptType implements VariableType,DataObjectType {
 
-	protected boolean module = false;
-	protected String sourcePath = null;
 	protected String name = null;
 	protected BuildContext bctx = null;
 	protected Map<String,String> properties = new HashMap<>();
@@ -29,14 +26,7 @@ public abstract class JavascriptType implements VariableType,DataObjectType {
 		properties.put(name, type);
 	}
 
-	public JavascriptType(String name,boolean module,ProcessorContext ctx) {
-		this.ctx = ctx;
-		if (module) {
-			try {
-				this.sourcePath = JavascriptUtils.getModuleSource(ctx).getPath();
-			} catch(JasperException e) { }
-		}
-		this.module = module;
+	public JavascriptType(String name) {
 		this.name = name;
 		if (ctx!=null) {
 			this.bctx = ctx.getBuildContext();
@@ -56,22 +46,6 @@ public abstract class JavascriptType implements VariableType,DataObjectType {
 	@Override
 	public BuildContext getBuildContext() {
 		return bctx;
-	}
-
-	public boolean isModule() {
-		return module;
-	}
-
-	public void setModule(boolean module) {
-		this.module = module;
-	}
-
-	public String getSourcePath() {
-		return sourcePath;
-	}
-
-	public void setSourcePath(String sourcePath) {
-		this.sourcePath = sourcePath;
 	}
 
 	@Override

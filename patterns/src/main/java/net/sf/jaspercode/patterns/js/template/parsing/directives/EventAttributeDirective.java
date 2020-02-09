@@ -24,7 +24,7 @@ public class EventAttributeDirective extends AttributeDirectiveBase {
 	@Override
 	public void generateCode(DirectiveContext ctx) throws JasperException {
 		StringBuilder code = ctx.getCode();
-		String event = ctx.getTemplateAttributes().get("js-event");
+		String event = ctx.getTemplateAttribute("js-event");
 		CodeExecutionContext execCtx = ctx.getExecCtx();
 		String parent = ctx.getContainerVarName();
 		

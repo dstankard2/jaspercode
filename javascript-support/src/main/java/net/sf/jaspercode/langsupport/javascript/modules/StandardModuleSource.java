@@ -4,10 +4,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import net.sf.jaspercode.api.exception.JasperException;
+import net.sf.jaspercode.langsupport.javascript.JavascriptUtils;
+import net.sf.jaspercode.langsupport.javascript.types.ExportedModuleType;
+
 public class StandardModuleSource implements ModuleSource {
 
 	private String name = null;
-
+	private ExportedModuleType exportType = null;
+	
 	public StandardModuleSource(String name) {
 		this.name = name;
 	}
@@ -20,6 +25,14 @@ public class StandardModuleSource implements ModuleSource {
 
 	private StringBuilder initCode = new StringBuilder();
 	
+	public ExportedModuleType getExportType() {
+		return exportType;
+	}
+
+	public void setExportType(ExportedModuleType exportType) {
+		this.exportType = exportType;
+	}
+
 	public void addProperty(String name,String type) {
 		properties.put(name, type);
 	}
@@ -28,7 +41,10 @@ public class StandardModuleSource implements ModuleSource {
 		return properties.get(name);
 	}
 
-	public void addInternalFunction(ModuleFunction fn) {
+	public void addInternalFunction(ModuleFunction fn) throws JasperException {
+		if (getExportType()==ExportedModuleType.CONST) {
+			throw new JasperException("A constant cannot have an internal function.  You should add the module function to the module source file.");
+		}
 		internalFunctions.put(fn.getName(), fn);
 	}
 	
@@ -46,57 +62,42 @@ public class StandardModuleSource implements ModuleSource {
 	public void setName(String name) {
 		this.name = name;
 	}
-	public StringBuilder getCode() {
-		StringBuilder ret = new StringBuilder();
-		StringBuilder objSource = new StringBuilder();
+	public String getSource() {
+		StringBuilder ret = new StringBuilder(); // Return value
+		StringBuilder objSource = new StringBuilder(); // Object that is to be exported
 		boolean first = true;
-		
-		for(String name : properties.keySet()) {
-			ret.append("var _"+name+";\n");
-			if (first) first = false;
-			else objSource.append(",\n");
-			objSource.append(name+" : _"+name);
-		}
-		for(String name : internalFunctions.keySet()) {
-			ModuleFunction fn = internalFunctions.get(name);
-			ret.append(fnSource(fn));
-		}
-		for(String name : functions.keySet()) {
-			ModuleFunction fn = functions.get(name);
 
-			ret.append(fnSource(fn));
+		for(String name : properties.keySet()) {
+			ret.append("let "+getName()+"_"+name+";\n");
 			if (first) first = false;
 			else objSource.append(",\n");
-			objSource.append(name+" : _"+name);
+			objSource.append(name+" : "+getName()+"_"+name);
 		}
-		
-		ret.append(initCode);
-		ret.append("var _obj = {\n");
-		ret.append(objSource);
-		ret.append("};\n");
-		
-		ret.append("return _obj;\n");
-		return ret;
+		internalFunctions.keySet().forEach(key-> {
+			ModuleFunction fn = internalFunctions.get(name);
+			ret.append(JavascriptUtils.fnSource(fn, null));
+		});
+		for(Entry<String,ModuleFunction> entry : functions.entrySet()) {
+			ModuleFunction fn = entry.getValue();
+			ret.append(JavascriptUtils.fnSource(fn, getName()+"_"));
+			if (first) first = false;
+			else objSource.append(",\n");
+			objSource.append(fn.getName()+" : "+getName()+"_"+fn.getName());
+		}
+
+		if (getExportType()==ExportedModuleType.CONST) {
+			ret.append(initCode);
+			ret.append("export const "+getName()+" = {\n");
+			ret.append(objSource.toString());
+			ret.append("\n};\n");
+		} else if (getExportType()==ExportedModuleType.CONSTRUCTOR) {
+			ret.append("export function "+getName()+"() {\n");
+			ret.append(initCode);
+			ret.append("\n};\n");
+		}
+		return ret.toString();
 	}
 	
-	private String fnSource(ModuleFunction fn) {
-		StringBuilder b = new StringBuilder();
-		String name = fn.getName();
-		
-		b.append("function _"+name+"(");
-		boolean firstParam = true;
-		for(String p : fn.getParamNames()) {
-			if (firstParam) firstParam = false;
-			else b.append(',');
-			b.append(p);
-		}
-		b.append(") {\n");
-		b.append(fn.getCode().getCodeText());
-		b.append("\n}\n");
-
-		return b.toString();
-	}
-
 	public StandardModuleSource copy() {
 		StandardModuleSource ret = new StandardModuleSource(name);
 		
@@ -104,6 +105,7 @@ public class StandardModuleSource implements ModuleSource {
 		ret.properties = copy(properties);
 		ret.functions = copy(functions);
 		ret.internalFunctions = copy(internalFunctions);
+		ret.exportType = exportType;
 		
 		return ret;
 	}

@@ -8,7 +8,7 @@ public class DOMElementType extends JavascriptType {
 	//protected Map<String,String> properties = new HashMap<String,String>(); // Accessed via dot notation
 
 	public DOMElementType() {
-		super("DOMElement",false,null);
+		super("DOMElement");
 	}
 
 	{

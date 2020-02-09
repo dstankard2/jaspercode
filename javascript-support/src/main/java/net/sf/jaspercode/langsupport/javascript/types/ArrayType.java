@@ -24,7 +24,7 @@ public class ArrayType extends JavascriptType implements ListType {
 	}
 
 	public ArrayType() {
-		super("list",false,null);
+		super("list");
 	}
 
 	@Override

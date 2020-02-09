@@ -150,12 +150,12 @@ public abstract class ProcessableBase extends ProcessableContextBase implements 
 		typeDependencies.clear();
 
 		for(Pair<String,FolderWatcher> entry : this.folderWatchersAdded) {
-			ctx.addFolderWatcher(id, originatorFile, entry.getKey(), entry.getRight());
+			ctx.addFolderWatcher(id, originatorFile, entry.getKey(), entry.getRight(), configs);
 		}
 		folderWatchersAdded.clear();
 		
 		for(Pair<String,FileProcessor> proc : this.fileProcessorsAdded) {
-			ctx.addFileProcessor(id, originatorFile, proc.getKey(), proc.getRight());
+			ctx.addFileProcessor(id, originatorFile, proc.getKey(), proc.getRight(), configs);
 		}
 		fileProcessorsAdded.clear();
 		

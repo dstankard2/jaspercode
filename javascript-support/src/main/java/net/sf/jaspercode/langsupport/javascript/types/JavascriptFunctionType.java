@@ -38,7 +38,7 @@ public class JavascriptFunctionType extends JavascriptType {
 		return name;
 	}
 	public JavascriptFunctionType(String name,ProcessorContext ctx) {
-		super(name,false,ctx);
+		super(name);
 		this.name = name;
 	}
 	

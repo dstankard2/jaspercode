@@ -219,7 +219,7 @@ public class ProcessingManager {
 		// Look for component Files Added - add component entries
 		for(ComponentFile f : componentFilesAdded) {
 			for(Component comp : f.getComponentSet().getComponent()) {
-				Map<String,String> configs = ProcessingUtilities.getConfigs(f);
+				Map<String,String> configs = ProcessingUtilities.getConfigs(f, comp);
 				if (comp instanceof BuildComponent) {
 					int id = newId();
 					BuildComponent buildComp = (BuildComponent)comp;
@@ -566,7 +566,7 @@ public class ProcessingManager {
 			throw new JasperException("Couldn't find pattern for component class "+component.getClass().getCanonicalName());
 		}
 		
-		Map<String,String> configs = ProcessingUtilities.getConfigs(componentFile);
+		Map<String,String> configs = ProcessingUtilities.getConfigs(componentFile, component);
 		ComponentItem item = new ComponentItem(id, component, processingContext, componentFile, configs, originatorId, pattern, jasperResources);
 		toProcess.add(item);
 		items.add(item);
@@ -585,9 +585,8 @@ public class ProcessingManager {
 			}
 		}
 	}
-	public void addFolderWatcher(int originatorId, ComponentFile componentFile,String path,FolderWatcher folderWatcher) {
+	public void addFolderWatcher(int originatorId, ComponentFile componentFile,String path,FolderWatcher folderWatcher,Map<String,String> configs) {
 		int id = newId();
-		Map<String,String> configs = ProcessingUtilities.getConfigs(componentFile);
 		ProcessingContext processingContext = new ProcessingContext(this, processingDataManager);
 		FolderWatcherItem item = new FolderWatcherItem(id, folderWatcher, originatorId, path, processingContext, componentFile, configs, jasperResources);
 		items.add(item);
@@ -596,11 +595,10 @@ public class ProcessingManager {
 
 	// If the file doesn't exist then this is a no-op
 	// A file processor runs one time.
-	public void addFileProcessor(int originatorId, ComponentFile componentFile,String path,FileProcessor fileProcessor) {
+	public void addFileProcessor(int originatorId, ComponentFile componentFile,String path,FileProcessor fileProcessor,Map<String,String> configs) {
 		int id = newId();
 		ApplicationFolderImpl folder = componentFile.getFolder();
 		ProcessingContext processingContext = new ProcessingContext(this,processingDataManager);
-		Map<String,String> configs = ProcessingUtilities.getConfigs(componentFile);
 		FileProcessorItem proc = new FileProcessorItem(id, path, jasperResources, processingContext, fileProcessor, componentFile, folder, configs, originatorId, jasperResources);
 		UserFile userFile = applicationManager.getUserFiles().get(path);
 		if (userFile!=null) {
