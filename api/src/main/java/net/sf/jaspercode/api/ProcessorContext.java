@@ -4,7 +4,6 @@ import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.ApplicationResource;
 import net.sf.jaspercode.api.resources.FileProcessor;
-import net.sf.jaspercode.api.resources.FileWatcher;
 import net.sf.jaspercode.api.resources.FolderWatcher;
 import net.sf.jaspercode.api.types.VariableType;
 
@@ -39,8 +38,6 @@ public interface ProcessorContext {
 	Log getLog();
 
 	void addFolderWatcher(String folderPath,FolderWatcher folderWatcher);
-	
-	void addFileWatcher(String filePath,FileWatcher fileWatcher);
 	
 	void addFileProcessor(String filePath,FileProcessor fileProcessor);
 	

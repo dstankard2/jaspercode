@@ -48,6 +48,8 @@ public class PatternPriority {
 
 	public static final int SERVLET_ENDPOINT_BUILDER = 50000;
 
+	public static final int HANDWRITTEN_JS_MODULE = 52500;
+
 	public static final int WS_CLIENT = 55000;
 
 	public static final int PAGE = 60000;

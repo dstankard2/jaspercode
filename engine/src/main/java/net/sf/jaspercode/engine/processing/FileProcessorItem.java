@@ -30,11 +30,10 @@ public class FileProcessorItem extends ProcessableBase {
 		this.applicationContext = applicationContext;
 		this.fileProcessor = fileProcessor;
 		this.originatorId = originatorId;
+		this.log = new ProcessorLog(getName());
 
 		ProcessorContextImpl impl = new ProcessorContextImpl(this,folder,log,jasperResources);
 		fileProcessor.init(impl);
-
-		this.log = new ProcessorLog(getName());
 	}
 
 	@Override

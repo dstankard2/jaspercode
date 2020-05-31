@@ -1,6 +1,7 @@
 package net.sf.jaspercode.patterns.java.handwritten;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 import org.jboss.forge.roaster.ParserException;
@@ -45,12 +46,14 @@ public class FileHandler {
 	
 	private JavaType<?> parseType() throws IOException,JasperException {
 		if (javaType==null) {
-			try {
-			javaType = Roaster.parse(file.getInputStream());
+
+			try (InputStream in = file.getInputStream()) {
+				javaType = Roaster.parse(in);
 			} catch(ParserException e) {
 				throw new JasperException("Couldn't parse Java file", e);
 			}
 		}
+
 		return javaType;
 	}
 	
@@ -166,7 +169,7 @@ public class FileHandler {
 				break;
 			}
 		}
-		if (!found) throw new JasperException("A class with @WebContextListener must implement interface 'javax.servlet.ServletContextEvent'");
+		if (!found) throw new JasperException("A class with @WebContextListener must implement interface 'javax.servlet.ServletContextListener'");
 		
 		JavaWebappRuntimePlatform platform = JavaWebUtils.getWebPlatform(ctx);
 		platform.addServletContextListener(src.getCanonicalName());

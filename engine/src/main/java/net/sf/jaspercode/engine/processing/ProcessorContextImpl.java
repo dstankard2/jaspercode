@@ -9,7 +9,6 @@ import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.ApplicationResource;
 import net.sf.jaspercode.api.resources.FileProcessor;
-import net.sf.jaspercode.api.resources.FileWatcher;
 import net.sf.jaspercode.api.resources.FolderWatcher;
 import net.sf.jaspercode.api.types.VariableType;
 import net.sf.jaspercode.engine.application.JasperResources;
@@ -59,6 +58,9 @@ public class ProcessorContextImpl implements ProcessorContext {
 
 	@Override
 	public void addVariableType(VariableType variableType) throws JasperException {
+		if (language==null) {
+			throw new JasperException("Unable to add variable type "+variableType.getName()+" as there is no currently selected language");
+		}
 		ctx.addVariableType(language, variableType);
 	}
 
@@ -131,10 +133,6 @@ public class ProcessorContextImpl implements ProcessorContext {
 	@Override
 	public void addFolderWatcher(String folderPath, FolderWatcher folderWatcher) {
 		ctx.addFolderWatcher(folderPath, folderWatcher);
-	}
-
-	@Override
-	public void addFileWatcher(String filePath, FileWatcher fileWatcher) {
 	}
 
 	public void addFileProcessor(String filePath,FileProcessor fileProcessor) {

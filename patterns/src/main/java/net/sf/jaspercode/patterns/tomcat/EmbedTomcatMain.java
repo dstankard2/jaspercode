@@ -37,6 +37,10 @@ public class EmbedTomcatMain implements ComponentProcessor {
 		EmbedTomcatRuntimePlatform platform = (EmbedTomcatRuntimePlatform)ctx.getBuildContext().getRuntimePlatform();
 		String pkg = component.getPkg();
 
+		platform.getDependencies().stream().forEach(dep -> {
+			ctx.getBuildContext().addDependency(dep);
+		});
+		
 		ctx.getLog().warn("Assembling Tomcat Main File");
 
 		j.setName(className);
@@ -117,9 +121,14 @@ public class EmbedTomcatMain implements ComponentProcessor {
 			body.append("ctx.addApplicationListener(\""+l+"\");\n");
 		}
 		
+		Map<String,String> websocketEndpoints = platform.getWebsocketEndpoints();
+
+		if (websocketEndpoints.size()>0) {
+			j.addImport("org.apache.tomcat.websocket.server.WsSci");
+			body.append("ctx.addServletContainerInitializer(new WsSci(), null);\n");
+		}
 		body.append("tomcat.start();\ntomcat.getConnector().start();\n");
 		
-		Map<String,String> websocketEndpoints = platform.getWebsocketEndpoints();
 		if (websocketEndpoints.size()>0) {
 			j.addImport("javax.websocket.server.ServerContainer");
 			j.addImport("javax.websocket.server.ServerEndpointConfig");

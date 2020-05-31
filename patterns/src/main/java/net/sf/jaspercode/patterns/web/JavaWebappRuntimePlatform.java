@@ -18,6 +18,14 @@ public abstract class JavaWebappRuntimePlatform implements RuntimePlatform {
 	protected Map<String,List<String>> filterMappings = new HashMap<>();
 	protected Map<String,String> websocketEndpoints = new HashMap<>();
 	protected List<WebServiceDefinition> services = new ArrayList<>();
+	protected List<String> dependencies = new ArrayList<>();
+
+	public void addDependency(String name) {
+		dependencies.add(name);
+	}
+	public List<String> getDependencies() {
+		return dependencies;
+	}
 
 	public List<String> getServletNames() {
 		List<String> ret = new ArrayList<>();

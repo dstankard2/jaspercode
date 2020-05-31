@@ -45,8 +45,8 @@ public class JavascriptUtils {
 		
 		return build.toString();
 	}
-	public static String getModulePath(ProcessorContext ctx) throws JasperException {
-		String srcPath = getModuleSourceFilePath(ctx);
+	
+	public static String getModulePath(String srcPath,ProcessorContext ctx) throws JasperException {
 		String ret = null;
 		String base = ctx.getProperty("javascript.modules.srcRoot");
 		
@@ -58,6 +58,11 @@ public class JavascriptUtils {
 		}
 		
 		return ret;
+	}
+	
+	public static String getModulePath(ProcessorContext ctx) throws JasperException {
+		String srcPath = getModuleSourceFilePath(ctx);
+		return getModulePath(srcPath,ctx);
 	}
 	
 	protected static String getModuleSourceFilePath(ProcessorContext ctx) throws JasperException {
