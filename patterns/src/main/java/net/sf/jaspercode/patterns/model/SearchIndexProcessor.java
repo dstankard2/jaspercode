@@ -56,6 +56,7 @@ public class SearchIndexProcessor implements ComponentProcessor {
 			op.returnType("list/"+entity);
 		} else {
 			op.returnType(entity);
+			multiple = Boolean.FALSE;
 		}
 		List<AttribEntry> attribs = JasperUtils.readParametersAsList(paramString, ctx);
 		String resultStr = (multiple) ? "getResultList()" : "getSingleResult()";

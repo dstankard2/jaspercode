@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import net.sf.jaspercode.api.config.BuildComponent;
 import net.sf.jaspercode.api.config.Component;
@@ -63,7 +64,8 @@ public class ProcessingManager {
 	private Map<String,ComponentFile> componentFiles = new HashMap<>();
 
 	// The key is an id, the value is a file path
-	private Map<Integer,String> fileProcessorItems = new HashMap<>();
+	private Set<FileProcessorRecord> fileProcessors = new HashSet<>();
+	//private Map<Integer,String> fileProcessorItems = new HashMap<>();
 
 	public ProcessingManager(JasperResources jasperResources,EnginePatterns patterns, EngineLanguages languages,ApplicationManager applicationManager,ProcessorLog appLog) {
 		this.jasperResources = jasperResources;
@@ -95,19 +97,11 @@ public class ProcessingManager {
 	}
 	
 	protected boolean isFileProcessor(int id) {
-		return fileProcessorItems.get(id) != null;
+		return fileProcessors.stream().anyMatch(e-> e.getId()==id);
 	}
 
 	protected Set<Integer> getFileProcessorIds(String path) {
-		Set<Integer> ret = new HashSet<>();
-
-		for(Entry<Integer,String> entry : fileProcessorItems.entrySet()) {
-			if (entry.getValue().equals(path)) {
-				ret.add(entry.getKey());
-			}
-		}
-
-		return ret;
+		return fileProcessors.stream().filter(e-> e.getPath().contentEquals(path)).map(e-> e.getId()).collect(Collectors.toSet());
 	}
 
 	protected ComponentItem getComponentItem(Component component) {
@@ -383,6 +377,7 @@ public class ProcessingManager {
 		this.state = ProcessingState.COMPLETE;
 	}
 
+	// This should never be called recursively
 	protected Set<Item> userFileRemoved(String path) {
 		boolean fileChanged = this.userFilesChanged.contains(path);
 		Set<Item> itemsToAdd = new HashSet<>();
@@ -412,7 +407,10 @@ public class ProcessingManager {
 		return itemsToAdd;
 	}
 
-	// When re-adding a folderWatcher, evaluate userFiles to process
+	// Remove the item from processing.  Return a list of items that should be re-added.
+	// When a folder watcher is re-added, the folder watched will have to be scanned by the caller.
+	// Any item with an originator is removed permanently.
+	// Any item that originates from something being removed will be removed permanently.
 	protected Set<Item> removeItem(int id,boolean permanent) {
 		Item item = getItem(id);
 		boolean isFileProcessor = this.isFileProcessor(id);
@@ -425,20 +423,29 @@ public class ProcessingManager {
 		} else {
 			jasperResources.engineDebug("Removing item ("+id+") with perm = "+permanent);
 		}
+
 		ret.addAll(unloadItem(id));
 		
-		jasperResources.engineDebug("Finished removing item "+id);
-		
-		// If an item is being removed, and it has an originator which is not an item or 
-		// file processor, the item should be removed permanently
-		if ((item!=null) && (item.getOriginatorId()>0) && (!permanent)) {
-			int orig = item.getOriginatorId();
-			//Item origItem = getItem(orig);
-			if ((getItem(orig)==null) && (fileProcessorItems.get(orig)==null)) {
-				permanent = true;
-			}
+		// Removing a file processor is always permanent
+		if (isFileProcessor) {
+			permanent = true;
 		}
 		
+		// Removing an item with an originator is always permanent
+		// If an item is being removed, and it has an originator, unload the originator with !permanent
+		if ((item!=null) && (item.getOriginatorId()>0)) {
+			permanent = true;
+			ret.addAll(removeItem(item.getOriginatorId(), false));
+		}
+		
+		// Any item that originates from id is removed permanently.
+		this.items.stream().forEach(i-> {
+			if (i.getOriginatorId()==id) {
+				ret.addAll(removeItem(i.getId(), true));
+			}
+		});
+
+		// If the remove is permanent, make sure the item id is not in the return list
 		if ((permanent) || (isFileProcessor)) {
 			ret.removeIf(i -> (
 				i.getId()==id
@@ -446,7 +453,10 @@ public class ProcessingManager {
 			return ret;
 		}
 
-		ret.add(item);
+		// Now, re-add the item if the remove is not permanent
+		if (!permanent) {
+			ret.add(item);
+		}
 
 		return ret;
 	}
@@ -463,7 +473,7 @@ public class ProcessingManager {
 		if (item!=null) {
 			this.items.remove(item);
 		} else if (isFileProcessor) {
-			this.fileProcessorItems.remove(id);
+			this.fileProcessors.stream().filter(r-> r.getId()==id);
 		} else {
 			System.err.println("Couldn't determine how to remove item "+id);
 		}
@@ -611,7 +621,8 @@ public class ProcessingManager {
 			}
 			this.toProcess.add(proc);
 			// Track this file processor ID
-			this.fileProcessorItems.put(id, path);
+			FileProcessorRecord r = new FileProcessorRecord(id, originatorId, path);
+			this.fileProcessors.add(r);
 		}
 	}
 

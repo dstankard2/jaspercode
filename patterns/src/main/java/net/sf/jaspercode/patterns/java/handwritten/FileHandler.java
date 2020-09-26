@@ -300,8 +300,9 @@ public class FileHandler {
 				if (an!=null) {
 					ServiceOperation op = new ServiceOperation(method.getName());
 					serviceType.addOperation(op);
-					String returnClassName = method.getReturnType().getQualifiedName();
-					String returnTypeName = JavaUtils.getTypeName(returnClassName);
+					//String returnClassName = method.getReturnType().getQualifiedName();
+					String returnTypeName = JavaUtils.getTypeName(method.getReturnType());
+					//String returnTypeName = JavaUtils.getTypeName(returnClassName);
 					op.returnType(returnTypeName);
 					List<ParameterSource<JavaClassSource>> params = method.getParameters();
 					for(ParameterSource<JavaClassSource> param : params) {

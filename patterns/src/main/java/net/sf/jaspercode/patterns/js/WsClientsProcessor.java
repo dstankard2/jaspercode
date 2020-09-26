@@ -201,7 +201,7 @@ public class WsClientsProcessor implements ComponentProcessor {
 			fnBody.append("else _options.path += '" + param + "=';\n");
 		}
 
-		if (comp.getPreprocessing().trim().length() > 0) {
+		if ((comp.getPreprocessing()!=null) && (comp.getPreprocessing().trim().length() > 0)) {
 			fnBody.append(comp.getPreprocessing()).append("(_options);\n");
 		} else {
 			ctx.getLog().info("No request preprocessing defined for web service");

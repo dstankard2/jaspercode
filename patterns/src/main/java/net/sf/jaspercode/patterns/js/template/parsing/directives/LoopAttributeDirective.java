@@ -27,6 +27,11 @@ public class LoopAttributeDirective extends AttributeDirectiveBase {
 		String eltVar = a.substring(0, i).trim();
 		String list = a.substring(i+4).trim();
 		
+		String includeIf = ctx.getTemplateAttribute("js-loop-include-if");
+		if ((includeIf!=null) && (includeIf.trim().length()==0)) {
+			includeIf = null;
+		}
+		
 		String indexVar = null;
 		
 		final String indexIndicator = " index ";
@@ -65,7 +70,13 @@ public class LoopAttributeDirective extends AttributeDirectiveBase {
 			args = args + ','+in;
 		}
 		b.append("var "+eltVar+" = "+list+"["+in+"];\n");
+		if (includeIf!=null) {
+			b.append("if ("+includeIf+") {\n");
+		}
 		b.append(func+"("+args+");\n}\n");
+		if (includeIf!=null) {
+			b.append("}\n");
+		}
 		b.append("}catch(_err){}\n");
 	}
 

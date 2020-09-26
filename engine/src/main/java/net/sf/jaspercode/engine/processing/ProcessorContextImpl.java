@@ -62,6 +62,7 @@ public class ProcessorContextImpl implements ProcessorContext {
 			throw new JasperException("Unable to add variable type "+variableType.getName()+" as there is no currently selected language");
 		}
 		ctx.addVariableType(language, variableType);
+		originateVariableType(variableType);
 	}
 
 	@Override

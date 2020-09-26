@@ -24,7 +24,10 @@ public class OnClickAttributeDirective extends AttributeDirectiveBase {
 		b.append(var+".addEventListener('click', function($event) {\n");
 		b.append("$event.stopPropagation();\n");
 		b.append(click);
-		if (!click.endsWith(";")) {
+		if (click==null) {
+			b.append("/* no-op */");
+		}
+		else if (!click.endsWith(";")) {
 			b.append(";");
 		}
 		b.append("\n});\n");

@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jboss.forge.roaster.model.Type;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
 import org.jboss.forge.roaster.model.source.MethodSource;
 
@@ -233,14 +234,25 @@ public class JavaUtils {
 		
 		return ret;
 	}
-	
+
+	public static String getTypeName(Type<JavaClassSource> cl) {
+		String ret = null;
+		
+		if ((cl.getQualifiedName().equals("java.util.List")) && (cl.isParameterized())) {
+			String name = cl.getTypeArguments().get(0).getQualifiedName();
+			ret = "list/"+getTypeName(name);
+		}
+		else ret = getTypeName(cl.getQualifiedName());
+		
+		return ret;
+	}
+
 	public static String getTypeName(String className) {
 		String ret = null;
 		
 		if (className.equals("java.lang.String")) ret = "string";
 		else if (className.equals("java.lang.Integer")) ret = "integer";
 		else if (className.equals("java.lang.Double")) ret = "double";
-		else if (className.startsWith("java.util.List")) ret = "list/object";
 		else if (className.startsWith("java.lang.Object")) ret = "object";
 		else if (className.startsWith("java.lang.Long")) ret = "longint";
 		else if (className.startsWith("java.util.Date")) ret = "date";
@@ -291,6 +303,9 @@ public class JavaUtils {
 					break;
 				}
 			}
+		}
+		if(op==null) {
+			throw new JasperException("Couldn't find rule "+rule+" with params = "+params);
 		}
 		return op;
 	}

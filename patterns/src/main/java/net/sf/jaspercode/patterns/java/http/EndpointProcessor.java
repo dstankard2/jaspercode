@@ -113,7 +113,7 @@ public class EndpointProcessor implements ComponentProcessor {
 		src = JavaUtils.getClassSourceFile(pkg+'.'+className, ctx, false);
 
 		if (src==null) {
-			throw new JasperException("Couldn't Find servlet web service '"+pkg+'.'+className+"'");
+			throw new JasperException("Couldn't Find servlet web service '"+pkg+'.'+className+"' - You must declare a module component");
 		}
 
 		MethodSource<JavaClassSource> serviceMethod = src.getSrc().getMethod("service","javax.servlet.ServletRequest","javax.servlet.ServletResponse");
@@ -170,7 +170,7 @@ public class EndpointProcessor implements ComponentProcessor {
 					code.append("BufferedReader _r = _httpRequest.getReader();\n");
 					code.append("String _l = null;\n");
 					code.append("while((_l = _r.readLine()) != null) {\n");
-					code.append(requestBody+" += _l.trim();\n]\n");
+					code.append(requestBody+" += _l.trim();\n}\n");
 				} else if(bodyType==ctx.getVariableType("integer")) {
 					code.append("Integer "+requestBody+" = null;\n");
 					execCtx.addVariable(requestBody, "integer");

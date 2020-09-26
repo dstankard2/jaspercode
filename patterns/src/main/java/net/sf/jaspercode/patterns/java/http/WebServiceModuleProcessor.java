@@ -68,13 +68,13 @@ public class WebServiceModuleProcessor implements ComponentProcessor {
 		bodyCode.append("Map<String,String> _params = null;\n");
 		bodyCode.append("String _method = _httpRequest.getMethod();\n");
 
-		if (comp.getRequestRef().trim().length()>0) {
+		if ((comp.getRequestRef()!=null) && (comp.getRequestRef().trim().length()>0)) {
 			String ref = comp.getRequestRef();
 			ctx.addSystemAttribute(ref, "HttpServletRequest");
 			bodyCode.append("HttpServletRequest "+ref+" = _httpRequest;\n");
 			execCtx.addVariable(ref, "HttpServletRequest");
 		}
-		if (comp.getResponseRef().trim().length()>0) {
+		if ((comp.getResponseRef()!=null) && (comp.getResponseRef().trim().length()>0)) {
 			String ref = comp.getResponseRef();
 			ctx.addSystemAttribute(ref, "HttpServletResponse");
 			bodyCode.append("HttpServletResponse "+ref+" = _httpResponse;\n");

@@ -37,6 +37,8 @@ public class DOMElementType extends JavascriptType {
 		properties.put("disabled", "string");
 		properties.put("title", "string");
 		properties.put("type", "string");
+		properties.put("cols", "integer");
+		properties.put("rows", "integer");
 	}
 
 }

@@ -34,8 +34,8 @@ public class DomainRuleUtils {
 		Map<String,JavaServiceType> ret = new HashMap<>();
 		
 		String deps = comp.getDependencies();
-		if (deps.trim().equals("")) {
-			ctx.getLog().warn("No dependencies found for Domain Rule component");
+		if ((deps==null) || (deps.trim().equals(""))) {
+			ctx.getLog().warn("No dependencies found for Domain Rule component - Specify with configuration property 'java.domain.depedencyRefs'");
 			return ret;
 		}
 		String[] refs = deps.split(",");
@@ -61,8 +61,8 @@ public class DomainRuleUtils {
 		Map<String,JavaVariableType> ret = new HashMap<>();
 		
 		String deps = comp.getDependencies();
-		if (deps.trim().equals("")) {
-			ctx.getLog().warn("No dependencies found for Domain Rule component");
+		if ((deps==null) || (deps.trim().equals(""))) {
+			ctx.getLog().warn("No dependencies found for Domain Rule component - specify with configuration property 'java.domain.depedencyRefs'");
 			return ret;
 		}
 		String[] refs = deps.split(",");
@@ -83,6 +83,9 @@ public class DomainRuleUtils {
 		LocatedServiceType serviceType = null;
 		String implClass = comp.getImplClass();
 
+		//if ((implClass==null) || (implClass.trim().length()==0)) {
+		//	throw new JasperException("Couldn't find implementation class name for domain logic component");
+		//}
 		if (className.equals(ref)) {
 			throw new JasperException("Couldn't determine ref for service '"+className+"'");
 		}
@@ -121,7 +124,7 @@ public class DomainRuleUtils {
 
 		// Add locator method for this service
 		String instanceClass = className;
-		if (implClass.trim().length()>0) {
+		if ((implClass!=null) && (implClass.trim().length()>0)) {
 			ctx.getLog().info("Creating service '"+className+"' as abstract class and using '"+implClass+"' as implementation");
 			instanceClass = implClass;
 			serviceFile.getSrc().setAbstract(true);

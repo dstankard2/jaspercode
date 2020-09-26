@@ -9,7 +9,7 @@ import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.langsupport.java.types.JavaVariableType;
 import net.sf.jaspercode.langsupport.java.types.impl.JavaListType;
 
-public abstract class JavaSourceFile<T extends JavaSource> implements SourceFile {
+public abstract class JavaSourceFile<T extends JavaSource<?>> implements SourceFile {
 
 	protected ProcessorContext ctx = null;
 	protected T src = null;
@@ -25,14 +25,6 @@ public abstract class JavaSourceFile<T extends JavaSource> implements SourceFile
 		this.ctx = ctx;
 		//this.buildCtx = ctx.getBuildContext();
 		this.src = Roaster.create(cl);
-		this.basePath = ctx.getBuildContext().getOutputRootPath("java");
-	}
-
-	private JavaSourceFile(Class<T> cl,ProcessorContext ctx, T src) throws JasperException {
-		this.cl = cl;
-		this.ctx = ctx;
-		//this.buildCtx = ctx.getBuildContext();
-		this.src = src;
 		this.basePath = ctx.getBuildContext().getOutputRootPath("java");
 	}
 

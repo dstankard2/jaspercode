@@ -28,6 +28,15 @@ public class ArrayType extends JavascriptType implements ListType {
 	}
 
 	@Override
+	public String getName() {
+		if (elementType!=null) {
+			return "list/"+elementType.getName();
+		} else {
+			return "list";
+		}
+	}
+
+	@Override
 	public Code declare(String varName, String elementType, CodeExecutionContext execCtx) throws JasperException {
 		return declare(varName,execCtx);
 	}

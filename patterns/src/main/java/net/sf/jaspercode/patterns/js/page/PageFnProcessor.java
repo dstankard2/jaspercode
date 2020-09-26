@@ -15,6 +15,11 @@ import net.sf.jaspercode.langsupport.javascript.types.JavascriptType;
 import net.sf.jaspercode.langsupport.javascript.types.PromiseType;
 import net.sf.jaspercode.patterns.xml.js.page.PageFn;
 
+/**
+ * PageFn which either has handwritten code or wraps around a web service
+ * @author DCS
+ *
+ */
 @Plugin
 @Processor(componentClass = PageFn.class)
 public class PageFnProcessor implements ComponentProcessor {
@@ -133,7 +138,7 @@ public class PageFnProcessor implements ComponentProcessor {
 				String attribType = resolveType.getAttributeType(attr);
 				if (modelType.getAttributeType(attr)!=null) {
 					if (!modelType.getAttributeType(attr).equals(attribType)) {
-						throw new JasperException("Found inconsistent types for model attribute '"+attr+"'");
+						throw new JasperException("Found inconsistent types for model attribute '"+attr+"': '"+modelType.getAttributeType(attr)+"' and '"+attribType+"'");
 					}
 				} else {
 					PageUtils.addModelAttribute(info.getName(), attr, attribType, ctx);

@@ -46,10 +46,6 @@ public class EmbedTomcatJarProcessor implements ComponentProcessor {
 		ctx.getBuildContext().addDependency("tomcat-embed-core");
 		ctx.getBuildContext().addDependency("tomcat-embed-jasper");
 		ctx.getBuildContext().addDependency("tomcat-jasper");
-		/* Not necessary?
-		ctx.getBuildContext().addDependency("tomcat-jasper-el");
-		ctx.getBuildContext().addDependency("tomcat-jsp-api");
-		*/
 		
 		// For a Maven Build, add the Maven assembly plugin to build a Jar with dependencies
 		if (MavenUtils.isMavenBuild(ctx)) {

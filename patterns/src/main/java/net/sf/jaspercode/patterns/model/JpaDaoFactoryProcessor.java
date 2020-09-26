@@ -38,10 +38,15 @@ public class JpaDaoFactoryProcessor implements ComponentProcessor {
 	public void process() throws JasperException {
 		ctx.setLanguageSupport("Java8");
 		boolean selectOnIndexes = false;
+		boolean deleteOnIndexes = false;
 
 		String s = comp.getSelectByIndex();
 		if ((s.equalsIgnoreCase("t")) || (s.equalsIgnoreCase("true"))) {
 			selectOnIndexes = true;
+		}
+		s = comp.getDeleteByIndex();
+		if ((s.equalsIgnoreCase("t")) || (s.equalsIgnoreCase("true"))) {
+			deleteOnIndexes = true;
 		}
 		
 		String locatorName = comp.getEntityManagerLocator();
@@ -67,6 +72,11 @@ public class JpaDaoFactoryProcessor implements ComponentProcessor {
 		MethodSource<JavaClassSource> constructor = factoryClass.addMethod().setConstructor(true).setPublic();
 		StringBuilder constructorCode = new StringBuilder();
 		
+		MethodSource<JavaClassSource> getEm = factoryClass.addMethod().setPublic().setName("getEntityManager")
+				.setReturnType("javax.persistence.EntityManager");
+		//getEm.setBody("return null;");
+		getEm.setBody("return "+locatorType.getEntityManager(null, null).getCodeText()+";");
+
 		for(TableInfo table : tableSet.getTableInfos()) {
 			String daoName = table.getEntityName()+"Dao";
 			String daoRef = JasperUtils.getLowerCamelName(daoName);
@@ -158,6 +168,31 @@ public class JpaDaoFactoryProcessor implements ComponentProcessor {
 						body.appendCodeText(".getResultList();\n");
 						op.returnType("list/"+entityName);
 					}
+					JavaCode b = new JavaCode(body.getCodeText().replace("_REPLACE_", queryString.toString()));
+					JavaUtils.addServiceOperation(op, b, daoClass, ctx);
+					daoType.addOperation(op);
+				}
+				if (deleteOnIndexes) {
+					StringBuilder queryString = new StringBuilder();
+					op = new ServiceOperation("deleteBy"+indName);
+					body = new JavaCode();
+
+					body.appendCodeText(getEmAnon.getCodeText()+".createQuery(\"_REPLACE_\")");
+					
+					queryString.append("delete from "+entityName);
+					boolean first = true;
+					for(String col : ind.getColumns()) {
+						String type = ctx.getSystemAttribute(col);
+						op.addParam(col, type);
+						body.appendCodeText(".setParameter(\""+col+"\","+col+")\n");
+						if (first) {
+							first = false;
+							queryString.append(" where "+col+" = :"+col);
+						} else {
+							queryString.append(" and "+col+" = :"+col);
+						}
+					}
+					body.appendCodeText(".executeUpdate();");
 					JavaCode b = new JavaCode(body.getCodeText().replace("_REPLACE_", queryString.toString()));
 					JavaUtils.addServiceOperation(op, b, daoClass, ctx);
 					daoType.addOperation(op);

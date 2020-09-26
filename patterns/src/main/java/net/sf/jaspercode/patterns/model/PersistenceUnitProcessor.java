@@ -70,8 +70,8 @@ public class PersistenceUnitProcessor implements ComponentProcessor {
 
 		if (jpaImplementation.equals("hibernate")) pu.addElement("provider").setText("org.hibernate.jpa.HibernatePersistenceProvider");
 
-		if (ctx.getProperty("model.jndiDataSource")!=null) {
-			String name = ctx.getProperty("model.jndiDataSource");
+		if (persistenceUnit.getJndiDataSource()!=null) {
+			String name = persistenceUnit.getJndiDataSource();
 			pu.addElement("non-jta-data-source").setText(name);
 		}
 		
@@ -86,6 +86,11 @@ public class PersistenceUnitProcessor implements ComponentProcessor {
 			// Add MySQL dialect and dependencies
 			dialect.addAttribute("value","org.hibernate.dialect.MySQLDialect");
 			ctx.getBuildContext().addDependency("mysql-connector");
+			if (persistenceUnit.getShowSql()!=null) {
+				Element showSql = props.addElement("property");
+				showSql.addAttribute("value", "true");
+				showSql.addAttribute("name", "hibernate.show_sql");
+			}
 		}
 
 		ctx.getBuildContext().addDependency("jpa");
@@ -108,7 +113,7 @@ public class PersistenceUnitProcessor implements ComponentProcessor {
 		entityFile.getSrc().addAnnotation("javax.persistence.Entity");
 		entityFile.getSrc().addAnnotation("javax.persistence.Table")
 				.setLiteralValue("name", "\""+tableInfo.getTableName()+"\"")
-				.setLiteralValue("schema", "\""+tableInfo.getSchema()+"\"");
+				.setLiteralValue("catalog", "\""+tableInfo.getSchema()+"\"");
 		entityFile.getSrc().addMethod().setConstructor(true).setPublic().setBody("");
 		MethodSource<JavaClassSource> constructor = entityFile.getSrc().addMethod().setConstructor(true).setPublic();
 		StringBuilder constructorCode = new StringBuilder();
@@ -163,7 +168,7 @@ public class PersistenceUnitProcessor implements ComponentProcessor {
 				field.addAnnotation("javax.persistence.Id");
 			}
 			if (col.isAutoGenerate()) {
-				field.addAnnotation("javax.persistence.GeneratedValue").setLiteralValue("strategy", "javax.persistence.GenerationType.AUTO");
+				field.addAnnotation("javax.persistence.GeneratedValue").setLiteralValue("strategy", "javax.persistence.GenerationType.IDENTITY");
 			}
 		}
 		constructor.setBody(constructorCode.toString());

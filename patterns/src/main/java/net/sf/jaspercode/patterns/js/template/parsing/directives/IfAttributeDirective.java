@@ -26,6 +26,9 @@ public class IfAttributeDirective extends AttributeDirectiveBase {
 		String cond = ctx.getTemplateAttribute("js-if");
 		CodeExecutionContext existingCtx = ctx.getExecCtx();
 
+		if ((cond==null) || (cond.trim().length()==0)) {
+			throw new JasperException("Directive js-if requires a condition");
+		}
 		JavascriptParser eval = new JavascriptParser(cond,existingCtx);
 		DirectiveUtils.populateImpliedVariables(eval);
 		JavascriptParsingResult result = eval.evalExpression();
