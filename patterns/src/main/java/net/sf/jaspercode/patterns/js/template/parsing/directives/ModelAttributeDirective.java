@@ -4,8 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.annotation.Plugin;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.patterns.js.template.parsing.AttributeDirectiveBase;
 import net.sf.jaspercode.patterns.js.template.parsing.DirectiveContext;
 
@@ -19,11 +19,11 @@ public class ModelAttributeDirective extends AttributeDirectiveBase {
 
 	@Override
 	public void generateCode(DirectiveContext ctx) throws JasperException {
-		String model = ctx.getTemplateAttributes().get("js-model");
+		String model = ctx.getTemplateAttribute("js-model");
 		StringBuilder b = ctx.getCode();
 		String eltName = ctx.getElementName();
+		String setAfterFn = null;
 
-		//ctx.continueRenderElement(ctx.getExecCtx());
 		String var = ctx.getElementVarName();
 		String template = null;
 		Map<String,String> templateParams = new HashMap<>();
@@ -33,6 +33,9 @@ public class ModelAttributeDirective extends AttributeDirectiveBase {
 		templateParams.put("MODEL_REF", "_model."+model);
 		
 		String attrName = model;
+		if ((model==null) || (model.trim().length()==0)) {
+			throw new JasperException("HTML template directive js-model requires a value");
+		}
 		if (model.indexOf('.')>=0) {
 			attrName = model.substring(0, model.indexOf('.'));
 		}
@@ -42,17 +45,19 @@ public class ModelAttributeDirective extends AttributeDirectiveBase {
 			template = SELECT_MODEL;
 			String fn = ctx.newVarName("_f", "function", ctx.getExecCtx());
 			templateParams.put("FN", fn);
+			setAfterFn = fn;
 		} else if (eltName.equals("input")) {
-			String type = ctx.getDomAttributes().get("type");
+			String type = ctx.getDomAttribute("type");
 			String changeEvent;
 			if (type==null) changeEvent = "keyup";
-			else if (type.equals("text")) changeEvent = "keyup";
-			else if (type.equals("password")) changeEvent = "keyup";
+			else if (type.equals("text")) changeEvent = "input";
+			else if (type.equals("password")) changeEvent = "input";
 			else changeEvent = "change";
 			template = INPUT_MODEL_TEXT;
 			templateParams.put("DOMEVENT", changeEvent);
 		} else if (eltName.equals("textarea")) {
-			
+			template = INPUT_MODEL_TEXT;
+			templateParams.put("DOMEVENT", "input");
 		}
 		
 		String code = template;
@@ -61,17 +66,21 @@ public class ModelAttributeDirective extends AttributeDirectiveBase {
 		}
 		b.append(code);
 		ctx.continueRenderElement();
+		if (setAfterFn != null) {
+			code = code + setAfterFn+"();\r\n";
+		}
 	}
 	
 	private static final String INPUT_MODEL_TEXT = "aaaELTVAR.addEventListener('aaaDOMEVENT', function() {\n"
 			+ "var val = aaaELTVAR.value;\n"
 			+ "try {\n"
 			+ "aaaMODEL_REF = val;\n"
+			+ "_page.event('aaaCHANGE_EVENT');\n"
 			+ "} catch(err) { }\n"
 			+ "});\n"
 			+ "var aaaREM_FN = _page.event('aaaCHANGE_EVENT', function() {\n"
-			+ "var val = aaaMODEL_REF;\n"
 			+ "try {\n"
+			+ "var val = aaaMODEL_REF;\n"
 			+ "if ((val===null) || (val===undefined)) val = '';\n"
 			+ "aaaELTVAR.value = val;\n"
 			+ "} catch(err) {}\n"
@@ -98,7 +107,6 @@ public class ModelAttributeDirective extends AttributeDirectiveBase {
 			"}.bind(_page);\r\n" + 
 			"var aaaREM_FN = _page.event('aaaCHANGE_EVENT',aaaFN);\r\n" + 
 			"aaaFN();\r\n" + 
-			"aaaELTVAR.$$remove.push(aaaREM_FN);\r\n" + 
-			"";
+			"aaaELTVAR.$$remove.push(aaaREM_FN);\r\n";
 }
 

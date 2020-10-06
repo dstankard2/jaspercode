@@ -5,8 +5,8 @@ import java.util.List;
 
 import net.sf.jaspercode.api.BuildContext;
 import net.sf.jaspercode.api.BuildProcessorContext;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.RuntimePlatform;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.ApplicationResource;
 
 public class MavenBuildContext implements BuildContext {
@@ -39,20 +39,21 @@ public class MavenBuildContext implements BuildContext {
 	}
 
 	@Override
-	public void addDependency(BuildContext buildCtx) throws JasperException {
+	public void addDependency(BuildContext buildCtx) {
 		if (buildCtx==null) return;
 		if (!(buildCtx instanceof MavenBuildContext)) {
-			throw new JasperException("A Maven Build Context may only depend on anotehr Maven Build Context");
+			ctx.getLog().warn("A Maven build context may only depend on another Maven build context");
+		} else {
+			MavenBuildContext mavenCtx = (MavenBuildContext)buildCtx;
+			if (mavenCtx==this) return;
+			String dep = mavenCtx.getArtifact();
+			proc.addDependency(dep);
 		}
-		MavenBuildContext mavenCtx = (MavenBuildContext)buildCtx;
-		if (mavenCtx==this) return;
-		String dep = mavenCtx.getArtifact();
-		proc.addDependency(dep);
 	}
 
 	@Override
 	public String getApplicationFolderPath() {
-		return ctx.getFolderPath();
+		return ctx.getFolder().getPath();
 	}
 
 	@Override
@@ -71,7 +72,7 @@ public class MavenBuildContext implements BuildContext {
 	
 	@Override
 	public String getOutputRootPath(String fileExt) {
-		String path = ctx.getFolderPath();
+		String path = ctx.getFolder().getPath();
 		
 		if (fileExt!=null) {
 			if (fileExt.equals("java")) {

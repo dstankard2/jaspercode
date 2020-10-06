@@ -14,12 +14,22 @@ import net.sf.jaspercode.api.config.BuildComponent;
 import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.config.ComponentSet;
 import net.sf.jaspercode.api.config.Property;
+import net.sf.jaspercode.api.plugin.ApplicationPlugin;
+import net.sf.jaspercode.api.plugin.EnginePlugin;
 
 public class PluginManager {
 	private Set<Class<?>> plugins = null;
 	private File[] pluginLocations = null;
 	private Set<Class<?>> xmlConfigClasses = null;
-	
+
+	public Set<Class<EnginePlugin>> getEnginePlugins() {
+		return getPluginSubclasses(EnginePlugin.class);
+	}
+
+	public Set<Class<ApplicationPlugin>> getApplicationPlugins() {
+		return getPluginSubclasses(ApplicationPlugin.class);
+	}
+
 	public PluginManager(File[] libs) throws EngineInitException {
 		pluginLocations = libs;
 

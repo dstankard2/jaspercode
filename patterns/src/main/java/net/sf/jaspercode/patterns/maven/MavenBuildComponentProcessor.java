@@ -10,9 +10,9 @@ import net.sf.jaspercode.api.BuildComponentProcessor;
 import net.sf.jaspercode.api.BuildContext;
 import net.sf.jaspercode.api.BuildProcessorContext;
 import net.sf.jaspercode.api.Command;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.config.BuildComponent;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.ApplicationFile;
 import net.sf.jaspercode.api.resources.ApplicationResource;
 import net.sf.jaspercode.patterns.CommandImpl;
@@ -33,6 +33,7 @@ public class MavenBuildComponentProcessor implements BuildComponentProcessor {
 	private String artifact = null;
 
 	private List<Command> build = new ArrayList<>();
+	private List<Command> clean = new ArrayList<>();
 
 	@Override
 	public Class<? extends BuildComponent> getComponentClass() {
@@ -63,7 +64,7 @@ public class MavenBuildComponentProcessor implements BuildComponentProcessor {
 	public void initialize(BuildComponent component, BuildProcessorContext ctx) throws JasperException {
 		this.component = (MavenBuild)component;
 		this.ctx = ctx;
-		ctx.getLog().info("Initialize Maven Build Context for path "+ctx.getFolderPath());
+		ctx.getLog().info("Initialize Maven Build Context for path "+ctx.getFolder().getPath());
 		this.packaging = this.component.getPackaging();
 		Dependencies deps = this.component.getDependencies();
 		for(String s : deps.getDependency()) {
@@ -71,6 +72,9 @@ public class MavenBuildComponentProcessor implements BuildComponentProcessor {
 		}
 		
 		build.add(new MavenCommand());
+		MavenCommand cleanCmd = new MavenCommand();
+		cleanCmd.addPhase("clean");
+		clean.add(cleanCmd);
 		
 		ApplicationResource src = ctx.getFolder().getResource("src/main/java");
 		if (src!=null) {
@@ -80,6 +84,7 @@ public class MavenBuildComponentProcessor implements BuildComponentProcessor {
 			HandwrittenCode code = new HandwrittenCode();
 			String path = ctx.getFolder().getPath()+"src/main/java";
 			code.setPath(path);
+			code.setPriority(0);
 			ctx.addComponent(code);
 		}
 
@@ -125,13 +130,13 @@ public class MavenBuildComponentProcessor implements BuildComponentProcessor {
 
 	@Override
 	public BuildContext createBuildContext() {
-		ctx.getLog().debug("Create new Maven build context at path '"+ctx.getFolderPath()+"'");
+		ctx.getLog().debug("Create new Maven build context at path '"+ctx.getFolder().getPath()+"'");
 		return new MavenBuildContext(ctx,this);
 	}
 
 	@Override
 	public void generateBuild() throws JasperException {
-		String path = ctx.getFolderPath();
+		String path = ctx.getFolder().getPath();
 		XmlFile pom = new XmlFile(path+"pom.xml");
 		Document doc = pom.getDocument();
 		Element root = doc.addElement("project");
@@ -301,6 +306,11 @@ public class MavenBuildComponentProcessor implements BuildComponentProcessor {
 	@Override
 	public List<Command> build() {
 		return build;
+	}
+
+	@Override
+	public List<Command> clean() {
+		return clean;
 	}
 
 }

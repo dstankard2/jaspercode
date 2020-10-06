@@ -3,7 +3,7 @@ package net.sf.jaspercode.api.types;
 import net.sf.jaspercode.api.BuildContext;
 import net.sf.jaspercode.api.Code;
 import net.sf.jaspercode.api.CodeExecutionContext;
-import net.sf.jaspercode.api.JasperException;
+import net.sf.jaspercode.api.exception.JasperException;
 
 public interface VariableType {
 

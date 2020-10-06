@@ -54,4 +54,11 @@ public class EmbedTomcatRuntimePlatform extends JavaWebappRuntimePlatform {
 		this.dataSources = dataSources;
 	}
 
+	public void addWebsocketEndpoint(String url,String className) {
+		super.addWebsocketEndpoint(url, className);
+		this.dependencies.add("javax.websocket-api");
+		this.dependencies.add("tomcat-websocket");
+		this.dependencies.add("tomcat-embed-websocket");
+	}
+
 }

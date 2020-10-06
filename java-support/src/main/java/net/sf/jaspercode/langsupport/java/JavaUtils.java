@@ -4,14 +4,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jboss.forge.roaster.model.Type;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
 import org.jboss.forge.roaster.model.source.MethodSource;
 
 import net.sf.jaspercode.api.AttribEntry;
 import net.sf.jaspercode.api.CodeExecutionContext;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.types.ServiceOperation;
 import net.sf.jaspercode.langsupport.java.types.JavaVariableType;
 import net.sf.jaspercode.langsupport.java.types.ServiceLocator;
@@ -34,7 +35,7 @@ public class JavaUtils {
 		return getRootPackage(ctx)+'.'+component.getPkg();
 	}
 
-	private static String getJavaSourcePath(String cannonicalName,ProcessorContext ctx) {
+	private static String getJavaSourcePath(String cannonicalName,ProcessorContext ctx) throws JasperException {
 		String ret = null;
 		
 		ret = ctx.getBuildContext().getOutputRootPath("java") + '/';
@@ -48,7 +49,7 @@ public class JavaUtils {
 	 * @param ctx
 	 * @return
 	 */
-	public static JavaClassSourceFile getClassSourceFile(String cannonicalName,ProcessorContext ctx) {
+	public static JavaClassSourceFile getClassSourceFile(String cannonicalName,ProcessorContext ctx) throws JasperException {
 		return getClassSourceFile(cannonicalName,ctx,true);
 	}
 	
@@ -58,7 +59,7 @@ public class JavaUtils {
 	 * @param ctx
 	 * @return
 	 */
-	public static JavaClassSourceFile getClassSourceFile(String cannonicalName,ProcessorContext ctx, boolean create) {
+	public static JavaClassSourceFile getClassSourceFile(String cannonicalName,ProcessorContext ctx, boolean create) throws JasperException {
 		JavaClassSourceFile ret = null;
 
 		ret = (JavaClassSourceFile)ctx.getSourceFile(getJavaSourcePath(cannonicalName,ctx));
@@ -67,8 +68,8 @@ public class JavaUtils {
 			int i = cannonicalName.lastIndexOf('.');
 			String pkg = cannonicalName.substring(0, i);
 			String className = cannonicalName.substring(i+1);
-			ret.getJavaClassSource().setPackage(pkg);
-			ret.getJavaClassSource().setName(className);
+			ret.getSrc().setPackage(pkg);
+			ret.getSrc().setName(className);
 			ctx.addSourceFile(ret);
 		}
 		
@@ -117,7 +118,7 @@ public class JavaUtils {
 	public static void addProperty(JavaClassSourceFile src,String name,String typeName,ProcessorContext ctx) throws JasperException {
 		JavaVariableType type = JasperUtils.getType(JavaVariableType.class, typeName, ctx);
 		src.addImport(type);
-		src.getJavaClassSource().addProperty(type.getClassName(), name);
+		src.getSrc().addProperty(type.getClassName(), name);
 	}
 	
 	public static JavaCode addServiceToExecutionContext(String ref,CodeExecutionContext execCtx,ProcessorContext ctx) throws JasperException {
@@ -233,14 +234,25 @@ public class JavaUtils {
 		
 		return ret;
 	}
-	
+
+	public static String getTypeName(Type<JavaClassSource> cl) {
+		String ret = null;
+		
+		if ((cl.getQualifiedName().equals("java.util.List")) && (cl.isParameterized())) {
+			String name = cl.getTypeArguments().get(0).getQualifiedName();
+			ret = "list/"+getTypeName(name);
+		}
+		else ret = getTypeName(cl.getQualifiedName());
+		
+		return ret;
+	}
+
 	public static String getTypeName(String className) {
 		String ret = null;
 		
 		if (className.equals("java.lang.String")) ret = "string";
-		else if (className.equals("java.lang.Integer")) ret = "int";
+		else if (className.equals("java.lang.Integer")) ret = "integer";
 		else if (className.equals("java.lang.Double")) ret = "double";
-		else if (className.startsWith("java.util.List")) ret = "list/object";
 		else if (className.startsWith("java.lang.Object")) ret = "object";
 		else if (className.startsWith("java.lang.Long")) ret = "longint";
 		else if (className.startsWith("java.util.Date")) ret = "date";
@@ -291,6 +303,9 @@ public class JavaUtils {
 					break;
 				}
 			}
+		}
+		if(op==null) {
+			throw new JasperException("Couldn't find rule "+rule+" with params = "+params);
 		}
 		return op;
 	}
@@ -355,11 +370,13 @@ public class JavaUtils {
 		return ret;
 	}
 	
+	/*
 	public static void addImports(JavaClassSourceFile src, JavaCode code) {
 		for(String im : code.getImports()) {
 			src.getJavaClassSource().addImport(im);
 		}
 	}
+	*/
 	
 }
 

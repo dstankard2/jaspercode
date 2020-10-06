@@ -1,7 +1,7 @@
 package net.sf.jaspercode.patterns.maven;
 
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.ProcessorContext;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.ApplicationFolder;
 import net.sf.jaspercode.api.resources.ApplicationResource;
 import net.sf.jaspercode.patterns.java.http.JavaWebUtils;

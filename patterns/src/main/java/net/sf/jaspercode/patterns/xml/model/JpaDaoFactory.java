@@ -39,6 +39,9 @@ public class JpaDaoFactory extends JavaComponent {
 	@XmlAttribute
 	private String selectByIndex = "";
 	
+	@XmlAttribute
+	private String deleteByIndex = "";
+	
 	@XmlTransient
 	private String pkg = "";
 	
@@ -64,6 +67,14 @@ public class JpaDaoFactory extends JavaComponent {
 
 	public void setSelectByIndex(String selectByIndex) {
 		this.selectByIndex = selectByIndex;
+	}
+
+	public String getDeleteByIndex() {
+		return deleteByIndex;
+	}
+
+	public void setDeleteByIndex(String deleteByIndex) {
+		this.deleteByIndex = deleteByIndex;
 	}
 
 	@ConfigProperty(required = true, name = "java.model.package", example = "model",

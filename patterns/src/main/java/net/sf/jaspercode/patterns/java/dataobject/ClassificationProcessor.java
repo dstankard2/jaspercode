@@ -3,12 +3,12 @@ package net.sf.jaspercode.patterns.java.dataobject;
 import org.jboss.forge.roaster.model.source.JavaInterfaceSource;
 
 import net.sf.jaspercode.api.ComponentProcessor;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.annotation.Processor;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.langsupport.java.JavaInterfaceSourceFile;
 import net.sf.jaspercode.langsupport.java.JavaUtils;
 import net.sf.jaspercode.langsupport.java.types.JavaVariableType;
@@ -30,10 +30,10 @@ public class ClassificationProcessor implements ComponentProcessor {
 	@Override
 	public void process() throws JasperException {
 		ctx.setLanguageSupport("Java8");
-		JavaInterfaceSourceFile file = new JavaInterfaceSourceFile(ctx.getBuildContext());
+		JavaInterfaceSourceFile file = new JavaInterfaceSourceFile(ctx);
 		String pkg = JavaUtils.getJavaPackage(comp, ctx);
 		String className = comp.getName();
-		JavaInterfaceSource src = file.getJavaClassSource();
+		JavaInterfaceSource src = file.getSrc();
 		src.setName(className);
 		src.setPackage(pkg);
 		JavaDataObjectType type = new JavaDataObjectType(className, pkg+'.'+className, ctx.getBuildContext());
@@ -54,7 +54,7 @@ public class ClassificationProcessor implements ComponentProcessor {
 				if (!exType.getIsInterface()) {
 					throw new JasperException("A classification may only extend another classification");
 				}
-				ctx.dependOnVariableType(ex);
+				ctx.dependOnVariableType(exType);
 				src.addInterface(exType.getImport());
 				for(String n : exType.getAttributeNames()) {
 					if (type.getAttributeType(n)==null) {
@@ -94,12 +94,12 @@ public class ClassificationProcessor implements ComponentProcessor {
 			} else {
 				propertyClass = attrType.getClassName();
 			}
-			ctx.dependOnVariableType(attrType.getName());
+			ctx.dependOnVariableType(attrType);
 			String upperCamel = JasperUtils.getUpperCamelName(attr);
-			file.addImport(attrType.getImport());
+			file.addImport(attrType);
 			src.addMethod().setName("set"+upperCamel).setPublic().addParameter(propertyClass, attr);
 			src.addMethod().setName("get"+upperCamel).setPublic().setReturnType(propertyClass);
-			file.addImport(attrType.getImport());
+			file.addImport(attrType);
 		}
 		
 		ctx.addSourceFile(file);

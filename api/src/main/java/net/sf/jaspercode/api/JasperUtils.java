@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.types.DataObjectType;
 import net.sf.jaspercode.api.types.ListType;
 import net.sf.jaspercode.api.types.ServiceOperation;
@@ -130,6 +131,9 @@ public class JasperUtils {
 		T ret = null;
 		VariableType type = null;
 		
+		if (name==null) {
+			throw new JasperException("Couldn't find type with null name");
+		}
 		if (ctx==null) {
 			throw new JasperException("Tried to find type '"+name+"' but got null ProcessorContext");
 		}
@@ -326,4 +330,23 @@ public class JasperUtils {
 		return ret;
 	}
 	
+	@SuppressWarnings("unchecked")
+	public static <T extends SourceFile> T getSourceFile(Class<T> sourceFileClass, String path,ProcessorContext ctx) throws JasperException {
+		T ret = null;
+		
+		if (ctx==null) {
+			throw new JasperException("Tried to find source file '"+path+"' but got null ProcessorContext");
+		}
+		SourceFile src = ctx.getSourceFile(path);
+		if (src==null) {
+			throw new JasperException("Couldn't find source file at path '"+path+"'");
+		}
+		if (sourceFileClass.isAssignableFrom(src.getClass())) {
+			ret = (T)src;
+		} else {
+			throw new JasperException("Source File '"+path+"' was not of type '"+sourceFileClass.getCanonicalName()+"'");
+		}
+		
+		return ret;
+	}
 }

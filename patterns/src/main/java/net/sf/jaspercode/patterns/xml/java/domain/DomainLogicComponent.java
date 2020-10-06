@@ -38,7 +38,7 @@ public abstract class DomainLogicComponent extends JavaComponent {
 	}
 
 	@ConfigProperty(required = false, name = "java.domain.depedencyRefs",
-			description = "Comm-delimited list of system attributes that this component uses to resolve the rule to be generated.", 
+			description = "Comma-delimited list of system attributes that this component uses to resolve the rule to be generated.", 
 			example = "daoFactory,service,anotherService")
 	public void setDependencies(String dependencies) {
 		this.dependencies = dependencies;

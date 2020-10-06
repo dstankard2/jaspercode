@@ -1,15 +1,15 @@
 package net.sf.jaspercode.patterns.js.template.parsing.directives;
 
 import net.sf.jaspercode.api.CodeExecutionContext;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.ProcessorContext;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.langsupport.javascript.types.JavascriptType;
 
 public class LocalModelType extends JavascriptType {
 	String templateName;
 
 	public LocalModelType(String templateName, ProcessorContext ctx) {
-		super(templateName+"_Model", false, ctx);
+		super(templateName+"_Model");
 		this.templateName = templateName;
 	}
 

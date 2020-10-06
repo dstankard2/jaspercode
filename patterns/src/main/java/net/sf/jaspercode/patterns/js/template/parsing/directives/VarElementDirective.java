@@ -1,7 +1,7 @@
 package net.sf.jaspercode.patterns.js.template.parsing.directives;
 
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.annotation.Plugin;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.patterns.js.template.parsing.DirectiveContext;
 import net.sf.jaspercode.patterns.js.template.parsing.ElementDirective;
 
@@ -16,9 +16,9 @@ public class VarElementDirective implements ElementDirective {
 	@Override
 	public void generateCode(DirectiveContext ctx) throws JasperException {
 		StringBuilder b = ctx.getCode();
-		String name = ctx.getDomAttributes().get("name");
-		String type = ctx.getDomAttributes().get("type");
-		String value = ctx.getDomAttributes().get("value");
+		String name = ctx.getDomAttribute("name");
+		String type = ctx.getDomAttribute("type");
+		String value = ctx.getDomAttribute("value");
 
 		if ((name==null) || (name.trim().length()==0)) {
 			throw new JasperException("js-var element directive required attribute 'name'");

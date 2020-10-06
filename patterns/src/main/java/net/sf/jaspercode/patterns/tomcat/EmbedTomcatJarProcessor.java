@@ -2,11 +2,11 @@ package net.sf.jaspercode.patterns.tomcat;
 
 import net.sf.jaspercode.api.BuildContext;
 import net.sf.jaspercode.api.ComponentProcessor;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.annotation.Processor;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.patterns.java.http.JavaWebUtils;
 import net.sf.jaspercode.patterns.maven.ExecutionConfig;
 import net.sf.jaspercode.patterns.maven.MavenBuildContext;
@@ -46,8 +46,6 @@ public class EmbedTomcatJarProcessor implements ComponentProcessor {
 		ctx.getBuildContext().addDependency("tomcat-embed-core");
 		ctx.getBuildContext().addDependency("tomcat-embed-jasper");
 		ctx.getBuildContext().addDependency("tomcat-jasper");
-		ctx.getBuildContext().addDependency("tomcat-jasper-el");
-		ctx.getBuildContext().addDependency("tomcat-jsp-api");
 		
 		// For a Maven Build, add the Maven assembly plugin to build a Jar with dependencies
 		if (MavenUtils.isMavenBuild(ctx)) {

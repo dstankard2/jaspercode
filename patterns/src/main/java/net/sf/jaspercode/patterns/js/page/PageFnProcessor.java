@@ -4,17 +4,22 @@ import java.util.List;
 
 import net.sf.jaspercode.api.CodeExecutionContext;
 import net.sf.jaspercode.api.ComponentProcessor;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.annotation.Processor;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.types.ServiceOperation;
 import net.sf.jaspercode.langsupport.javascript.types.JavascriptType;
 import net.sf.jaspercode.langsupport.javascript.types.PromiseType;
 import net.sf.jaspercode.patterns.xml.js.page.PageFn;
 
+/**
+ * PageFn which either has handwritten code or wraps around a web service
+ * @author DCS
+ *
+ */
 @Plugin
 @Processor(componentClass = PageFn.class)
 public class PageFnProcessor implements ComponentProcessor {
@@ -37,6 +42,8 @@ public class PageFnProcessor implements ComponentProcessor {
 		if (info==null) {
 			throw new JasperException("Couldn't find page '"+pageName+"' for pageModel component");
 		}
+		
+		ctx.originateVariableType(info.getPageType());
 
 		String name = comp.getName();
 		String event = comp.getEvent();
@@ -131,7 +138,7 @@ public class PageFnProcessor implements ComponentProcessor {
 				String attribType = resolveType.getAttributeType(attr);
 				if (modelType.getAttributeType(attr)!=null) {
 					if (!modelType.getAttributeType(attr).equals(attribType)) {
-						throw new JasperException("Found inconsistent types for model attribute '"+attr+"'");
+						throw new JasperException("Found inconsistent types for model attribute '"+attr+"': '"+modelType.getAttributeType(attr)+"' and '"+attribType+"'");
 					}
 				} else {
 					PageUtils.addModelAttribute(info.getName(), attr, attribType, ctx);

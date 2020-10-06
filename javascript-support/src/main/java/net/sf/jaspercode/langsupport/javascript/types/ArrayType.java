@@ -2,7 +2,7 @@ package net.sf.jaspercode.langsupport.javascript.types;
 
 import net.sf.jaspercode.api.Code;
 import net.sf.jaspercode.api.CodeExecutionContext;
-import net.sf.jaspercode.api.JasperException;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.types.ListType;
 import net.sf.jaspercode.api.types.VariableType;
 import net.sf.jaspercode.langsupport.javascript.JavascriptCode;
@@ -24,7 +24,16 @@ public class ArrayType extends JavascriptType implements ListType {
 	}
 
 	public ArrayType() {
-		super("list",false,null);
+		super("list");
+	}
+
+	@Override
+	public String getName() {
+		if (elementType!=null) {
+			return "list/"+elementType.getName();
+		} else {
+			return "list";
+		}
 	}
 
 	@Override

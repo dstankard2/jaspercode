@@ -3,39 +3,25 @@ package net.sf.jaspercode.langsupport.javascript;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.sf.jaspercode.api.JasperException;
+import org.apache.commons.lang3.tuple.Pair;
+
 import net.sf.jaspercode.api.SourceFile;
+import net.sf.jaspercode.langsupport.javascript.types.ModuleType;
 
 public class JavascriptSourceFile implements SourceFile {
 
-	private String path = null;
 	private StringBuilder source = new StringBuilder();
-
-	private List<ModuleImport> importedModules = new ArrayList<>();
+	protected String path = null;
+	protected List<Pair<String,String>> importedModules = new ArrayList<>();
 	
-	protected String getImportSource() {
-		StringBuilder ret = new StringBuilder();
-		
-		for(ModuleImport im : importedModules) {
-			String b = "import {";
-			boolean first = true;
-			for(String name : im.getModuleNames()) {
-				if (first) first = false;
-				else b += ',';
-				b += name;
-			}
-			b += "} from '"+im.getLocation()+"';\n";
-			ret.append(b);
-		}
-		
-		return ret.toString();
+	public JavascriptSourceFile() {
 	}
 	
 	@Override
-	public StringBuilder getSource() throws JasperException {
+	public StringBuilder getSource() {
 		StringBuilder ret = new StringBuilder();
 		
-		ret.append(getImportSource());
+		//ret.append(getImportSource());
 		ret.append(source.toString());
 		
 		return ret;
@@ -48,18 +34,21 @@ public class JavascriptSourceFile implements SourceFile {
 	public void setPath(String s) {
 		this.path = s;
 	}
-	
-	public void addModule(String location, String...moduleNames) {
-		ModuleImport module = new ModuleImport();
-		module.setLocation(location);
-		for(String moduleName : moduleNames) {
-			module.getModuleNames().add(moduleName);
-		}
-		importedModules.add(module);
+
+	public void importModule(Pair<String,String> module) {
+		this.importedModules.add(module);
 	}
-	
-	public void addModule(ModuleImport module) {
-		importedModules.add(module);
+	public void importModule(ModuleType type) {
+		importedModules.add(Pair.of(type.getName(), type.getWebPath()));
+	}
+
+	@Override
+	public SourceFile copy() {
+		JavascriptSourceFile ret = new JavascriptSourceFile();
+		ret.importedModules.addAll(importedModules);
+		ret.setPath(getPath());
+		ret.source = new StringBuilder(getSource().toString());
+		return ret;
 	}
 
 }

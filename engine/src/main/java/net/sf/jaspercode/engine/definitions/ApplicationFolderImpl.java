@@ -7,23 +7,13 @@ import java.util.List;
 import java.util.Map;
 
 import net.sf.jaspercode.api.BuildContext;
-import net.sf.jaspercode.api.config.ComponentSet;
+import net.sf.jaspercode.api.config.BuildComponent;
 import net.sf.jaspercode.api.resources.ApplicationFolder;
-import net.sf.jaspercode.api.resources.ApplicationResource;
-import net.sf.jaspercode.engine.impl.ApplicationContextImpl;
-import net.sf.jaspercode.engine.impl.DefaultBuildComponent;
-import net.sf.jaspercode.engine.processing.BuildComponentEntry;
-import net.sf.jaspercode.engine.processing.ComponentContainer;
+import net.sf.jaspercode.engine.processing.BuildComponentItem;
 
 public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder {
 
-	public ApplicationFolderImpl(File file,ApplicationFolderImpl parent,ApplicationContextImpl applicationContext) {
-		this.folder = file;
-		this.name = file.getName();
-		this.parent = parent;
-		this.applicationContext = applicationContext;
-	}
-	
+	// lastModified is used to determine if the folder needs to be processed again.  i.e. if jasper.properties is changed
 	private long lastModified = Long.MIN_VALUE;
 	
 	private List<String> ignoreFiles = new ArrayList<>();
@@ -33,22 +23,39 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 	private String logLevel = null;
 	
 	private File folder = null;
+
+	//private ApplicationContext applicationContext = null;
 	
 	private ApplicationFolderImpl parent = null;
-	private ApplicationContextImpl applicationContext = null;
 	
-	private BuildComponentEntry buildComponent = null;
+	private BuildComponentItem buildComponent = null;
 	
 	private HashMap<String,ApplicationFolderImpl> subFolders = new HashMap<>();
 	private Map<String,ComponentFile> componentFiles = new HashMap<>();
 	private Map<String,UserFile> userFiles = new HashMap<>();
-
-	// system attributes in systemAttributes.properties
-	private long systemAttributesModified = Long.MIN_VALUE;
 	
 	// configuration in jasper.properties
-	private Map<String,String> jasperProperties = new HashMap<String,String>();
-	private long jasperPropertiesLastModified = Long.MIN_VALUE;
+	private JasperPropertiesFile jasperProperties = null;
+
+	public ApplicationFolderImpl(File file,ApplicationFolderImpl parent) {
+		this.folder = file;
+		this.name = file.getName();
+		this.parent = parent;
+		this.lastModified = file.lastModified();
+	}
+
+	// TODO: Should this unload component files in the folder?
+	public void setJasperProperties(JasperPropertiesFile jasperProperties) {
+		this.jasperProperties = jasperProperties;
+		// This folder needs to be processed again.  Mark it as modified
+		lastModified = System.currentTimeMillis() - 1;
+		String logLevel = this.getJasperProperties().get("logLevel");
+		if (logLevel==null) this.setLogLevel("WARN");
+		else if (logLevel.equalsIgnoreCase("ERROR")) this.setLogLevel("ERROR");
+		else if (logLevel.equalsIgnoreCase("INFO")) this.setLogLevel("INFO");
+		else if (logLevel.equalsIgnoreCase("DEBUG")) this.setLogLevel("DEBUG");
+		else if (logLevel.equalsIgnoreCase("WARN")) this.setLogLevel("WARN");
+	}
 
 	public void setLogLevel(String logLevel) {
 		this.logLevel = logLevel;
@@ -58,7 +65,7 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 		return logLevel;
 	}
 
-	public void setBuildComponentEntry(BuildComponentEntry e) {
+	public void setBuildComponentItem(BuildComponentItem e) {
 		this.buildComponent = e;
 	}
 	
@@ -67,12 +74,6 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 	}
 	public void setIgnoreFiles(List<String> ignoreFiles) {
 		this.ignoreFiles = ignoreFiles;
-	}
-	public long getSystemAttributesModified() {
-		return systemAttributesModified;
-	}
-	public void setSystemAttributesModified(long l) {
-		this.systemAttributesModified = l;
 	}
 
 	public Map<String,WatchedResource> getFiles() {
@@ -86,6 +87,9 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 		}
 		for(String key : userFiles.keySet()) {
 			ret.put(key, userFiles.get(key));
+		}
+		if (jasperProperties!=null) {
+			ret.put("jasper.properties", jasperProperties);
 		}
 		
 		return ret;
@@ -110,7 +114,7 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 	}
 
 	@Override
-	public ApplicationResource getResource(String path) {
+	public WatchedResource getResource(String path) {
 		if (path==null) return null;
 		path = path.trim();
 		if (path.length()==0) {
@@ -122,14 +126,13 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 		if (path.startsWith("./")) {
 			return getResource(path.substring(2));
 		}
-		if (path.startsWith("/")) {
+		else if (path.startsWith("/")) {
 			return getRootFolder().getResource(path.substring(1));
 		}
 		else if (path.startsWith("../")) {
 			return getParent().getResource(path.substring(3));
-		} else if (path.startsWith("./")) {
-			return getResource(path.substring(2));
-		} else if (path.indexOf('/')>0) {
+		}
+		else if (path.indexOf('/')>0) {
 			int i = path.indexOf('/');
 			String sub = path.substring(0, i);
 			if (subFolders.get(sub)!=null) {
@@ -139,9 +142,12 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 			}
 		} else {
 			// path is a name of a folder or UserFileResource
-			ApplicationResource ret = subFolders.get(path);
+			WatchedResource ret = subFolders.get(path);
 			if (ret==null) {
 				ret = userFiles.get(path);
+				if (ret==null) {
+					ret = this.componentFiles.get(path);
+				}
 			}
 			return ret;
 		}
@@ -176,9 +182,11 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 		} else {
 			ret = new HashMap<String,String>();
 		}
-		for(String key : jasperProperties.keySet()) {
-			String value = jasperProperties.get(key);
-			ret.put(key, value);
+		if (jasperProperties!=null) {
+			for(String key : jasperProperties.getProperties().keySet()) {
+				String value = jasperProperties.getProperties().get(key);
+				ret.put(key, value);
+			}
 		}
 		
 		return ret;
@@ -197,11 +205,8 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 	}
 
 	public Map<String,String> getJasperProperties() {
-		return jasperProperties;
-	}
-
-	public void setJasperProperties(Map<String,String> jasperProperties) {
-		this.jasperProperties = jasperProperties;
+		if (jasperProperties==null) return null;
+		return jasperProperties.getProperties();
 	}
 
 	public Map<String, ComponentFile> getComponentFiles() {
@@ -229,40 +234,34 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 	}
 
 	public long getJasperPropertiesLastModified() {
-		return jasperPropertiesLastModified;
+		if (jasperProperties==null) return 0L;
+		return jasperProperties.getLastModified();
 	}
 
-	public void setJasperPropertiesLastModified(long jasperPropertiesLastModified) {
-		this.jasperPropertiesLastModified = jasperPropertiesLastModified;
-	}
-	
-	public BuildComponentEntry getBuildComponent() {
+	public BuildComponentItem getBuildComponent() {
 		return buildComponent;
 	}
 	
-	public BuildComponentEntry getCurrentBuildComponent(ComponentContainer mgr) {
-		BuildComponentEntry ret = null;
+	public BuildComponentItem getCurrentBuildComponent() {
+		BuildComponentItem ret = null;
 		
 		if (buildComponent!=null) {
 			ret = buildComponent;
 		} else {
 			if (parent!=null) {
-				ret = parent.getCurrentBuildComponent(mgr);
+				ret = parent.getCurrentBuildComponent();
 			} else {
-				ComponentFile f = new ComponentFile(new ComponentSet(),null,this);
-				ret = new BuildComponentEntry(f, new DefaultBuildComponent(), mgr, null, applicationContext);
-				try {
-					ret.initialize();
-				} catch(Exception e) {
-				}
+				BuildComponent buildComp = new DefaultBuildComponent();
+				ret = new BuildComponentItem(-1, buildComp, null, this.getProperties(), null, null, null);
+				ret.init();
 			}
 		}
 		
 		return ret;
 	}
 	
-	public BuildContext getBuildContext(ComponentContainer mgr) {
-		return getCurrentBuildComponent(mgr).getBuildContext();
+	public BuildContext getBuildContext() {
+		return getCurrentBuildComponent().getBuildContext();
 	}
 
 	@Override
@@ -277,6 +276,11 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 		}
 
 		return ret;
+	}
+
+	@Override
+	public ApplicationFolderImpl getFolder() {
+		return this.getParent();
 	}
 
 }

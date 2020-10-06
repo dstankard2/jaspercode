@@ -1,8 +1,8 @@
 package net.sf.jaspercode.patterns.js.template.parsing.directives;
 
 import net.sf.jaspercode.api.CodeExecutionContext;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.annotation.Plugin;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.patterns.js.parsing.JavascriptParser;
 import net.sf.jaspercode.patterns.js.parsing.JavascriptParsingResult;
 import net.sf.jaspercode.patterns.js.template.parsing.AttributeDirectiveBase;
@@ -23,9 +23,12 @@ public class IfAttributeDirective extends AttributeDirectiveBase {
 	@Override
 	public void generateCode(DirectiveContext ctx) throws JasperException {
 		StringBuilder b = ctx.getCode();
-		String cond = ctx.getTemplateAttributes().get("js-if");
+		String cond = ctx.getTemplateAttribute("js-if");
 		CodeExecutionContext existingCtx = ctx.getExecCtx();
 
+		if ((cond==null) || (cond.trim().length()==0)) {
+			throw new JasperException("Directive js-if requires a condition");
+		}
 		JavascriptParser eval = new JavascriptParser(cond,existingCtx);
 		DirectiveUtils.populateImpliedVariables(eval);
 		JavascriptParsingResult result = eval.evalExpression();
@@ -37,16 +40,7 @@ public class IfAttributeDirective extends AttributeDirectiveBase {
 		b.append("if ("+boolVar+") {\n");
 
 		CodeExecutionContext newCtx = new CodeExecutionContext(existingCtx);
-		if (cond.equals("model.empireBuildingData.lumbermillData")) {
-			System.out.println("evaling case");
-		}
-		if (existingCtx.getTypeForVariable("b")!=null) {
-			System.out.println("Before if eval, existing ctx has b");
-		}
 		ctx.continueRenderElement(newCtx);
-		if (existingCtx.getTypeForVariable("b")!=null) {
-			System.out.println("After if eval, existing ctx has b");
-		}
 
 		b.append("}\n");
 		

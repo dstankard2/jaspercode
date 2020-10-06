@@ -1,8 +1,8 @@
 package net.sf.jaspercode.patterns.js.template.parsing.directives;
 
 import net.sf.jaspercode.api.CodeExecutionContext;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.annotation.Plugin;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.patterns.js.template.parsing.AttributeDirectiveBase;
 import net.sf.jaspercode.patterns.js.template.parsing.DirectiveContext;
 
@@ -22,36 +22,61 @@ public class LoopAttributeDirective extends AttributeDirectiveBase {
 		StringBuilder b = ctx.getCode();
 		CodeExecutionContext execCtx = ctx.getExecCtx();
 		
-		String a = ctx.getTemplateAttributes().get("js-loop");
+		String a = ctx.getTemplateAttribute("js-loop");
 		int i = a.indexOf(" in ");
 		String eltVar = a.substring(0, i).trim();
 		String list = a.substring(i+4).trim();
+		
+		String includeIf = ctx.getTemplateAttribute("js-loop-include-if");
+		if ((includeIf!=null) && (includeIf.trim().length()==0)) {
+			includeIf = null;
+		}
+		
+		String indexVar = null;
+		
+		final String indexIndicator = " index ";
+		if (list.indexOf(indexIndicator)>0) {
+			int indicatorIndex = list.indexOf(indexIndicator);
+			indexVar = list.substring(indicatorIndex+indexIndicator.length());
+			list = list.substring(0, list.indexOf(indexIndicator));
+			ctx.getProcessorContext().getLog().warn("Found indexVar as "+indexVar);
+			if (execCtx.getVariableType(indexVar)!=null) {
+				throw new JasperException("Tried to define index variable '"+indexVar+"' but it already exists in the code execution context");
+			}
+		}
 
 		if (execCtx.getVariableType(eltVar)!=null) {
 			throw new JasperException("Couldn't create loop variable '"+eltVar+"' as there is already a variable in the current execution context with that name");
 		}
-		/*
-		//String type = DirectiveUtils.getReferenceType(list, execCtx);
-		if (type==null) {
-			throw new JasperException("Couldn't evaluate type for js-loop list variable '"+list+"'");
-		}
-		String listStr = DirectiveUtils.getValidReference(list, execCtx);
-		if (type.startsWith("list/")) type = type.substring(5);
-		//String parentNodes = ctx.newVarName("_n", "object", execCtx);
-		*/
-		//execCtx = new CodeExecutionContext(execCtx);
 		String in = ctx.newVarName("_i","object",execCtx);
 		
-		CodeExecutionContext newCtx = new CodeExecutionContext(execCtx);
 		String func = ctx.newVarName("_lf", "function", execCtx);
-		b.append("var "+func+" = function("+eltVar+"){\n");
+		execCtx.addVariable(func, "function");
+		CodeExecutionContext newCtx = new CodeExecutionContext(execCtx);
+		String args = eltVar;
+		if (indexVar!=null) {
+			args = args + ',' + indexVar;
+			newCtx.addVariable(indexVar, "integer");
+		}
+		b.append("var "+func+" = function("+args+"){\n");
 		newCtx.addVariable(eltVar, "object");
-		ctx.continueRenderElement();
+		// TODO: Pass newCtx or existing one?  Should be new one...
+		ctx.continueRenderElement(newCtx);
 		b.append("}\n");
 		b.append("try {\n");
 		b.append("for(var "+in+"=0;"+in+"<"+list+".length;"+in+"++) {\n");
+		args = eltVar;
+		if (indexVar!=null) {
+			args = args + ','+in;
+		}
 		b.append("var "+eltVar+" = "+list+"["+in+"];\n");
-		b.append(func+"("+eltVar+");\n}\n");
+		if (includeIf!=null) {
+			b.append("if ("+includeIf+") {\n");
+		}
+		b.append(func+"("+args+");\n}\n");
+		if (includeIf!=null) {
+			b.append("}\n");
+		}
 		b.append("}catch(_err){}\n");
 	}
 

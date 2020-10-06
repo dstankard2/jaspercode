@@ -1,10 +1,11 @@
 package net.sf.jaspercode.api;
 
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.ApplicationResource;
 
 /**
  * The compile-time context of a component in Jasper.
- * Can be used to add dependencies
+ * Can be used to add dependencies and determine where files will be written to.
  * @author DCS
  *
  */
@@ -12,9 +13,9 @@ public interface BuildContext {
 
 	void addDependency(String name);
 	
-	void addDependency(BuildContext buildCtx) throws JasperException;
+	void addDependency(BuildContext buildCtx);
 
-	String getOutputRootPath(String fileExt);
+	String getOutputRootPath(String fileExt) throws JasperException;
 
 	String getOutputRootPath();
 

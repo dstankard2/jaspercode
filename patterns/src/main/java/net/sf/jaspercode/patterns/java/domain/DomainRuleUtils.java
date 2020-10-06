@@ -9,9 +9,9 @@ import java.util.Map.Entry;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
 
 import net.sf.jaspercode.api.CodeExecutionContext;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.types.ServiceOperation;
 import net.sf.jaspercode.langsupport.java.JavaClassSourceFile;
 import net.sf.jaspercode.langsupport.java.JavaCode;
@@ -34,8 +34,8 @@ public class DomainRuleUtils {
 		Map<String,JavaServiceType> ret = new HashMap<>();
 		
 		String deps = comp.getDependencies();
-		if (deps.trim().equals("")) {
-			ctx.getLog().warn("No dependencies found for Domain Rule component");
+		if ((deps==null) || (deps.trim().equals(""))) {
+			ctx.getLog().warn("No dependencies found for Domain Rule component - Specify with configuration property 'java.domain.depedencyRefs'");
 			return ret;
 		}
 		String[] refs = deps.split(",");
@@ -61,8 +61,8 @@ public class DomainRuleUtils {
 		Map<String,JavaVariableType> ret = new HashMap<>();
 		
 		String deps = comp.getDependencies();
-		if (deps.trim().equals("")) {
-			ctx.getLog().warn("No dependencies found for Domain Rule component");
+		if ((deps==null) || (deps.trim().equals(""))) {
+			ctx.getLog().warn("No dependencies found for Domain Rule component - specify with configuration property 'java.domain.depedencyRefs'");
 			return ret;
 		}
 		String[] refs = deps.split(",");
@@ -83,16 +83,26 @@ public class DomainRuleUtils {
 		LocatedServiceType serviceType = null;
 		String implClass = comp.getImplClass();
 
+		//if ((implClass==null) || (implClass.trim().length()==0)) {
+		//	throw new JasperException("Couldn't find implementation class name for domain logic component");
+		//}
 		if (className.equals(ref)) {
 			throw new JasperException("Couldn't determine ref for service '"+className+"'");
 		}
 
 		ctx.addSystemAttribute(ref, className);
 		serviceFile = new JavaClassSourceFile(ctx);
-		serviceFile.getJavaClassSource().setPackage(pkg);
-		serviceFile.getJavaClassSource().setName(className);
+		serviceFile.getSrc().setPackage(pkg);
+		serviceFile.getSrc().setName(className);
 		ctx.addSourceFile(serviceFile);
 		
+		ctx.getLog().debug("Initializing Java domain service "+className);
+		
+		if ((serviceGroup==null) || (serviceGroup.trim().isEmpty())) {
+			ctx.getLog().warn("Found no service group name - defaulting to '"+DEFAULT_SERVICE_GROUP_NAME+"'");
+			serviceGroup = DEFAULT_SERVICE_GROUP_NAME;
+		}
+
 		// Add located service for this type
 		serviceType = new LocatedServiceType(pkg, className,ctx.getBuildContext(),pkg+'.'+serviceGroup+"Locator", serviceGroup+"Locator");
 		ctx.addVariableType(serviceType);
@@ -100,16 +110,12 @@ public class DomainRuleUtils {
 		ServiceLocatorImpl serviceLocatorType = null;
 		JavaClassSourceFile locatorSource = null;
 		
-		if (serviceGroup.trim().isEmpty()) {
-			ctx.getLog().warn("Found no service group name - defaulting to '"+DEFAULT_SERVICE_GROUP_NAME+"'");
-			serviceGroup = DEFAULT_SERVICE_GROUP_NAME;
-		}
 		if (ctx.getVariableType(serviceGroup+"Locator")==null) {
 			serviceLocatorType = new ServiceLocatorImpl(serviceGroup+"Locator",serviceGroup+"Locator",pkg,ctx.getBuildContext());
 			ctx.addVariableType(serviceLocatorType);
 			locatorSource = new JavaClassSourceFile(ctx);
-			locatorSource.getJavaClassSource().setName(serviceGroup+"Locator");
-			locatorSource.getJavaClassSource().setPackage(pkg);
+			locatorSource.getSrc().setName(serviceGroup+"Locator");
+			locatorSource.getSrc().setPackage(pkg);
 			ctx.addSourceFile(locatorSource);
 		} else {
 			serviceLocatorType = JasperUtils.getType(ServiceLocatorImpl.class, serviceGroup+"Locator", ctx);
@@ -118,14 +124,14 @@ public class DomainRuleUtils {
 
 		// Add locator method for this service
 		String instanceClass = className;
-		if (implClass.trim().length()>0) {
+		if ((implClass!=null) && (implClass.trim().length()>0)) {
 			ctx.getLog().info("Creating service '"+className+"' as abstract class and using '"+implClass+"' as implementation");
 			instanceClass = implClass;
-			serviceFile.getJavaClassSource().setAbstract(true);
+			serviceFile.getSrc().setAbstract(true);
 		}
 		CodeExecutionContext execCtx = null;
 		execCtx = new CodeExecutionContext(ctx);
-		JavaClassSource locatorClass = locatorSource.getJavaClassSource();
+		JavaClassSource locatorClass = locatorSource.getSrc();
 		serviceLocatorType.getAvailableServices().add(className);
 		locatorClass.addField().setName(ref).setType(pkg+'.'+className).setStatic(true).setLiteralInitializer("_get"+className+"();\n").setPrivate().setFinal(true);
 		locatorClass.addMethod().setName("get"+className).setReturnType(pkg+'.'+className).setBody("return "+ref+";").setPublic();
@@ -138,10 +144,10 @@ public class DomainRuleUtils {
 			getCode.append(JavaUtils.serviceInstance(depName, depType, execCtx, ctx));
 			String setter = "set"+JasperUtils.getUpperCamelName(depName);
 			getCode.appendCodeText("_ret."+setter+"("+depName+");\n");
-			JavaUtils.addImports(locatorSource, getCode);
+			locatorSource.addImports(getCode);
 			serviceType.addDependency(depName);
-			serviceFile.getJavaClassSource().addField().setName(depName).setType(depType.getImport()).setProtected();
-			serviceFile.getJavaClassSource().addMethod().setPublic().setName("set"+JasperUtils.getUpperCamelName(depName)).setBody("this."+depName+" = "+depName+";").addParameter(depType.getImport(), depName);//.addParameter(depName, depType.getImport());
+			serviceFile.getSrc().addField().setName(depName).setType(depType.getImport()).setProtected();
+			serviceFile.getSrc().addMethod().setPublic().setName("set"+JasperUtils.getUpperCamelName(depName)).setBody("this."+depName+" = "+depName+";").addParameter(depType.getImport(), depName);//.addParameter(depName, depType.getImport());
 		}
 		getCode.appendCodeText("return _ret;\n");
 		locatorClass.addMethod().setName("_get"+className).setStatic(true).setBody(getCode.getCodeText()).setReturnType(pkg+'.'+className).setPrivate();

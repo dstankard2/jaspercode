@@ -32,10 +32,36 @@ public class PersistenceUnit extends JavaComponent {
 	@XmlTransient
 	private String pkg = null;
 
+	@XmlTransient
+	private String jndiDataSource = null;
+	
+	@XmlTransient
+	private String showSql = null;
+	
 	public int getPriority() {
 		return PatternPriority.PERSISTENCE_UNIT;
 	}
 	
+	public String getJndiDataSource() {
+		return jndiDataSource;
+	}
+
+	@ConfigProperty(required = false, name = "jpa.jndiDataSource", example = "java:comp/env/someDataSource",
+			description = "JNDI reference to a data source available")
+	public void setJndiDataSource(String jndiDataSource) {
+		this.jndiDataSource = jndiDataSource;
+	}
+
+	public String getShowSql() {
+		return showSql;
+	}
+
+	@ConfigProperty(required = false, name = "jpa.hibernate.show_sql", example = "T",
+			description = "T to have Hibernate log SQL.")
+	public void setShowSql(String showSql) {
+		this.showSql = showSql;
+	}
+
 	public String getTxRef() {
 		return txRef;
 	}

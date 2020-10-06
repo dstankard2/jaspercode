@@ -7,17 +7,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.jsoup.nodes.Attribute;
 import org.jsoup.nodes.Element;
 
 import net.sf.jaspercode.api.CodeExecutionContext;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.types.ServiceOperation;
 import net.sf.jaspercode.langsupport.javascript.JavascriptCode;
 import net.sf.jaspercode.langsupport.javascript.JavascriptUtils;
-import net.sf.jaspercode.langsupport.javascript.ModuleImport;
 import net.sf.jaspercode.langsupport.javascript.types.DOMElementType;
 import net.sf.jaspercode.patterns.js.parsing.JavascriptParser;
 import net.sf.jaspercode.patterns.js.parsing.JavascriptParsingResult;
@@ -46,11 +46,16 @@ public class ElementParser implements DirectiveContext {
 	boolean elementCreated = false;
 	boolean domPropertiesAdded = false;
 	List<CodeExecutionContext> contexts = new ArrayList<CodeExecutionContext>();
-	List<ModuleImport> imports = new ArrayList<>();
+	List<Pair<String,String>> imports = new ArrayList<>();
 
-	public List<ModuleImport> getImports() {
+	public List<Pair<String,String>> getImports() {
 		return imports;
 	}
+	
+	public void importModule(String typeName,String jsPath) {
+		imports.add(Pair.of(typeName, jsPath));
+	}
+
 
 	public ElementParser(Element elt,ProcessorContext ctx,String containerVar,String templateObj,ServiceOperation fn,List<String> previousElementVars, TemplateParser caller) throws JasperException {
 		attributeDirectives = DirectiveUtils.getAttributeDirectives(ctx);
@@ -109,12 +114,20 @@ public class ElementParser implements DirectiveContext {
 		while(attributeDirectives.size()>0) {
 			AttributeDirective next = attributeDirectives.get(0);
 			attributeDirectives.remove(0);
-			if ((!elementCreated) && (next.getPriority()>=3) && (!isTemplateCall)) {
+			
+			if ((!elementCreated) && (next.getPriority()>=3)) {
 				elementCreated = true;
-				code.append(eltVar+" = "+DirectiveUtils.DOCUMENT_REF+
-						".createElement('"+elt.nodeName()+"');\n");
-				code.append(eltVar+"._elt = '"+eltVar+"';\n");
-				code.append(eltVar+".$$remove = [];\n");
+				if (!isTemplateCall) {
+					code.append(eltVar+" = "+DirectiveUtils.DOCUMENT_REF+
+							".createElement('"+elt.nodeName()+"');\n");
+					code.append(eltVar+"._elt = '"+eltVar+"';\n");
+					code.append(eltVar+".$$remove = [];\n");
+				} else {
+					code.append(processTemplateCall(elt.nodeName(),execCtx,this));
+					code.append(eltVar+"._elt = '"+eltVar+"';\n");
+					if (containerVar!=null)
+						code.append(containerVar+".appendChild("+eltVar+");\n");
+				}
 			}
 			String att = next.getAttributeName();
 			if (templateAttributes.get(att)!=null) {
@@ -124,10 +137,12 @@ public class ElementParser implements DirectiveContext {
 		}
 		if (!attributeDirectiveCalled) {
 			if (isTemplateCall) {
-				code.append(processTemplateCall(elt.nodeName(),execCtx,this));
-				code.append(eltVar+"._elt = '"+eltVar+"';\n");
-				if (containerVar!=null)
-					code.append(containerVar+".appendChild("+eltVar+");\n");
+				if (!elementCreated) {
+					code.append(processTemplateCall(elt.nodeName(),execCtx,this));
+					code.append(eltVar+"._elt = '"+eltVar+"';\n");
+					if (containerVar!=null)
+						code.append(containerVar+".appendChild("+eltVar+");\n");
+				}
 			} else {
 				if (!elementCreated) {
 					code.append(eltVar+" = "+DirectiveUtils.DOCUMENT_REF+
@@ -190,7 +205,7 @@ public class ElementParser implements DirectiveContext {
 		}
 	}
 
-	protected String processTemplateCall(String elementName,CodeExecutionContext execCtx,DirectiveContext dctx) throws JasperException {
+	protected String processTemplateCall(String elementName,CodeExecutionContext execCtx,ElementParser dctx) throws JasperException {
 		// Take the element name and remove '-', insert capital letter
 		int i = elementName.indexOf('-');
 		String temp = elementName;
@@ -212,7 +227,11 @@ public class ElementParser implements DirectiveContext {
 		}
 		String objRef = elementName.substring(0,i);
 		String ruleName = elementName.substring(i+1);
-		String typeName = JasperUtils.getTypeForRef(objRef, dctx.getProcessorContext());
+		String typeName = execCtx.getVariableType(objRef);
+		if (typeName==null) {
+			throw new JasperException("Couldn't invoke template '"+elementName+"' as there was no service '"+objRef+"' in the code execution context");
+		}
+		//String typeName = JasperUtils.getTypeForRef(objRef, dctx.getProcessorContext());
 		List<ServiceOperation> fns = JasperUtils.findRuleFromTypeAndRef(typeName+'.'+ruleName, ctx);
 		if ((fns==null) || (fns.size()==0)) {
 			throw new JasperException("Couldn't find template '"+elementName+"'");
@@ -220,7 +239,7 @@ public class ElementParser implements DirectiveContext {
 			throw new JasperException("Found multiple templates called '"+elementName+"' - couldn't determine which to invoke");
 		}
 		ServiceOperation fn = fns.get(0);
-		Map<String,String> atts = dctx.getDomAttributes();
+		Map<String,String> atts = dctx.domAttributes;
 		HashMap<String,String> params = new HashMap<String,String>();
 		Iterator<String> names = atts.keySet().iterator();
 		while(names.hasNext()) {
@@ -294,8 +313,10 @@ public class ElementParser implements DirectiveContext {
 		return previousEltVars;
 	}
 	@Override
-	public Map<String, String> getDomAttributes() {
-		return this.domAttributes;
+	public String getDomAttribute(String name) {
+		String val = this.domAttributes.get(name);
+		if ((val==null) || (val.trim().length()==0)) val = null;
+		return val;
 	}
 	@Override
 	public String getElementVarName() {
@@ -310,8 +331,10 @@ public class ElementParser implements DirectiveContext {
 		return this.containerVar;
 	}
 	@Override
-	public Map<String, String> getTemplateAttributes() {
-		return this.templateAttributes;
+	public String getTemplateAttribute(String name) {
+		String val = this.templateAttributes.get(name);
+		if ((val==null) || (val.trim().length()==0)) val = null;
+		return val;
 	}
 	@Override
 	public CodeExecutionContext getExecCtx() {
@@ -338,14 +361,9 @@ public class ElementParser implements DirectiveContext {
 	public ProcessorContext getProcessorContext() {
 		return ctx;
 	}
-
-	public void addModule(String location, String...moduleNames) {
-		ModuleImport module = new ModuleImport();
-		module.setLocation(location);
-		for(String moduleName : moduleNames) {
-			module.getModuleNames().add(moduleName);
-		}
-		imports.add(module);
+	@Override
+	public boolean isJavascriptDebug() {
+		return  JavascriptUtils.isJavascriptDebug(ctx);
 	}
-	
+
 }

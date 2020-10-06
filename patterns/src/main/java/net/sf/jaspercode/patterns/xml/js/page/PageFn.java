@@ -91,7 +91,8 @@ public class PageFn extends Component {
 	
 	@Override
 	public String getComponentName() {
-		return "PageFn ["+pageName+"]["+name+"]";
+		return "PageFn ["+pageName+"."+name+"]";
 	}
 
 }
+

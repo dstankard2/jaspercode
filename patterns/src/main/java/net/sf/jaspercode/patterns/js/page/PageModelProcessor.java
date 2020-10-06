@@ -4,12 +4,12 @@ import java.util.List;
 
 import net.sf.jaspercode.api.AttribEntry;
 import net.sf.jaspercode.api.ComponentProcessor;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.annotation.Processor;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.patterns.xml.js.page.PageModel;
 
 @Plugin
@@ -39,6 +39,7 @@ public class PageModelProcessor implements ComponentProcessor {
 		}
 
 		PageModelType modelType = info.getModelType();
+		ctx.originateVariableType(modelType);
 
 		String attrs = comp.getAttributes();
 		List<AttribEntry> entries = JasperUtils.readParametersAsList(attrs, ctx);

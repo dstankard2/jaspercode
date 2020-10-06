@@ -1,8 +1,8 @@
 package net.sf.jaspercode.patterns.js.template.parsing.directives;
 
 import net.sf.jaspercode.api.CodeExecutionContext;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.annotation.Plugin;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.patterns.js.template.parsing.AttributeDirectiveBase;
 import net.sf.jaspercode.patterns.js.template.parsing.DirectiveContext;
 import net.sf.jaspercode.patterns.js.template.parsing.DirectiveUtils;
@@ -17,14 +17,14 @@ public class OnChangeAttributeDirective extends AttributeDirectiveBase {
 
 	@Override
 	public void generateCode(DirectiveContext ctx) throws JasperException {
-		String change = ctx.getTemplateAttributes().get("js-onchange");
+		String change = ctx.getTemplateAttribute("js-onchange");
 		String eltName = ctx.getElementName();
 		String var = ctx.getElementVarName();
 		StringBuilder code = ctx.getCode();
 		CodeExecutionContext execCtx = ctx.getExecCtx();
 		
 		// The ModelAttributeDirective will handle this attribute.
-		if (ctx.getTemplateAttributes().get("js-model")!=null) {
+		if (ctx.getTemplateAttribute("js-model")!=null) {
 			ctx.continueRenderElement(ctx.getExecCtx());
 			return;
 		}
@@ -33,7 +33,7 @@ public class OnChangeAttributeDirective extends AttributeDirectiveBase {
 		if (eltName.equals("select")) {
 			domEvent = "change";
 		} else if (eltName.equals("input")) {
-			String type = ctx.getDomAttributes().get("type");
+			String type = ctx.getDomAttribute("type");
 			if (type==null) type = "text";
 			if (type.equals("text")) domEvent = "keyup";
 			else domEvent = "change";

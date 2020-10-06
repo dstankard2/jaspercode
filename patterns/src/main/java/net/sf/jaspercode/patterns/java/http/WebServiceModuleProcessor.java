@@ -7,12 +7,12 @@ import org.jboss.forge.roaster.model.source.MethodSource;
 
 import net.sf.jaspercode.api.CodeExecutionContext;
 import net.sf.jaspercode.api.ComponentProcessor;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.annotation.Processor;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.types.ServiceOperation;
 import net.sf.jaspercode.langsupport.java.JavaCode;
 import net.sf.jaspercode.langsupport.java.JavaClassSourceFile;
@@ -42,8 +42,8 @@ public class WebServiceModuleProcessor implements ComponentProcessor {
 	@Override
 	public void process() throws JasperException {
 		ctx.setLanguageSupport("Java8");
-		JavaClassSourceFile src = new JavaClassSourceFile(ctx.getBuildContext());
-		JavaClassSource cl = src.getJavaClassSource();
+		JavaClassSourceFile src = new JavaClassSourceFile(ctx);
+		JavaClassSource cl = src.getSrc();
 		String name = comp.getName();
 		String servletName = name+"Servlet";
 		String pkg = JavaUtils.getJavaPackage(comp, ctx);
@@ -68,13 +68,13 @@ public class WebServiceModuleProcessor implements ComponentProcessor {
 		bodyCode.append("Map<String,String> _params = null;\n");
 		bodyCode.append("String _method = _httpRequest.getMethod();\n");
 
-		if (comp.getRequestRef().trim().length()>0) {
+		if ((comp.getRequestRef()!=null) && (comp.getRequestRef().trim().length()>0)) {
 			String ref = comp.getRequestRef();
 			ctx.addSystemAttribute(ref, "HttpServletRequest");
 			bodyCode.append("HttpServletRequest "+ref+" = _httpRequest;\n");
 			execCtx.addVariable(ref, "HttpServletRequest");
 		}
-		if (comp.getResponseRef().trim().length()>0) {
+		if ((comp.getResponseRef()!=null) && (comp.getResponseRef().trim().length()>0)) {
 			String ref = comp.getResponseRef();
 			ctx.addSystemAttribute(ref, "HttpServletResponse");
 			bodyCode.append("HttpServletResponse "+ref+" = _httpResponse;\n");
@@ -138,7 +138,7 @@ public class WebServiceModuleProcessor implements ComponentProcessor {
 		
 		bodyCode.append(preprocessingCode.getCodeText());
 		for(String im : preprocessingCode.getImports()) {
-			src.getJavaClassSource().addImport(im);
+			src.getSrc().addImport(im);
 		}
 
 		service.setBody(bodyCode.toString());
@@ -150,9 +150,9 @@ public class WebServiceModuleProcessor implements ComponentProcessor {
 		def.setName(name);
 		webCtx.getWebServices().add(def);
 
-		src.getJavaClassSource().addImport("java.util.Map");
-		src.getJavaClassSource().addImport("java.util.HashMap");
-		MethodSource<JavaClassSource> retrieveParameters = src.getJavaClassSource().addMethod().setName("retrieveParameters").setPrivate().setBody(RETRIEVE_PARAMETER_CODE).setReturnType("Map<String,String>");
+		src.getSrc().addImport("java.util.Map");
+		src.getSrc().addImport("java.util.HashMap");
+		MethodSource<JavaClassSource> retrieveParameters = src.getSrc().addMethod().setName("retrieveParameters").setPrivate().setBody(RETRIEVE_PARAMETER_CODE).setReturnType("Map<String,String>");
 		retrieveParameters.addParameter("String", "template");
 		retrieveParameters.addParameter("String", "path");
 	}

@@ -3,6 +3,7 @@ package net.sf.jaspercode.patterns.js.template.parsing;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -11,18 +12,17 @@ import org.jsoup.nodes.TextNode;
 import org.jsoup.parser.Parser;
 
 import net.sf.jaspercode.api.CodeExecutionContext;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.ProcessorContext;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.types.ServiceOperation;
 import net.sf.jaspercode.langsupport.javascript.JavascriptCode;
-import net.sf.jaspercode.langsupport.javascript.ModuleImport;
 
 public class TemplateParser {
 	private String template;
 	private ProcessorContext ctx;
 	private String obj;
 	private ServiceOperation serviceOperation = null;
-	private List<ModuleImport> imports = new ArrayList<>();
+	private List<Pair<String,String>> imports = new ArrayList<>();
 
 	public TemplateParser(String template,ProcessorContext ctx,String obj,ServiceOperation fn) {
 		this.template = template;
@@ -80,12 +80,12 @@ public class TemplateParser {
 		for(ElementParser p : rootParsers) {
 			p.parseElement(execCtx);
 			b.append(p.getElementCode());
-			ret.getModules().addAll(p.getImports());
+			ret.getImportedModules().addAll(p.getImports());
 		}
 
 		b.append("return _e0;\n");
 		ret.appendCodeText(b.toString());
-		ret.getModules().addAll(imports);
+		ret.getImportedModules().addAll(imports);
 		return ret;
 	}
 

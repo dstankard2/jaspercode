@@ -7,8 +7,8 @@ import java.sql.SQLException;
 import org.dom4j.Element;
 import org.dom4j.Namespace;
 
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.ProcessorContext;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.patterns.files.XmlFile;
 
 public class ModelUtils {

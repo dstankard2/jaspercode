@@ -1,10 +1,12 @@
 package net.sf.jaspercode.patterns.js.page;
 
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.types.ServiceOperation;
-import net.sf.jaspercode.langsupport.javascript.types.JavascriptServiceType;
+import net.sf.jaspercode.langsupport.javascript.JavascriptUtils;
+import net.sf.jaspercode.langsupport.javascript.types.ExportedModuleType;
+import net.sf.jaspercode.langsupport.javascript.types.ModuleType;
 
 public class PageUtils {
 
@@ -25,7 +27,8 @@ public class PageUtils {
 		// Create model type for this page
 		PageModelType modelType = new PageModelType(pageName,false,ctx);
 		ctx.addVariableType(modelType);
-		JavascriptServiceType pageType = new JavascriptServiceType(pageName,true,ctx);
+		ModuleType pageType = new ModuleType(pageName,JavascriptUtils.getModulePath(ctx), ExportedModuleType.CONSTRUCTOR);
+		//JavascriptServiceType pageType = new JavascriptServiceType(pageName);
 		ctx.addVariableType(pageType);
 		pageInfo.setModelType(modelType);
 		pageInfo.setPageType(pageType);
@@ -46,14 +49,11 @@ public class PageUtils {
 		String name = getPageModelTypeName(pageName);
 		return JasperUtils.getType(PageModelType.class, name, ctx);
 	}
-	
+
 	public static void addModelAttribute(String pageName,String attrib,String type,ProcessorContext ctx) throws JasperException {
 		PageModelType t = getPageModelType(pageName,ctx);
 		t.addAttribute(attrib, type);
-	}
-	
-	public static JavascriptServiceType getPageType(String pageName,ProcessorContext ctx) throws JasperException {
-		return JasperUtils.getType(JavascriptServiceType.class, "Page_"+pageName, ctx);
+		ctx.originateVariableType(t);
 	}
 	
 }

@@ -1,7 +1,7 @@
 package net.sf.jaspercode.patterns.js.template.parsing.directives;
 
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.annotation.Plugin;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.patterns.js.parsing.JavascriptParser;
 import net.sf.jaspercode.patterns.js.parsing.JavascriptParsingResult;
 import net.sf.jaspercode.patterns.js.template.parsing.AttributeDirectiveBase;
@@ -19,9 +19,8 @@ public class DisabledAttributeDirective extends AttributeDirectiveBase {
 	@Override
 	public void generateCode(DirectiveContext ctx) throws JasperException {
 		StringBuilder code = ctx.getCode();
-		String value = ctx.getTemplateAttributes().get("js-disabled");
+		String value = ctx.getTemplateAttribute("js-disabled");
 		
-		ctx.getTemplateAttributes().remove("js-disabled");
 		ctx.continueRenderElement(ctx.getExecCtx());
 		
 		JavascriptParser eval = new JavascriptParser(value,ctx.getExecCtx());

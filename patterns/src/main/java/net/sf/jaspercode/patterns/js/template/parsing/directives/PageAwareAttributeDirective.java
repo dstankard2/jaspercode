@@ -1,7 +1,7 @@
 package net.sf.jaspercode.patterns.js.template.parsing.directives;
 
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.annotation.Plugin;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.langsupport.javascript.types.JavascriptServiceType;
 import net.sf.jaspercode.patterns.js.page.PageModelType;
 import net.sf.jaspercode.patterns.js.template.parsing.AttributeDirectiveBase;
@@ -13,8 +13,8 @@ public class PageAwareAttributeDirective extends AttributeDirectiveBase {
 
 	@Override
 	public void generateCode(DirectiveContext ctx) throws JasperException {
-		String ref = ctx.getTemplateAttributes().get("js-page-ref");
-		String modelRef = ctx.getTemplateAttributes().get("js-model-ref");
+		String ref = ctx.getTemplateAttribute("js-page-ref");
+		String modelRef = ctx.getTemplateAttribute("js-model-ref");
 		handlePageAware(ctx, ref, modelRef);
 	}
 
@@ -38,7 +38,7 @@ public class PageAwareAttributeDirective extends AttributeDirectiveBase {
 		}
 
 		// Create types for this pseudo-page and its model
-		JavascriptServiceType pageType = new JavascriptServiceType(pageName, false, ctx.getProcessorContext());
+		JavascriptServiceType pageType = new JavascriptServiceType(pageName);
 		PageModelType modelType = new PageModelType(pageName, false, ctx.getProcessorContext());
 		ctx.getProcessorContext().addVariableType(pageType);
 		ctx.getProcessorContext().addVariableType(modelType);

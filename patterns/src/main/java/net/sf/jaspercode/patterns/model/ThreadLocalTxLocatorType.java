@@ -2,7 +2,7 @@ package net.sf.jaspercode.patterns.model;
 
 import net.sf.jaspercode.api.BuildContext;
 import net.sf.jaspercode.api.CodeExecutionContext;
-import net.sf.jaspercode.api.JasperException;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.langsupport.java.JavaCode;
 import net.sf.jaspercode.patterns.model.types.impl.EntityManagerType;
 

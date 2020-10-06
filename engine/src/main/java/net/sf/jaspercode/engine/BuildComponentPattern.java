@@ -9,6 +9,11 @@ public class BuildComponentPattern {
 	
 	private Class<? extends BuildComponentProcessor> processorClass;
 
+	/**
+	 * Neither parameter is ever null.
+	 * @param componentClass
+	 * @param processorClass
+	 */
 	public BuildComponentPattern(Class<? extends BuildComponent> componentClass,Class<? extends BuildComponentProcessor> processorClass) {
 		this.componentClass = componentClass;
 		this.processorClass = processorClass;
@@ -20,7 +25,6 @@ public class BuildComponentPattern {
 		try {
 			ret = processorClass.newInstance();
 		} catch(Exception e) {
-			e.printStackTrace();
 			ret = null;
 		}
 		

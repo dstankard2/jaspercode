@@ -1,0 +1,17 @@
+
+<jasper:componentSet xmlns="http://jaspercode.sf.net/patterns/maven"
+		xmlns:jasper="http://jaspercode.sf.net/config">
+
+	<project artifact="net.sf.jaspercode:example1:1.0" packaging="jar">
+		<description>
+Example application
+		</description>
+
+		<dependencies>
+			<dependency>jasper-patterns-user-api</dependency>
+		</dependencies>
+
+	</project>
+
+</jasper:componentSet>
+

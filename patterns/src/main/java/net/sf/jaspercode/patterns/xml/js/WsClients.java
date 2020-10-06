@@ -82,6 +82,11 @@ public class WsClients extends Component {
 	public void setUrlPrefix(String urlPrefix) {
 		this.urlPrefix = urlPrefix;
 	}
-	
+
+	@Override
+	public String getComponentName() {
+		return "WsClients["+urlPrefix+"/*]";
+	}
+
 }
 

@@ -12,6 +12,7 @@ import net.sf.jaspercode.langsupport.javascript.types.BooleanType;
 import net.sf.jaspercode.langsupport.javascript.types.DOMElementType;
 import net.sf.jaspercode.langsupport.javascript.types.DOMEventType;
 import net.sf.jaspercode.langsupport.javascript.types.DoubleType;
+import net.sf.jaspercode.langsupport.javascript.types.FunctionType;
 import net.sf.jaspercode.langsupport.javascript.types.IntegerType;
 import net.sf.jaspercode.langsupport.javascript.types.JavascriptType;
 import net.sf.jaspercode.langsupport.javascript.types.LongintType;
@@ -34,7 +35,8 @@ public class JavascriptLanguageSupport implements LanguageSupport {
 		return Arrays.asList(
 				new ArrayType(), new DOMElementType(), new DOMEventType(), new DoubleType(), 
 				new IntegerType(), new NodeListType(), new NodeType(), new ObjectType(), new StringType(),
-				PromiseType.noResultPromise("Promise"), new LongintType(), new BooleanType()
+				PromiseType.noResultPromise("Promise"), new LongintType(), new BooleanType(),
+				new FunctionType()
 		);
 	}
 

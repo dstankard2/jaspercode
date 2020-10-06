@@ -1,11 +1,11 @@
 package net.sf.jaspercode.patterns.java.handwritten;
 
 import net.sf.jaspercode.api.ComponentProcessor;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.annotation.Processor;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.ApplicationFile;
 import net.sf.jaspercode.api.resources.ApplicationFolder;
 import net.sf.jaspercode.api.resources.ApplicationResource;
@@ -16,6 +16,7 @@ import net.sf.jaspercode.patterns.xml.java.handwritten.HandwrittenCode;
 public class HandwrittenCodeProcessor implements ComponentProcessor {
 	ProcessorContext ctx = null;
 	HandwrittenCode comp = null;
+	String watchPath = null;
 
 	@Override
 	public void init(Component comp, ProcessorContext ctx) {
@@ -35,11 +36,7 @@ public class HandwrittenCodeProcessor implements ComponentProcessor {
 		}
 		
 		if (res instanceof ApplicationFile) {
-			if (!path.endsWith(".java")) {
-				throw new JasperException("Invalid Java resource to watch '"+path+"'");
-			}
-			ApplicationFile file = (ApplicationFile)res;
-			watchFile(file);
+			throw new JasperException("Handwritten Java code component can only watch a directory");
 		} else {
 			ApplicationFolder folder = (ApplicationFolder)res;
 			watchDirectory(folder);
@@ -47,12 +44,9 @@ public class HandwrittenCodeProcessor implements ComponentProcessor {
 	}
 	
 	protected void watchDirectory(ApplicationFolder folder) {
-		FolderWatcher folderWatcher = new FolderWatcher(folder.getPath());
-		ctx.addResourceWatcher(folderWatcher, folder.getPath());
+		HandwrittenCodeFolderWatcher folderWatcher = new HandwrittenCodeFolderWatcher(folder.getPath());
+		ctx.addFolderWatcher(folder.getPath(),folderWatcher);
 	}
 
-	protected void watchFile(ApplicationFile file) {
-		
-	}
-	
 }
+

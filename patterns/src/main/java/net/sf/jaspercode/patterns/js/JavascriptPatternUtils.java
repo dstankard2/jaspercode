@@ -2,9 +2,9 @@ package net.sf.jaspercode.patterns.js;
 
 import java.util.Set;
 
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.langsupport.java.types.JavaVariableType;
 import net.sf.jaspercode.langsupport.java.types.impl.JavaDataObjectType;
 import net.sf.jaspercode.langsupport.javascript.types.JavascriptDataObjectType;

@@ -35,8 +35,6 @@ public class JavascriptParser {
 		JavascriptParsingResult ret = new JavascriptParsingResult();
 		// Insert \n after ;
 		String c = code.replaceAll(";", ";\n");
-		// Also put \n after {
-		c = c.replaceAll("\\{", "\\{\n");
 		ret.setCode(c);
 		
 		return ret;

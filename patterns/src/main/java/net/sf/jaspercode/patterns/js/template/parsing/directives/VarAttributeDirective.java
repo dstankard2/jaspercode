@@ -1,7 +1,7 @@
 package net.sf.jaspercode.patterns.js.template.parsing.directives;
 
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.annotation.Plugin;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.patterns.js.template.parsing.AttributeDirectiveBase;
 import net.sf.jaspercode.patterns.js.template.parsing.DirectiveContext;
 
@@ -19,7 +19,7 @@ public class VarAttributeDirective extends AttributeDirectiveBase {
 	@Override
 	public void generateCode(DirectiveContext ctx) throws JasperException {
 		StringBuilder b = ctx.getCode();
-		String name = ctx.getTemplateAttributes().get("js-var");
+		String name = ctx.getTemplateAttribute("js-var");
 
 		if (name.trim().length()==0) {
 			throw new JasperException("Found invalid js-var attribute value '"+name+"'");

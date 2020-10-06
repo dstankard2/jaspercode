@@ -1,41 +1,71 @@
 package net.sf.jaspercode.langsupport.java;
 
-import org.jboss.forge.roaster.model.JavaClass;
+import org.jboss.forge.roaster.Roaster;
+import org.jboss.forge.roaster.model.source.JavaSource;
 
-import net.sf.jaspercode.api.BuildContext;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.SourceFile;
+import net.sf.jaspercode.api.exception.JasperException;
+import net.sf.jaspercode.langsupport.java.types.JavaVariableType;
+import net.sf.jaspercode.langsupport.java.types.impl.JavaListType;
 
-public class JavaSourceFile<T extends JavaClass> implements SourceFile {
+public abstract class JavaSourceFile<T extends JavaSource<?>> implements SourceFile {
 
-	private BuildContext buildCtx = null;
-	private T srcClass = null;
-	private Class<T> cl = null;
+	protected ProcessorContext ctx = null;
+	protected T src = null;
+	protected Class<T> cl = null;
+	protected String basePath = null;
 
-	public T getJavaClass() {
-		return srcClass;
+	public T getSrc() {
+		return src;
 	}
 
-	public JavaSourceFile(Class<T> cl,ProcessorContext ctx) {
+	public JavaSourceFile(Class<T> cl,ProcessorContext ctx) throws JasperException {
 		this.cl = cl;
-		this.buildCtx = ctx.getBuildContext();
+		this.ctx = ctx;
+		//this.buildCtx = ctx.getBuildContext();
+		this.src = Roaster.create(cl);
+		this.basePath = ctx.getBuildContext().getOutputRootPath("java");
 	}
 
 	@Override
-	public StringBuilder getSource() throws JasperException {
+	public StringBuilder getSource() {
 		StringBuilder b = new StringBuilder();
-		b.append(srcClass.toString());
+		b.append(src.toString());
 		return b;
 	}
 
 	@Override
 	public String getPath() {
-		String base = buildCtx.getOutputRootPath("java");
-		if (base==null) base = "";
-		String dir = srcClass.getPackage();
-		String filename = srcClass.getName()+".java";
+		String base = basePath;
+		if (basePath==null) base = "";
+		String dir = src.getPackage();
+		String filename = src.getName()+".java";
 		return base + '/' + dir.replace('.', '/')+'/'+filename;
+	}
+
+	@Override
+	public abstract SourceFile copy();
+
+	public void addImport(JavaVariableType type) {
+		if (type.getImport()!=null) {
+			this.src.addImport(type.getImport());
+		}
+		if (type instanceof JavaListType) {
+			JavaListType listType = (JavaListType)type;
+			if (listType.getElementType()!=null) {
+				JavaVariableType eltType = (JavaVariableType)listType.getElementType();
+				if (eltType.getImport()!=null) {
+					this.src.addImport(eltType.getImport());
+				}
+			}
+		}
+	}
+	
+	public void addImports(JavaCode code) {
+		for(String s : code.getImports()) {
+			src.addImport(s);
+		}
 	}
 
 }

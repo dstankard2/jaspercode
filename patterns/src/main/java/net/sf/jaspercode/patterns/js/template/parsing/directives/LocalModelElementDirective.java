@@ -4,9 +4,9 @@ import java.util.List;
 
 import net.sf.jaspercode.api.AttribEntry;
 import net.sf.jaspercode.api.CodeExecutionContext;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.annotation.Plugin;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.patterns.js.template.parsing.DirectiveContext;
 import net.sf.jaspercode.patterns.js.template.parsing.DirectiveUtils;
 import net.sf.jaspercode.patterns.js.template.parsing.ElementDirective;
@@ -22,8 +22,8 @@ public class LocalModelElementDirective implements ElementDirective {
 
 	@Override
 	public void generateCode(DirectiveContext ctx) throws JasperException {
-		String ref = ctx.getDomAttributes().get("ref");
-		String attribs = ctx.getDomAttributes().get("attribs");
+		String ref = ctx.getDomAttribute("ref");
+		String attribs = ctx.getDomAttribute("attribs");
 		CodeExecutionContext execCtx = ctx.getExecCtx();
 		
 		if ((attribs==null) || (attribs.trim().length()==0)) {

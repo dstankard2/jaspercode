@@ -4,15 +4,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.sf.jaspercode.api.ComponentProcessor;
-import net.sf.jaspercode.api.JasperException;
+import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.annotation.Processor;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.types.ServiceOperation;
 import net.sf.jaspercode.langsupport.javascript.JavascriptUtils;
 import net.sf.jaspercode.langsupport.javascript.modules.HandwrittenModuleSource;
 import net.sf.jaspercode.langsupport.javascript.modules.ModuleSourceFile;
+import net.sf.jaspercode.langsupport.javascript.types.ModuleType;
 
 @Plugin
 @Processor(componentClass = PageBuilderComponent.class)
@@ -35,7 +37,7 @@ public class PageBuilderProcessor implements ComponentProcessor {
 
 		HandwrittenModuleSource mod = new HandwrittenModuleSource(pageInfo.getName());
 		f.addModule(mod);
-		StringBuilder code = mod.getCode();
+		StringBuilder code = mod.getCodeBuild();
 		StringBuilder modelCode = new StringBuilder();
 		List<String> fnNames = new ArrayList<>();
 		
@@ -49,17 +51,25 @@ public class PageBuilderProcessor implements ComponentProcessor {
 		fnNames.add("init");
 		code.append("function _init(_parent,_element) {\n");
 		code.append("console.log('init page "+pageInfo.getName()+"');\n");
+		code.append("if ((!_parent) && (!_element)) {\nconsole.error('No parent or element passed to init()');\nreturn;\n}\n");
+		
 		String renderObj = pageInfo.getPageRendererObj();
 		ServiceOperation renderOp = pageInfo.getPageRendererRule();
 		
 		//String renderFnRef = pageInfo.getPageRenderer();
 		if ((renderObj!=null) && (renderOp!=null)) {
+			String templatesTypeName = ctx.getSystemAttribute(renderObj);
+			
+			ModuleType templatesType = JasperUtils.getType(ModuleType.class, templatesTypeName, ctx);
+			//f.importModule(Pair.of(templatesTypeName, templatesType.getWebPath()));
+			f.importModule(templatesType);
 			// Page function should take one and only one argument - the page.  It should also return a DOM element
 			assert renderOp.getParamNames().size()==1 : "A function that renders a page must take the page as a parameter";
 			assert renderOp.getParamNames().get(0).equals("_page") : "A function that renders a page must take the page as a parameter";
 			assert "DOMElement".equals(renderOp.getReturnType()) : "A Javascript function that renders a page must return a DOM Element";
 			String fnName = renderObj+'.'+renderOp.getName();
-			code.append("var _elt = window."+fnName+"(_obj);\n");
+			code.append("let "+renderObj+" = "+templatesType.getName()+";\n");
+			code.append("var _elt = "+fnName+"(_obj);\n");
 			code.append("_obj.view = _elt;\n");
 			code.append("if (_element) {\n"
 					+ "_parent.replaceChild(_elt,_element);\n"

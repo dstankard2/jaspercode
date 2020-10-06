@@ -3,11 +3,11 @@ package net.sf.jaspercode.patterns.java.dataobject;
 import org.jboss.forge.roaster.model.source.JavaEnumSource;
 
 import net.sf.jaspercode.api.ComponentProcessor;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.annotation.Processor;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.langsupport.java.JavaEnumSourceFile;
 import net.sf.jaspercode.langsupport.java.JavaUtils;
 import net.sf.jaspercode.langsupport.java.types.impl.JavaEnumType;
@@ -34,10 +34,10 @@ public class OrdinalEnumProcessor implements ComponentProcessor {
 		String className = comp.getName();
 		String pkg = JavaUtils.getJavaPackage(comp, ctx);
 		JavaEnumSourceFile file = new JavaEnumSourceFile(ctx);
-		file.getJavaEnumSource().setPackage(pkg);
-		file.getJavaEnumSource().setName(className);
+		file.getSrc().setPackage(pkg);
+		file.getSrc().setName(className);
 		ctx.addSourceFile(file);
-		JavaEnumSource e = file.getJavaEnumSource();
+		JavaEnumSource e = file.getSrc();
 
 		for(String value : comp.getValue()) {
 			e.addEnumConstant(value);

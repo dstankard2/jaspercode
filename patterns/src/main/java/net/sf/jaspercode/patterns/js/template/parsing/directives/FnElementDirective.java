@@ -4,9 +4,9 @@ import java.util.List;
 
 import net.sf.jaspercode.api.AttribEntry;
 import net.sf.jaspercode.api.CodeExecutionContext;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.annotation.Plugin;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.patterns.js.parsing.JavascriptParser;
 import net.sf.jaspercode.patterns.js.parsing.JavascriptParsingResult;
 import net.sf.jaspercode.patterns.js.template.parsing.DirectiveContext;
@@ -25,27 +25,28 @@ public class FnElementDirective implements ElementDirective {
 	public void generateCode(DirectiveContext ctx) throws JasperException {
 		//String html = DirectiveUtils.unescapeXml(ctx.getInnerHtml()).trim();
 		String html = ctx.getInnerHtml().trim();
-		String name = ctx.getDomAttributes().get("name");
-		String params = ctx.getDomAttributes().get("params");
-		String event = ctx.getDomAttributes().get("event");
+		String name = ctx.getDomAttribute("name");
+		String params = ctx.getDomAttribute("params");
+		String event = ctx.getDomAttribute("event");
 		StringBuilder code = ctx.getCode();
 		CodeExecutionContext execCtx = ctx.getExecCtx();
 		CodeExecutionContext newCtx = new CodeExecutionContext(execCtx);
-		boolean isFunction = ((event!=null) || (name!=null));
+		boolean executeNow = ((name==null) && (event==null));
+		//boolean isFunction = ((event!=null) || (name!=null));
 
 		if (params==null) params = "";
-		if (newCtx.getTypeForVariable(name)!=null) {
+		if ((name!=null) && (newCtx.getTypeForVariable(name)!=null)) {
 			throw new JasperException("Cannot define a function named '"+name+"' as a variable of that name already exists in the execution context");
 		}
 
-		boolean execute = false;
+		//boolean execute = false;
 		if (name==null) {
 			name = ctx.newVarName("_f", "function", execCtx);
-			if (event==null) execute = true;
+			//if (event==null) execute = true;
 		}
 		else execCtx.addVariable(name, "function");
 
-		if (isFunction) {
+		if (!executeNow) {
 			code.append("function "+name+"(");
 			if (params.trim().length()>0) {
 				boolean first = true;
@@ -62,18 +63,16 @@ public class FnElementDirective implements ElementDirective {
 		} else {
 			code.append("(function() {\n");
 		}
-		
+		code.append("try{\n");
 		html = DirectiveUtils.unescapeXml(html);
 		JavascriptParser eval = new JavascriptParser(html,newCtx);
 		DirectiveUtils.populateImpliedVariables(eval);
 		JavascriptParsingResult result = eval.evalCodeBlock();
 
 		code.append(result.getCode().trim());
-		if (isFunction) {
+		code.append("\n}catch(_e){console.error(_e);}\n");
+		if (!executeNow) {
 			code.append("}\n");
-			if (execute) {
-				code.append(name+"();\n");
-			}
 		} else {
 			code.append("})();\n");
 		}

@@ -1,12 +1,12 @@
 package net.sf.jaspercode.patterns.java.dataobject;
 
 import net.sf.jaspercode.api.ComponentProcessor;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.annotation.Processor;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.langsupport.java.types.impl.JavaDataObjectType;
 import net.sf.jaspercode.langsupport.javascript.types.JavascriptDataObjectType;
 import net.sf.jaspercode.patterns.xml.java.dataobject.JsonObject;
@@ -32,9 +32,9 @@ public class JsonObjectProcessor implements ComponentProcessor {
 		if (name.trim().length()==0) {
 			throw new JasperException("name attribute is required for JSON object");
 		}
-		
-		ctx.dependOnVariableType(name);
+
 		JavaDataObjectType javaType = JasperUtils.getType(JavaDataObjectType.class, name, ctx);
+		ctx.dependOnVariableType(javaType);
 		JavascriptDataObjectType newType = new JavascriptDataObjectType(name, false,ctx);
 		
 		ctx.setLanguageSupport("Javascript");
@@ -46,3 +46,4 @@ public class JsonObjectProcessor implements ComponentProcessor {
 	}
 
 }
+

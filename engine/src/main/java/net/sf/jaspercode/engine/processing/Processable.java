@@ -1,20 +1,21 @@
 package net.sf.jaspercode.engine.processing;
 
-import net.sf.jaspercode.api.JasperException;
+import java.util.List;
 
-public interface Processable {
+import net.sf.jaspercode.api.plugin.ProcessorLogMessage;
 
-	/**
-	 * Priority rating for processing this item.  Items are sorted by priority in ascending order.  If 
-	 * priority is < 0 then the component will not be processed.
-	 * @return Priority rating.
-	 */
+// Replace Processable
+public interface Processable extends Comparable<Processable> {
+
+	int getOriginatorId();
+	ProcessingState getState();
 	int getPriority();
-	
-	/**
-	 * Process this component.
-	 * @throws JasperException
-	 */
-	void process() throws JasperException;
-	
+	List<ProcessorLogMessage> getMessages();
+	String getName();
+	boolean process();
+	boolean commitChanges();
+	//void rollbackChanges();
+	void clearLogMessages();
+	ProcessorLog getLog();
+
 }

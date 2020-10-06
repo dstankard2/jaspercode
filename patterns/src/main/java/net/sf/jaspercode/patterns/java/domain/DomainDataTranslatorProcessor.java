@@ -10,12 +10,12 @@ import org.jboss.forge.roaster.model.source.MethodSource;
 import net.sf.jaspercode.api.AttribEntry;
 import net.sf.jaspercode.api.CodeExecutionContext;
 import net.sf.jaspercode.api.ComponentProcessor;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.annotation.Processor;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.types.ServiceOperation;
 import net.sf.jaspercode.langsupport.java.JavaClassSourceFile;
 import net.sf.jaspercode.langsupport.java.JavaCode;
@@ -57,13 +57,12 @@ public class DomainDataTranslatorProcessor implements ComponentProcessor {
 		}
 		JavaDataObjectType attribType = JasperUtils.getType(JavaDataObjectType.class, attribTypeName, ctx);
 
-		MethodSource<JavaClassSource> methodSrc = src.getJavaClassSource().addMethod();
+		MethodSource<JavaClassSource> methodSrc = src.getSrc().addMethod();
 		ServiceOperation op = new ServiceOperation(ruleName);
 		op.returnType(attribTypeName);
 		methodSrc.setName(ruleName).setPublic();
 		methodSrc.setReturnType(attribType.getImport());
 		JavaCode code = new JavaCode();
-		ctx.originateSourceFile(src);
 		
 		List<AttribEntry> ruleParams = JasperUtils.readParametersAsList(params, ctx);
 		if (ruleParams.size()==0) {
@@ -97,9 +96,8 @@ public class DomainDataTranslatorProcessor implements ComponentProcessor {
 
 		code.appendCodeText("return "+attrib+";");
 		methodSrc.setBody(code.getCodeText());
-		JavaUtils.addImports(src, code);
+		src.addImports(code);
 		serviceType.addOperation(op);
-		ctx.originateVariableType(serviceType.getName());
 	}
 	
 	protected String findAttribute(String dataObjectRef, JavaDataObjectType dataObjectType, String attrib, 

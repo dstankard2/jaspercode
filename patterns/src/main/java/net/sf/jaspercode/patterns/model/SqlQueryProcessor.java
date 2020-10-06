@@ -7,11 +7,11 @@ import java.util.List;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
 
 import net.sf.jaspercode.api.ComponentProcessor;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.annotation.Processor;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.langsupport.java.JavaClassSourceFile;
 import net.sf.jaspercode.langsupport.java.JavaUtils;
 import net.sf.jaspercode.langsupport.java.types.JavaVariableType;
@@ -63,7 +63,7 @@ public class SqlQueryProcessor implements ComponentProcessor {
 		
 		String pkg = JavaUtils.getJavaPackage(comp, ctx);
 		src = JavaUtils.getClassSourceFile(pkg+'.'+serviceName, ctx);
-		JavaClassSource cl = src.getJavaClassSource();
+		JavaClassSource cl = src.getSrc();
 
 		if (stmt instanceof Select) {
 			Select sel = (Select)stmt;
@@ -78,10 +78,10 @@ public class SqlQueryProcessor implements ComponentProcessor {
 	protected void handleSelect(Select sel, JavaClassSource cl,String pkg) throws JasperException {
 		String dataObjName = comp.getResultType();
 		JavaDataObjectType dataType = new JavaDataObjectType(dataObjName,pkg+'.'+dataObjName,ctx.getBuildContext());
-		JavaClassSourceFile dataObjSrc = new JavaClassSourceFile(ctx.getBuildContext());
+		JavaClassSourceFile dataObjSrc = new JavaClassSourceFile(ctx);
 		ctx.addVariableType(dataType);
-		dataObjSrc.getJavaClassSource().setPackage(pkg);
-		dataObjSrc.getJavaClassSource().setName(dataObjName);
+		dataObjSrc.getSrc().setPackage(pkg);
+		dataObjSrc.getSrc().setName(dataObjName);
 		ctx.addSourceFile(dataObjSrc);
 		SelectBody body = sel.getSelectBody();
 		List<String> attributes = new ArrayList<>();
@@ -122,7 +122,7 @@ public class SqlQueryProcessor implements ComponentProcessor {
 			if (type.getImport()!=null) {
 				dataObjSrc.addImport(type);
 			}
-			dataObjSrc.getJavaClassSource().addProperty(type.getClassName(), name);
+			dataObjSrc.getSrc().addProperty(type.getClassName(), name);
 			dataType.addProperty(name, typeName);
 		}
 

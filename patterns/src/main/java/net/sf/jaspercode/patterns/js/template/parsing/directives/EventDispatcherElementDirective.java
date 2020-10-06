@@ -1,8 +1,8 @@
 package net.sf.jaspercode.patterns.js.template.parsing.directives;
 
 import net.sf.jaspercode.api.CodeExecutionContext;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.annotation.Plugin;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.patterns.js.template.parsing.DirectiveContext;
 import net.sf.jaspercode.patterns.js.template.parsing.DirectiveUtils;
 import net.sf.jaspercode.patterns.js.template.parsing.ElementDirective;
@@ -17,7 +17,7 @@ public class EventDispatcherElementDirective implements ElementDirective {
 
 	@Override
 	public void generateCode(DirectiveContext ctx) throws JasperException {
-		String ref = ctx.getDomAttributes().get("ref");
+		String ref = ctx.getDomAttribute("ref");
 		StringBuilder code = ctx.getCode();
 		CodeExecutionContext execCtx = ctx.getExecCtx();
 		String var = DirectiveUtils.EVENT_DISPATCHER_FN_VAR;

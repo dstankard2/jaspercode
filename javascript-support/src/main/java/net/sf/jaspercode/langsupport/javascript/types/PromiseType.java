@@ -3,7 +3,7 @@ package net.sf.jaspercode.langsupport.javascript.types;
 public abstract class PromiseType extends JavascriptServiceType {
 
 	public PromiseType() {
-		super("Promise",false,null);
+		super("Promise");
 	}
 	
 	public abstract String getResolveTypeName();

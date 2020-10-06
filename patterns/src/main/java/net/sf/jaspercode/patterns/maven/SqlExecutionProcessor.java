@@ -3,11 +3,11 @@ package net.sf.jaspercode.patterns.maven;
 import java.util.List;
 
 import net.sf.jaspercode.api.ComponentProcessor;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.annotation.Processor;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.ApplicationFile;
 import net.sf.jaspercode.api.resources.ApplicationFolder;
 import net.sf.jaspercode.api.resources.ApplicationResource;
@@ -72,7 +72,7 @@ public class SqlExecutionProcessor implements ComponentProcessor {
 	
 	protected void addFolder(ApplicationFolder folder,PropertyWithValueList files,MavenBuildContext bctx,ProcessorContext ctx) {
 		List<String> names = folder.getContentNames();
-		ctx.dependOnResource(folder.getPath());
+		//ctx.dependOnResource(folder.getPath());
 		for(String name : names) {
 			ApplicationResource res = folder.getResource(name);
 			if (res instanceof ApplicationFile) {
@@ -87,7 +87,7 @@ public class SqlExecutionProcessor implements ComponentProcessor {
 	
 	protected void addFile(String path,PropertyWithValueList files, MavenBuildContext bctx,ProcessorContext ctx) {
 		if (path.endsWith(".sql")) {
-			ctx.dependOnResource(path);
+			//ctx.dependOnResource(path);
 			String buildBase = bctx.getApplicationFolderPath();
 			String resourcePath = path.substring(buildBase.length());
 			files.addValue(resourcePath);

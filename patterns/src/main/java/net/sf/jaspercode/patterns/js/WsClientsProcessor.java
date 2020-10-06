@@ -4,12 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.sf.jaspercode.api.ComponentProcessor;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.annotation.Processor;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.types.DataObjectType;
 import net.sf.jaspercode.api.types.ServiceOperation;
 import net.sf.jaspercode.api.types.VariableType;
@@ -62,7 +62,7 @@ public class WsClientsProcessor implements ComponentProcessor {
 			String ref = service.getRef();
 			String module = service.getModule();
 
-			JavascriptServiceType type = new JavascriptServiceType(name, true, ctx);
+			JavascriptServiceType type = new JavascriptServiceType(name);
 
 			ctx.addSystemAttribute(ref, name);
 			ctx.addVariableType(type);
@@ -88,17 +88,17 @@ public class WsClientsProcessor implements ComponentProcessor {
 				appendOperation(op, src, type, urlPrefix, def.getUri());
 			}
 			src.setName(name);
-			src.getCode().append("return {\n");
+			src.getCodeBuild().append("return {\n");
 			boolean first = true;
 			for (WebServiceOperation op : ops) {
 				if (first)
 					first = false;
 				else
-					src.getCode().append(",\n");
+					src.getCodeBuild().append(",\n");
 				String n = getOperationName(op);
-				src.getCode().append(n + ": _" + n);
+				src.getCodeBuild().append(n + ": _" + n);
 			}
-			src.getCode().append("\n};\n");
+			src.getCodeBuild().append("\n};\n");
 		}
 
 	}
@@ -106,13 +106,6 @@ public class WsClientsProcessor implements ComponentProcessor {
 	// TODO: Figure out something else here
 	protected String getOperationName(WebServiceOperation op) {
 		return op.getOperationName();
-		/*
-		String val = op.getResponseBody();
-		if (val.endsWith("ServiceResult")) {
-			val = val.substring(0, val.indexOf("ServiceResult"));
-		}
-		return JasperUtils.getLowerCamelName(val);
-		*/
 	}
 
 	// The operation will be valid - there's no need to check
@@ -208,15 +201,19 @@ public class WsClientsProcessor implements ComponentProcessor {
 			fnBody.append("else _options.path += '" + param + "=';\n");
 		}
 
-		if (comp.getPreprocessing().trim().length() > 0) {
+		if ((comp.getPreprocessing()!=null) && (comp.getPreprocessing().trim().length() > 0)) {
 			fnBody.append(comp.getPreprocessing()).append("(_options);\n");
 		} else {
 			ctx.getLog().info("No request preprocessing defined for web service");
 		}
 
+		// TODO: This should probably be fetch
+		final String DefaultAjaxProvider = "XMLHttpRequest";
 		// Ajax Provider
-		if (ajaxProvider.trim().length() == 0) {
-			ajaxProvider = "XMLHttpRequest";
+		if (ajaxProvider==null) {
+			ajaxProvider = DefaultAjaxProvider;
+		} else if (ajaxProvider.trim().length() == 0) {
+			ajaxProvider = DefaultAjaxProvider;
 		}
 		fnBody.append("var _promise;\n");
 		AjaxClientProvider provider = JavascriptPatternUtils.getAjaxClientProvider(ajaxProvider, ctx);
@@ -228,13 +225,13 @@ public class WsClientsProcessor implements ComponentProcessor {
 		fnBody.append("return _promise;\n");
 
 		fnDec.append(") =>");
-		src.getCode().append(fnDec);
-		src.getCode().append("{\n");
+		src.getCodeBuild().append(fnDec);
+		src.getCodeBuild().append("{\n");
 
 		// Append function body
-		src.getCode().append(fnBody);
+		src.getCodeBuild().append(fnBody);
 
-		src.getCode().append("}\n");
+		src.getCodeBuild().append("}\n");
 	}
 
 	private void processReturnType(ServiceOperation op, WebServiceOperation webOp) throws JasperException {

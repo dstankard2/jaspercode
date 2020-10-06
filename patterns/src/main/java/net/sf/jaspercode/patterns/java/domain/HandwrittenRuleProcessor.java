@@ -7,12 +7,12 @@ import org.jboss.forge.roaster.model.source.MethodSource;
 
 import net.sf.jaspercode.api.AttribEntry;
 import net.sf.jaspercode.api.ComponentProcessor;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.JasperUtils;
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.annotation.Processor;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.types.ServiceOperation;
 import net.sf.jaspercode.langsupport.java.JavaClassSourceFile;
 import net.sf.jaspercode.langsupport.java.types.JavaVariableType;
@@ -45,7 +45,7 @@ public class HandwrittenRuleProcessor implements ComponentProcessor {
 			throw new JasperException("No rule specified for handwritten rule");
 		}
 
-		if (!src.getJavaClassSource().isAbstract()) {
+		if (!src.getSrc().isAbstract()) {
 			throw new JasperException("Handwritten rule requires the domain service to be an sbtract class - you must specify configuration 'java.domain.implClass'");
 		}
 		
@@ -55,7 +55,7 @@ public class HandwrittenRuleProcessor implements ComponentProcessor {
 		}
 		
 		ServiceOperation op = new ServiceOperation(ruleName);
-		MethodSource<JavaClassSource> methodSrc = src.getJavaClassSource().addMethod();
+		MethodSource<JavaClassSource> methodSrc = src.getSrc().addMethod();
 
 		methodSrc.setPublic().setAbstract(true).setName(ruleName);
 		if (returnType!=null) {
@@ -73,8 +73,7 @@ public class HandwrittenRuleProcessor implements ComponentProcessor {
 			op.addParam(paramName, paramType.getName());
 		}
 		serviceType.addOperation(op);
-		ctx.originateSourceFile(src);
-		ctx.originateVariableType(serviceType.getName());
+		ctx.originateVariableType(serviceType);
 	}
 	
 }

@@ -22,6 +22,7 @@ public class JasperTest {
 		}
 	}
 
+	/*
 	protected static void runTest() throws Exception {
 		JasperAgent agent = null;
 		HashMap<String,String> options = new HashMap<>();
@@ -34,6 +35,24 @@ public class JasperTest {
 		options.put("outputDir","/SomeLinuxFolder");
 		options.put("outputDir","c:\\SomeWindowsFolder");
 
+		agent = new JasperAgent(libs,options);
+		agent.start();
+	}
+	*/
+
+	// Realms, single app, daemon mode
+	protected static void runTest() throws Exception {
+		JasperAgent agent = null;
+		HashMap<String,String> options = new HashMap<>();
+
+		//options.put("once", "");
+		//options.put("applicationDir", "/SomeLinuxFolder");
+		options.put("applicationDir", "C:\\workspaces\\realms");
+
+		options.put("singleAppMode", "");
+		//options.put("outputDir","/SomeLinuxFolder");
+		options.put("outputDir","C:\\build\\realms");
+		
 		agent = new JasperAgent(libs,options);
 		agent.start();
 	}

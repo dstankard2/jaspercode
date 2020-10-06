@@ -31,7 +31,7 @@ public class RetrieveDataRule extends DomainLogicComponent {
 	@RequiredXml
 	@XmlAttribute
 	private String name = "";
-	
+
 	@RequiredXml
 	@XmlAttribute
 	private String params = "";
@@ -58,6 +58,10 @@ public class RetrieveDataRule extends DomainLogicComponent {
 
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	public String getComponentName() {
+		return "RetrieveDataRule["+this.getServiceName()+"."+name+"]";
 	}
 
 }

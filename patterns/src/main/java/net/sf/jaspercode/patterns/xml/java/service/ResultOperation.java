@@ -1,8 +1,8 @@
 package net.sf.jaspercode.patterns.xml.java.service;
 
 import net.sf.jaspercode.api.CodeExecutionContext;
-import net.sf.jaspercode.api.JasperException;
 import net.sf.jaspercode.api.ProcessorContext;
+import net.sf.jaspercode.api.exception.JasperException;
 
 public interface ResultOperation {
 
