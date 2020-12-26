@@ -9,6 +9,7 @@ public class WebUtils {
 	public static WebServiceContext getWebServiceDefinition(String name,ProcessorContext ctx,boolean force) {
 		WebServiceContext ret = null;
 		
+		if ((name==null) || (name.trim().length()==0)) name = ctx.getBuildContext().getName();
 		ret = (WebServiceContext)ctx.getObject(WEBSERVICE_DEFINITIONS+"_" + name);
 		if ((ret==null) && (force)) {
 			ret = new WebServiceContext();

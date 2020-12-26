@@ -51,6 +51,7 @@ public class WsClientsProcessor implements ComponentProcessor {
 		String ctxName = comp.getBuildContextName();
 		String urlPrefix = comp.getUrlPrefix();
 		WebServiceContext webCtx = WebUtils.getWebServiceDefinition(ctxName, ctx, false);
+		
 		List<WebService> services = comp.getWebService();
 
 		if (webCtx == null) {

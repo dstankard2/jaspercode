@@ -55,6 +55,8 @@ public class JavascriptUtils {
 		}
 		if (srcPath.startsWith(base)) {
 			ret = srcPath.substring(base.length());
+		} else {
+			throw new JasperException("Couldn't get web path for file "+srcPath+" based on www root folder "+base);
 		}
 		
 		return ret;

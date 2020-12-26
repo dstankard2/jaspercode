@@ -198,7 +198,7 @@ public class MavenBuildComponentProcessor implements BuildComponentProcessor {
 				if (artifact.indexOf(':')<0) {
 					String config = "maven.dependency."+depName;
 					artifact = ctx.getProperty(config);
-					if (artifact==null) {
+					if ((artifact==null) || (artifact.trim().length()==0)) {
 						throw new JasperException("Maven Processor needs configuration property '"+config+"' to resolve dependency '"+depName+"'");
 					}
 				}
