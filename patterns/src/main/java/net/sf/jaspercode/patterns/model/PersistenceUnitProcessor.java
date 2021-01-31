@@ -124,7 +124,6 @@ public class PersistenceUnitProcessor implements ComponentProcessor {
 			String colName = col.getName();
 			String colType = col.getType();
 			ctx.addSystemAttribute(name, attrType);
-			ctx.originateSystemAttribute(name);
 			String colClass = null;
 
 			objType.addProperty(name, colType);

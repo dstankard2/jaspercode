@@ -39,9 +39,7 @@ public class CallRuleRenderer extends OperationRenderer {
 			if (resultTypeName==null) {
 				throw new JasperException("Couldn't find a system attribute called '"+result+"' - it must be defined already");
 			}
-			ctx.dependOnSystemAttribute(result);
 			JavaVariableType resultType = execCtx.getType(JavaVariableType.class, resultTypeName);
-			ctx.dependOnVariableType(resultType);
 			JavaUtils.append(code, resultType.declare(result, execCtx));
 			execCtx.addVariable(result, resultTypeName);
 		}

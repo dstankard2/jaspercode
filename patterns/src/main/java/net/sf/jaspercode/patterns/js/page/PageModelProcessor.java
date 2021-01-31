@@ -38,8 +38,8 @@ public class PageModelProcessor implements ComponentProcessor {
 			throw new JasperException("Couldn't find page '"+pageName+"' for pageModel component");
 		}
 
-		PageModelType modelType = info.getModelType();
-		ctx.originateVariableType(modelType);
+		String modelTypeName = info.getModelTypeName();
+		PageModelType modelType = JasperUtils.getType(PageModelType.class, modelTypeName, ctx);
 
 		String attrs = comp.getAttributes();
 		List<AttribEntry> entries = JasperUtils.readParametersAsList(attrs, ctx);
@@ -52,11 +52,13 @@ public class PageModelProcessor implements ComponentProcessor {
 			} else {
 				PageUtils.addModelAttribute(pageName, name, entry.getType().getName(), ctx);
 			}
+			/* This should not be required
 			if (entry.isOriginator()) {
 				ctx.originateSystemAttribute(entry.getName());
 			} else {
 				ctx.dependOnSystemAttribute(entry.getName());
 			}
+			*/
 		}
 	}
 

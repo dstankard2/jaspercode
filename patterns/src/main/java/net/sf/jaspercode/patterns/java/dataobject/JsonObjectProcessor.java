@@ -34,7 +34,6 @@ public class JsonObjectProcessor implements ComponentProcessor {
 		}
 
 		JavaDataObjectType javaType = JasperUtils.getType(JavaDataObjectType.class, name, ctx);
-		ctx.dependOnVariableType(javaType);
 		JavascriptDataObjectType newType = new JavascriptDataObjectType(name, false,ctx);
 		
 		ctx.setLanguageSupport("Javascript");

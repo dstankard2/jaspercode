@@ -54,7 +54,6 @@ public class ClassificationProcessor implements ComponentProcessor {
 				if (!exType.getIsInterface()) {
 					throw new JasperException("A classification may only extend another classification");
 				}
-				ctx.dependOnVariableType(exType);
 				src.addInterface(exType.getImport());
 				for(String n : exType.getAttributeNames()) {
 					if (type.getAttributeType(n)==null) {
@@ -85,7 +84,6 @@ public class ClassificationProcessor implements ComponentProcessor {
 				if (typeName==null) {
 					throw new JasperException("Couldn't find type for classification attribute '"+attr+"'");
 				}
-				ctx.dependOnSystemAttribute(attr);
 			}
 			JavaVariableType attrType = JasperUtils.getType(JavaVariableType.class, typeName, ctx);
 			String propertyClass = null;
@@ -94,7 +92,6 @@ public class ClassificationProcessor implements ComponentProcessor {
 			} else {
 				propertyClass = attrType.getClassName();
 			}
-			ctx.dependOnVariableType(attrType);
 			String upperCamel = JasperUtils.getUpperCamelName(attr);
 			file.addImport(attrType);
 			src.addMethod().setName("set"+upperCamel).setPublic().addParameter(propertyClass, attr);

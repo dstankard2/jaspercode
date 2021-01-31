@@ -161,8 +161,6 @@ public class EndpointProcessor implements ComponentProcessor {
 				if (execCtx.getVariableType(requestBody)!=null) {
 					throw new JasperException("Cannot handle request body reference '"+requestBody+"' - That variable already exists in the code execution context");
 				}
-				ctx.dependOnSystemAttribute(requestBody);
-				ctx.dependOnVariableType(bodyType);
 				if (bodyType==ctx.getVariableType("string")) {
 					code.append("String "+requestBody+" = \"\";\n");
 					execCtx.addVariable(requestBody, "string");
@@ -280,7 +278,6 @@ public class EndpointProcessor implements ComponentProcessor {
 		execCtx.addVariable(operationResult, resultTypeName);
 		JavaServiceType serviceType = JasperUtils.getTypeForSystemAttribute(JavaServiceType.class, ruleParts[0], ctx);
 		JavaUtils.append(invokeCode, serviceType.declare(ruleParts[0], execCtx));
-		ctx.dependOnVariableType(serviceType);
 		execCtx.addVariable(ruleParts[0], serviceType.getName());
 		JavaUtils.append(invokeCode,serviceType.instantiate(ruleParts[0]));
 		JavaUtils.append(invokeCode, JavaUtils.callJavaOperation(operationResult, ruleParts[0], serviceOp, execCtx, null));

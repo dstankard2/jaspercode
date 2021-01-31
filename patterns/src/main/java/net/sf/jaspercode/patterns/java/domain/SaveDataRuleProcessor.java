@@ -71,9 +71,6 @@ public class SaveDataRuleProcessor implements ComponentProcessor {
 			src.addImport(type);
 			methodSrc.addParameter(type.getClassName(), key);
 			execCtx.addVariable(key, type.getName());
-			if (entry.isOriginator()) {
-				ctx.originateSystemAttribute(key);
-			}
 		}
 
 		Map<String,JavaServiceType> deps = DomainRuleUtils.getDependencyRefs(comp, ctx);

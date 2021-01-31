@@ -36,34 +36,17 @@ public class MavenBuildComponentProcessor implements BuildComponentProcessor {
 	private List<Command> clean = new ArrayList<>();
 
 	@Override
-	public Class<? extends BuildComponent> getComponentClass() {
-		return MavenBuild.class;
-	}
-	
-	public String getArtifact() {
-		return artifact;
-	}
-	
-	public void addBuildCommand(String cmd) {
-		Command command = new CommandImpl(cmd,false);
-		build.add(command);
-	}
-	
-	public void addBuildPhase(String phase) {
-		BuildContext parentBuildContext = ctx.getParentBuildContext();
-		MavenBuildContext mctx = (MavenBuildContext)parentBuildContext;
-		
-		if (mctx!=null) {
-			mctx.addBuildPhase(phase);
-		}
-		MavenCommand cmd = (MavenCommand)build.get(0);
-		cmd.addPhase(phase);
+	public void setBuildProcessorContext(BuildProcessorContext ctx) throws JasperException {
+		this.ctx = ctx;
 	}
 
 	@Override
-	public void initialize(BuildComponent component, BuildProcessorContext ctx) throws JasperException {
-		this.component = (MavenBuild)component;
-		this.ctx = ctx;
+	public void setBuildComponent(BuildComponent buildComponent) {
+		this.component = (MavenBuild)buildComponent;
+	}
+
+	@Override
+	public void initialize() throws JasperException {
 		ctx.getLog().info("Initialize Maven Build Context for path "+ctx.getFolder().getPath());
 		this.packaging = this.component.getPackaging();
 		Dependencies deps = this.component.getDependencies();
@@ -125,7 +108,6 @@ public class MavenBuildComponentProcessor implements BuildComponentProcessor {
 			}
 			//addDeployGoal("install");
 		}
-
 	}
 
 	@Override
@@ -133,6 +115,40 @@ public class MavenBuildComponentProcessor implements BuildComponentProcessor {
 		ctx.getLog().debug("Create new Maven build context at path '"+ctx.getFolder().getPath()+"'");
 		return new MavenBuildContext(ctx,this);
 	}
+	
+	@Override
+	public Class<? extends BuildComponent> getComponentClass() {
+		return MavenBuild.class;
+	}
+	
+	public String getArtifact() {
+		return artifact;
+	}
+	
+	public void addBuildCommand(String cmd) {
+		Command command = new CommandImpl(cmd,false);
+		build.add(command);
+	}
+	
+	public void addBuildPhase(String phase) {
+		BuildContext parentBuildContext = ctx.getParentBuildContext();
+		MavenBuildContext mctx = (MavenBuildContext)parentBuildContext;
+		
+		if (mctx!=null) {
+			mctx.addBuildPhase(phase);
+		}
+		MavenCommand cmd = (MavenCommand)build.get(0);
+		cmd.addPhase(phase);
+	}
+
+	/*
+	@Override
+	public void initialize(BuildComponent component, BuildProcessorContext ctx) throws JasperException {
+		this.component = (MavenBuild)component;
+		this.ctx = ctx;
+
+	}
+	*/
 
 	@Override
 	public void generateBuild() throws JasperException {

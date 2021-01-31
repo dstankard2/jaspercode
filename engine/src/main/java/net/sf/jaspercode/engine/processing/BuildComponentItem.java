@@ -101,7 +101,10 @@ public class BuildComponentItem implements Item {
 				try {
 					ProcessingUtilities.populateConfigurations(buildComp, log, configs);
 					processor = pattern.getProcessor(buildComp);
-					processor.initialize(buildComp, buildProcessorContext);
+					processor.setBuildComponent(buildComp);
+					processor.setBuildProcessorContext(buildProcessorContext);
+					processor.initialize();
+					//processor.initialize(buildComp, buildProcessorContext);
 					this.buildContext = processor.createBuildContext();
 				} catch(JasperException e) {
 					this.log.error("Exception while initializing build", e);

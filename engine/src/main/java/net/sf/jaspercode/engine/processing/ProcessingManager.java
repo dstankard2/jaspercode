@@ -1,6 +1,7 @@
 package net.sf.jaspercode.engine.processing;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -117,12 +118,14 @@ public class ProcessingManager {
 	}
 
 	public void setGlobalSystemAttributes(Map<String,String> attributes) {
+		/*
 		Set<Integer> toUnload = processingDataManager.setGlobalSystemAttributes(attributes);
-		Set<Item> itemsToAdd = new HashSet<>();
+		List<Item> itemsToAdd = new HashSet<>();
 		for(Integer i : toUnload) {
 			itemsToAdd.addAll(removeItem(i, false));
 		}
 		addItems(itemsToAdd);
+		*/
 	}
 
 	// Unloads the component files and re-adds them for processing.
@@ -166,7 +169,7 @@ public class ProcessingManager {
 		return _currentId;
 	}
 
-	protected void addItems(Set<Item> itemsToAdd) {
+	protected void addItems(List<Item> itemsToAdd) {
 		if (itemsToAdd.size()==0) return;
 		for(Item item : itemsToAdd) {
 			// Re-add item
@@ -192,8 +195,12 @@ public class ProcessingManager {
 		}
 	}
 
+	protected void addItem(Item item) {
+		addItems(Arrays.asList(item));
+	}
+
 	public void processChanges() {
-		Set<Item> itemsToAdd = new HashSet<>();
+		List<Item> itemsToAdd = new ArrayList<>();
 		// Look for userFiles removed
 		for(String f : userFilesRemoved) {
 			itemsToAdd.addAll(userFileRemoved(f));
@@ -221,14 +228,13 @@ public class ProcessingManager {
 					// TODO: Real processing context from processing manager
 					ProcessingContext pctx = new ProcessingContext(this, processingDataManager);
 					BuildComponentItem i = new BuildComponentItem(id, buildComp, pattern, configs, jasperResources, pctx, f);
-					buildItemsToInit.add(i);
+					addItem(i);
 				} else {
 					ComponentPattern pattern = patterns.getPattern(comp.getClass());
 					ProcessingContext ctx = new ProcessingContext(this, processingDataManager);
 					int id = newId();
 					ComponentItem item = new ComponentItem(id, comp, ctx, f, configs, 0, pattern, jasperResources);
-					toProcess.add(item);
-					items.add(item);
+					addItem(item);
 				}
 			}
 		}
@@ -331,7 +337,7 @@ public class ProcessingManager {
 				}
 			}
 		}
-		Set<Item> itemsToAdd = new HashSet<>();
+		List<Item> itemsToAdd = new ArrayList<>();
 		for(Integer id : idsToRemove) {
 			itemsToAdd.addAll(this.removeItem(id, true));
 		}

@@ -76,10 +76,7 @@ public class ThreadLocalEntityManagerProcessor implements ComponentProcessor {
 		b.append("em.getTransaction().commit();\n}\n}\nem.close();\n}\n");
 		cl.addMethod().setName("releaseEntityManager").setPublic().setStatic(true).setBody(b.toString());
 
-		ctx.dependOnVariableType(emType);
 		ctx.addVariableType(new ThreadLocalTxLocatorType(pkg, className, ctx.getBuildContext(),emType));
-		ctx.dependOnSystemAttribute(txRef);
-		//ctx.addSystemAttribute(txRef, className);
 		ctx.addSourceFile(src);
 	}
 

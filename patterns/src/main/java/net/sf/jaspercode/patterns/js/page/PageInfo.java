@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.sf.jaspercode.api.types.ServiceOperation;
-import net.sf.jaspercode.langsupport.javascript.types.JavascriptServiceType;
 
 public class PageInfo {
 
@@ -12,8 +11,9 @@ public class PageInfo {
 	private String pageRendererObj = null;
 	private ServiceOperation pageRendererRule = null;
 	private List<PageFnDef> functions = new ArrayList<>();
-	private PageModelType modelType = null;
-	private JavascriptServiceType pageType = null;
+	private String modelTypeName = null;
+	//private PageModelType modelType = null;
+	private String pageTypeName = null;
 
 	public String getPageRendererObj() {
 		return pageRendererObj;
@@ -39,17 +39,17 @@ public class PageInfo {
 	public void setFunctions(List<PageFnDef> functions) {
 		this.functions = functions;
 	}
-	public PageModelType getModelType() {
-		return modelType;
+	public String getModelTypeName() {
+		return modelTypeName;
 	}
-	public void setModelType(PageModelType modelType) {
-		this.modelType = modelType;
+	public void setModelTypeName(String modelTypeName) {
+		this.modelTypeName = modelTypeName;
 	}
-	public JavascriptServiceType getPageType() {
-		return pageType;
+	public String getPageTypeName() {
+		return pageTypeName;
 	}
-	public void setPageType(JavascriptServiceType pageType) {
-		this.pageType = pageType;
+	public void setPageTypeName(String pageTypeName) {
+		this.pageTypeName = pageTypeName;
 	}
 
 }

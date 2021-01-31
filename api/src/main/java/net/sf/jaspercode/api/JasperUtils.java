@@ -102,7 +102,6 @@ public class JasperUtils {
 					type = listType.getListTypeWithElementTypName(elementType);
 				}
 				ctx.addSystemAttribute(name, typeName);
-				ctx.originateSystemAttribute(name);
 				ret.add(new AttribEntry(name,type,true));
 			} else if (index==0) {
 				throw new JasperException("Found invalid attribute name '"+part+"'");

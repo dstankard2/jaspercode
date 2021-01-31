@@ -293,8 +293,6 @@ public class FileHandler {
 				JavaVariableType depType = JasperUtils.getType(JavaVariableType.class, depTypeName, ctx);
 				JavaUtils.append(locatorCode, JavaUtils.serviceInstance(depRef, depType, locatorExecCtx, ctx));
 				locatorCode.appendCodeText("_ret."+methodName+"("+depRef+");\n");
-				this.ctx.dependOnVariableType(depType);
-				this.ctx.dependOnSystemAttribute(depRef);
 			} else {
 				an = method.getAnnotation("net.sf.jaspercode.patterns.java.handwritten.BusinessRule");
 				if (an!=null) {

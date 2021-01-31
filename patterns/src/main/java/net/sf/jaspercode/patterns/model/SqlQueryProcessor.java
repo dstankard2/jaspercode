@@ -109,7 +109,6 @@ public class SqlQueryProcessor implements ComponentProcessor {
 					throw new JasperException("Found no system attribute named '"+name+"'");
 				}
 				attributes.add(name);
-				ctx.originateSystemAttribute(name);
 			}
 			Expression whereEx = ps.getWhere();
 		} else {

@@ -73,7 +73,6 @@ public class HandwrittenRuleProcessor implements ComponentProcessor {
 			op.addParam(paramName, paramType.getName());
 		}
 		serviceType.addOperation(op);
-		ctx.originateVariableType(serviceType);
 	}
 	
 }

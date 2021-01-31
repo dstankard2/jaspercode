@@ -54,8 +54,6 @@ public class ServiceProcessor implements ComponentProcessor {
 			ctx.addSystemAttribute(lowerCamel, type.getName());
 		}
 
-		ctx.originateVariableType(type);
-		
 		//handleResult(pkg);
 		handleServiceAndResult(type,src, pkg);
 	}

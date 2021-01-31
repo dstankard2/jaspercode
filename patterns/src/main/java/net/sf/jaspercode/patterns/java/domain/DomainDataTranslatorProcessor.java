@@ -75,9 +75,6 @@ public class DomainDataTranslatorProcessor implements ComponentProcessor {
 			src.addImport(type);
 			methodSrc.addParameter(type.getClassName(), key);
 			execCtx.addVariable(key, type.getName());
-			if (entry.isOriginator()) {
-				ctx.originateSystemAttribute(key);
-			}
 		}
 		code.append(attribType.declare(attrib, execCtx));
 		code.append(attribType.instantiate(attrib));

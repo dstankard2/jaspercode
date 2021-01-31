@@ -42,8 +42,10 @@ public class PageFnProcessor implements ComponentProcessor {
 		if (info==null) {
 			throw new JasperException("Couldn't find page '"+pageName+"' for pageModel component");
 		}
-		
-		ctx.originateVariableType(info.getPageType());
+
+		// This component should depend on the page type
+		String pageTypeName = info.getPageTypeName();
+		JasperUtils.getType(JavascriptType.class, pageTypeName, ctx);
 
 		String name = comp.getName();
 		String event = comp.getEvent();
@@ -103,7 +105,8 @@ public class PageFnProcessor implements ComponentProcessor {
 
 		StringBuilder code = new StringBuilder();
 		CodeExecutionContext execCtx = new CodeExecutionContext(ctx);
-		PageModelType modelType = info.getModelType();
+		String modelTypeName = info.getModelTypeName();
+		PageModelType modelType = JasperUtils.getType(PageModelType.class, modelTypeName, ctx);
 
 		for(String p : op.getParamNames()) {
 			execCtx.addVariable(p, op.getParamType(p));

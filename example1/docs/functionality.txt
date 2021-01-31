@@ -1,0 +1,31 @@
+
+(This file should not be in the JasperCode output)
+ 
+Example application 1
+
+This example is a library application with the following high level details
+	Books can be added to the library
+	Extra copies of a book may be added to the library
+	A book may be checked out by a customer.
+	A book may be checked in by a customer.
+	A book may be placed on the shelf by the librarian.
+	The user may log in as a customer or a librarian.
+
+Non-functionally: 
+	There is a MySQL database with book information.
+
+LibraryApp
+
+Business Object: BookCopy
+	A book has title, author
+	A book copy represents a copy of a book owned by the library.
+	A book copy has a state: Received, OnShelf, CheckedOut
+
+Contains a UI for adding books to the library.
+	Add another copy of a book.
+	Add the first copy of a new book.
+
+Contains a UI for checking out a book.
+	A book can be checked out on a date
+	A checked out book has a due date.
+

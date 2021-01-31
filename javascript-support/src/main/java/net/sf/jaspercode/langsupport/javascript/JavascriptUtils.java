@@ -20,9 +20,18 @@ public class JavascriptUtils {
 		
 		build.append(".");
 		int i = modulePath.lastIndexOf('/');
-		String moduleFileName = modulePath.substring(i+1);
-		String moduleFileDir = modulePath.substring(1,i);
-		String pathDir = path.substring(1, path.lastIndexOf('/'));
+		String moduleFileName = null;
+		String moduleFileDir = null;
+		String pathDir = null;
+		
+		moduleFileName = modulePath.substring(i+1);
+		if (i>0) {
+			moduleFileDir = modulePath.substring(1,i);
+			pathDir = path.substring(1, path.lastIndexOf('/'));
+		} else {
+			moduleFileDir = "/";
+			pathDir = "";
+		}
 		
 		// TODO: Implement real solution
 		if (moduleFileDir.startsWith(pathDir+'/')) {

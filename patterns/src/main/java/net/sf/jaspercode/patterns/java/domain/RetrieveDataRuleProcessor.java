@@ -75,9 +75,6 @@ public class RetrieveDataRuleProcessor implements ComponentProcessor {
 			src.addImport(type);
 			methodSrc.addParameter(type.getClassName(), key);
 			execCtx.addVariable(key, type.getName());
-			if (entry.isOriginator()) {
-				ctx.originateSystemAttribute(key);
-			}
 		}
 		code.append(attribType.declare(attrib, execCtx));
 
@@ -96,7 +93,6 @@ public class RetrieveDataRuleProcessor implements ComponentProcessor {
 		methodSrc.setBody(code.getCodeText());
 		src.addImports(code);
 		serviceType.addOperation(op);
-		ctx.originateVariableType(serviceType);
 	}
 
 	protected JavaCode internalFindAttribute(int level,String attrib,CodeExecutionContext execCtx,Map<String,JavaServiceType> serviceRefs, DomainDataRuleSet currentRules) throws JasperException {

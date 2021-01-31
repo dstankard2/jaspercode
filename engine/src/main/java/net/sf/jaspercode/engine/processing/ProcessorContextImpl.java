@@ -16,6 +16,12 @@ import net.sf.jaspercode.engine.definitions.ApplicationFolderImpl;
 
 public class ProcessorContextImpl implements ProcessorContext {
 
+	@Override
+	public void addSystemAttribute(String name, String type) throws JasperException {
+		// TODO Auto-generated method stub
+		
+	}
+
 	private ProcessableContext ctx = null;
 	private String language = null;
 	private ApplicationFolderImpl folder = null;
@@ -34,22 +40,28 @@ public class ProcessorContextImpl implements ProcessorContext {
 		this.language = language;
 	}
 
+	/*
 	@Override
 	public boolean addSystemAttribute(String name, String type) throws JasperException {
 		ctx.addSystemAttribute(name, type);
 		ctx.originateSystemAttribute(name);
 		return true;
 	}
+	*/
 
+	/*
 	@Override
 	public void originateSystemAttribute(String name) {
 		ctx.originateSystemAttribute(name);
 	}
+	*/
 
+	/*
 	@Override
 	public void dependOnSystemAttribute(String name) {
 		ctx.dependOnSystemAttribute(name);
 	}
+	*/
 
 	@Override
 	public String getSystemAttribute(String name) {
@@ -62,18 +74,22 @@ public class ProcessorContextImpl implements ProcessorContext {
 			throw new JasperException("Unable to add variable type "+variableType.getName()+" as there is no currently selected language");
 		}
 		ctx.addVariableType(language, variableType);
-		originateVariableType(variableType);
+		//originateVariableType(variableType);
 	}
 
+	/*
 	@Override
 	public void originateVariableType(VariableType variableType) throws JasperException {
 		ctx.originateType(language, variableType);
 	}
+	*/
 
+	/*
 	@Override
 	public void dependOnVariableType(VariableType variableType) {
 		ctx.dependOnType(language, variableType.getName(), folder.getBuildContext());
 	}
+	*/
 
 	@Override
 	public VariableType getVariableType(String name) throws JasperException {

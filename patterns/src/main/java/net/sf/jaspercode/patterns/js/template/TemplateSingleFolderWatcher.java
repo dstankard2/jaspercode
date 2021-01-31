@@ -74,7 +74,6 @@ public class TemplateSingleFolderWatcher implements FolderWatcher {
 			DirectiveUtils.ensureRem(src);
 			DirectiveUtils.ensureInvokeRem(src);
 		} else {
-			ctx.originateVariableType(folderType);
 			module = (StandardModuleSource)src.getModule(serviceName);
 			if (module==null) {
 				module = new StandardModuleSource(serviceName);
@@ -87,8 +86,6 @@ public class TemplateSingleFolderWatcher implements FolderWatcher {
 			}
 		}
 		
-		ctx.originateVariableType(folderType);
-
 		return Pair.of(folderType,module);
 	}
 
@@ -149,7 +146,6 @@ public class TemplateSingleFolderWatcher implements FolderWatcher {
 		fn.setCode(code);
 		mod.addFunction(fn);
 		folderType.addOperation(op);
-		ctx.originateVariableType(folderType);
 		for(Pair<String,String> s : code.getImportedModules()) {
 			src.importModule(s);
 		}

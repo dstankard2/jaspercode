@@ -6,6 +6,7 @@
 
 	<templateDirectory serviceName="ExampleTemplates">
 		<folder path="widgets" ref="widgets" />
+		<folder path="pages" ref="pages" />
 	</templateDirectory>
 
 <!-- 

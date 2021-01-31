@@ -11,14 +11,10 @@ public interface ProcessorContext {
 
 	public void setLanguageSupport(String language) throws JasperException;
 
-	public boolean addSystemAttribute(String name,String type) throws JasperException;
-	public void originateSystemAttribute(String name);
-	public void dependOnSystemAttribute(String name);
+	public void addSystemAttribute(String name,String type) throws JasperException;
 	public String getSystemAttribute(String name);
 
 	public void addVariableType(VariableType variableType) throws JasperException;
-	public void originateVariableType(VariableType variableType) throws JasperException;
-	public void dependOnVariableType(VariableType variableType);
 	public VariableType getVariableType(String name) throws JasperException;
 
 	public void setObject(String name,Object obj);

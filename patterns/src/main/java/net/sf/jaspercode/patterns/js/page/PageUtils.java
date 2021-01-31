@@ -30,8 +30,8 @@ public class PageUtils {
 		ModuleType pageType = new ModuleType(pageName,JavascriptUtils.getModulePath(ctx), ExportedModuleType.CONSTRUCTOR);
 		//JavascriptServiceType pageType = new JavascriptServiceType(pageName);
 		ctx.addVariableType(pageType);
-		pageInfo.setModelType(modelType);
-		pageInfo.setPageType(pageType);
+		pageInfo.setModelTypeName(modelType.getName());
+		pageInfo.setPageTypeName(pageType.getName());
 
 		// Add attributes to page type
 		pageType.addAttribute("model", modelType.getName());
@@ -53,7 +53,6 @@ public class PageUtils {
 	public static void addModelAttribute(String pageName,String attrib,String type,ProcessorContext ctx) throws JasperException {
 		PageModelType t = getPageModelType(pageName,ctx);
 		t.addAttribute(attrib, type);
-		ctx.originateVariableType(t);
 	}
 	
 }

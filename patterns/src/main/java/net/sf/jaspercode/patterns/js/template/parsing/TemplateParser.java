@@ -122,8 +122,7 @@ public class TemplateParser {
 		} else if (node instanceof TextNode) {
 			ret = processTextNode((TextNode)node,containerVar,execCtx);
 		} else {
-			// TODO: Handle cases
-			ret = "";
+			throw new JasperException("Parsed a HTML template node but it is neither text nor a DOM Element");
 		}
 		
 		return ret;

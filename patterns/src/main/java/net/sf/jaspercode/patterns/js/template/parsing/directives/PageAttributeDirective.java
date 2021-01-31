@@ -31,15 +31,15 @@ public class PageAttributeDirective extends AttributeDirectiveBase {
 			throw new JasperException("Found no page called '"+pageName+"'");
 		}
 
+		String modelTypeName = pageInfo.getModelTypeName();
 		ServiceOperation op = ctx.getFunction();
 		StringBuilder fnCode = ctx.getCode();
 		execCtx.addVariable("_page", pageName);
 		op.addParam("_page", pageName);
 
-		execCtx.addVariable("_model", pageInfo.getModelType().getName());
+		execCtx.addVariable("_model", modelTypeName);
 		fnCode.append("var _model = _page.model;\n");
 		
-		String modelTypeName = pageInfo.getModelType().getName();
 		execCtx.addVariable("_model", modelTypeName);
 		if (pageRef!=null) {
 			if (execCtx.getVariableType(pageRef)!=null) {
@@ -54,7 +54,7 @@ public class PageAttributeDirective extends AttributeDirectiveBase {
 				throw new JasperException("Couldn't create variable '"+pageRef+"' for page model ref because that variable already exists");
 			}
 			fnCode.append("var "+modelRef+" = _page.model;\n");
-			execCtx.addVariable(modelRef, pageInfo.getModelType().getName());
+			execCtx.addVariable(modelRef, modelTypeName);
 		}
 
 		// Get the page renderer
