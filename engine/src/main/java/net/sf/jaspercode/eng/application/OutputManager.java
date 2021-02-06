@@ -106,6 +106,7 @@ public class OutputManager {
 			if (actualFile.exists()) {
 				actualFile.delete();
 				jasperResources.engineDebug("Removing source file at path "+actualFile.getAbsolutePath());
+				sourceFiles.remove(path);
 			}
 		}
 	}

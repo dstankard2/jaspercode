@@ -65,6 +65,8 @@ public class ProcessorContextImpl implements ProcessorContext {
 	@Override
 	public void addVariableType(VariableType variableType) throws JasperException {
 		changes.getTypesAdded().add(Pair.of(lang, variableType));
+		// TODO: Either we add to dependencies, or we check types added when removing the item
+		changes.getTypeDependencies().add(Pair.of(lang, variableType));
 	}
 
 	protected VariableType findAddedType(String name) {

@@ -214,7 +214,7 @@ public class ResourceManager {
 				scanForModifiedFiles((ApplicationFolderImpl)oldFile, results);
 			}
 			else if (oldFile.getLastModified() < file.lastModified()) {
-				String path = folder.getPath()+'/'+oldFile.getName();
+				String path = folder.getPath()+oldFile.getName();
 				WatchedResource newFile = createWatchedResource(folder, file);
 				if (newFile!=null) {
 					results.add(new ResourceChange(path, oldFile, newFile));

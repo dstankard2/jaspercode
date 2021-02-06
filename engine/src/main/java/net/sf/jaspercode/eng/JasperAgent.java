@@ -6,7 +6,7 @@ import java.util.Map;
 
 import net.sf.jaspercode.api.plugin.EnginePlugin;
 import net.sf.jaspercode.eng.application.ApplicationManager;
-import net.sf.jaspercode.engine.processing.ProcessorLog;
+import net.sf.jaspercode.eng.processing.ProcessorLog;
 
 public class JasperAgent {
 	private File[] libs = null;

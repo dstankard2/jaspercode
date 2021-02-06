@@ -115,6 +115,7 @@ public class ProcessingManager implements ProcessableContext {
 		}
 		itemsToRemove.forEach(item -> {
 			removeItem(item.getItemId(), true);
+			//itemsToAdd.addAll(removeItem(item.getItemId(), true));
 		});
 		
 		if (componentFilesRemoved.size()>0) {
@@ -409,11 +410,12 @@ public class ProcessingManager implements ProcessableContext {
 	// If remove is not permanent, re-add any items again if they are components or build components
 	// Returns a list of items to be re-added
 	protected void removeItem(int id, boolean permanent) {
-		jasperResources.engineDebug("Remove item "+id+" with perm as "+permanent);
 
 		// Get the item, see if it has already been removed
 		Item item = this.getItem(id);
 		if (item==null) return;
+
+		jasperResources.engineDebug("Remove item "+item.getName()+"("+id+") with perm as "+permanent);
 
 		// Remove this item from items
 		this.items.remove(item);
@@ -423,7 +425,15 @@ public class ProcessingManager implements ProcessableContext {
 		srcPaths.forEach(path -> {
 			ctx.removeSourceFile(path);
 		});
-		
+
+		// TODO: Figure this out
+		// If this originates from another item, remove/re-add that item
+		// Something like this is required for folder watchers.
+		// If the item is a folder watcher, remove it permanently and remove/add its originator
+		if (item.getOriginatorId()>0) {
+			this.removeItem(item.getOriginatorId(), false);
+		}
+
 		// Items to remove and re-add
 		Set<Integer> toRemoveAndAdd = null;
 
@@ -472,18 +482,17 @@ public class ProcessingManager implements ProcessableContext {
 			buildItemsToGenerate.remove(buildCompItem);
 		}
 
-		toRemoveAndAdd.forEach(i -> {
-			removeItem(i, false);
-		});
+		if (!permanent) {
+			this.addItem(item);
+		}
 
 		toRemove.forEach(i -> {
 			removeItem(i, true);
 		});
 
-		// lastly, re-add item if this is not permanent
-		if (!permanent) {
-			addItem(item);
-		}
+		toRemoveAndAdd.forEach(i -> {
+			removeItem(i, false);
+		});
 	}
 
 	public void updateGlobalSystemAttributes(Map<String,String> attributes) {
