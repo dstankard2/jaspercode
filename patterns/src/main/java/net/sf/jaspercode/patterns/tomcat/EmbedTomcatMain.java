@@ -37,6 +37,9 @@ public class EmbedTomcatMain implements ComponentProcessor {
 		EmbedTomcatRuntimePlatform platform = (EmbedTomcatRuntimePlatform)ctx.getBuildContext().getRuntimePlatform();
 		String pkg = component.getPkg();
 
+		if (platform==null) {
+			throw new JasperException("Found no platform in current build context - expexted a Tomcat Runtime platform");
+		}
 		platform.getDependencies().stream().forEach(dep -> {
 			ctx.getBuildContext().addDependency(dep);
 		});
