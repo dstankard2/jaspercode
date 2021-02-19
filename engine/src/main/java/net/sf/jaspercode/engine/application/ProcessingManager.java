@@ -171,14 +171,18 @@ public class ProcessingManager implements ProcessableContext {
 	}
 	
 	private void addItem(Item item) {
+		items.add(item);
 		if (item instanceof ComponentItem) {
 			ComponentItem c = (ComponentItem)item;
 			toProcess.add(c);
-			items.add(c);
+			//items.add(c);
 		} else if (item instanceof BuildComponentItem) {
 			BuildComponentItem b = (BuildComponentItem)item;
 			buildItemsToInit.add(b);
-			items.add(b);
+			//items.add(b);
+		} else if (item instanceof FolderWatcherItem) {
+			FolderWatcherItem f = (FolderWatcherItem)item;
+			checkFilesForFolderWatcher(f);
 		}
 	}
 
@@ -426,22 +430,21 @@ public class ProcessingManager implements ProcessableContext {
 			ctx.removeSourceFile(path);
 		});
 
-		// TODO: Figure this out
-		// If this originates from another item, remove/re-add that item
-		// Something like this is required for folder watchers.
-		// If the item is a folder watcher, remove it permanently and remove/add its originator
-		// TODO: If the originator is a build component, we may not want to remove it.
-		if (item.getOriginatorId()>0) {
-			this.removeItem(item.getOriginatorId(), false);
-		}
-
 		// Items to remove and re-add
-		Set<Integer> toRemoveAndAdd = null;
+		Set<Integer> toRemoveAndAdd = new HashSet<>();
 
 		// Other Items to remove permanently
 		Set<Integer> toRemove = new HashSet<>();
-		
-		// TODO: Remove any item that originates from this one
+
+		// If the originator originates any application data, it should be removed and re-added
+		if (item.getOriginatorId()>0) {
+
+			if (data.originates(item.getOriginatorId())) {
+				toRemoveAndAdd.add(item.getOriginatorId());
+			}
+		}
+
+		// Remove any item that originates from this one
 		items.forEach(i -> {
 			if (i.getOriginatorId()==id) {
 				toRemove.add(i.getItemId());
@@ -449,7 +452,7 @@ public class ProcessingManager implements ProcessableContext {
 		});
 		
 		// Remove and re-add all items that depend on the same application data
-		toRemoveAndAdd = data.removeItem(id);
+		toRemoveAndAdd.addAll(data.removeItem(id));
 
 		// List of processables to remove
 		List<Processable> procs = new ArrayList<>();

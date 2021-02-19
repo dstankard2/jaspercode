@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import net.sf.jaspercode.api.langsupport.LanguageSupport;
@@ -46,6 +47,34 @@ public class ProcessingDataManager {
 			}
 		});
 		return ret;
+	}
+
+	public boolean originates(int itemId) {
+
+		// attributeDependencies
+		for(Entry<String,List<Integer>> e : attributeDependencies.entrySet()) {
+			if (e.getValue().contains(itemId)) return true;
+		}
+		
+		// objectDependencies
+		for(Entry<String,List<Integer>> e : objectDependencies.entrySet()) {
+			if (e.getValue().contains(itemId)) return true;
+		}
+
+		// typeDependencies
+		
+		for(Entry<String,Map<String,List<Integer>>> lang : typeDependencies.entrySet()) {
+			for(Entry<String,List<Integer>> e : lang.getValue().entrySet()) {
+				if (e.getValue().contains(itemId)) return true;
+			}
+		}
+
+		// srcDependencies
+		for(Entry<String,List<Integer>> e : srcDependencies.entrySet()) {
+			if (e.getValue().contains(itemId)) return true;
+		}
+
+		return false;
 	}
 
 	// Removes the itemId and everything that that itemId depends on

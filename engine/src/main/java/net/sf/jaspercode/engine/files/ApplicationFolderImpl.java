@@ -41,6 +41,12 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 		this.lastModified = file.lastModified();
 	}
 
+	public void removeResource(String name) {
+		this.componentFiles.remove(name);
+		this.subFolders.remove(name);
+		this.userFiles.remove(name);
+	}
+
 	// TODO: Calculate property map once here when jasper properties is set
 	public void setJasperProperties(JasperPropertiesFile jasperProperties) {
 		this.jasperProperties = jasperProperties;

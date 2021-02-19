@@ -162,14 +162,13 @@ public class ResourceManager {
 		return ret;
 	}
 	
-	public void scanForRemovedFiles(List<ResourceChange> changes) throws EngineException {
+	public void scanForRemovedFiles(List<ResourceChange> changes) {
 		scanForRemovedFiles(applicationFolder, changes);
 	}
 
-	private void scanForRemovedFiles(ApplicationFolderImpl folder,List<ResourceChange> changes) throws EngineException {
+	private void scanForRemovedFiles(ApplicationFolderImpl folder,List<ResourceChange> changes) {
 		File folderFile = folder.getFolderFile();;
 		File[] files = null;
-		
 		if ((!folderFile.exists()) || (!folderFile.isDirectory())) {
 			files = new File[0];
 		} else {
@@ -183,13 +182,25 @@ public class ResourceManager {
 				String path = res.getPath();
 				
 				if (res instanceof ApplicationFolderImpl) {
-					ApplicationFolderImpl f = (ApplicationFolderImpl)res;
-					scanForRemovedFiles(f, changes);
+					folder.getSubFolders().remove(name);
+					//ApplicationFolderImpl f = (ApplicationFolderImpl)res;
+					//scanForRemovedFiles(f, changes);
+				} else if (res instanceof ComponentFile) {
+					folder.getComponentFiles().remove(name);
+					changes.add(new ResourceChange(path, res, null));
+				} else if (res instanceof UserFile) {
+					folder.getUserFiles().remove(name);
+					changes.add(new ResourceChange(path, res, null));
+				} else if (res instanceof JasperPropertiesFile) {
+					throw new RuntimeException("TODO: Handle removed jasper.properties file");
 				}
 				
-				changes.add(new ResourceChange(path, res, null));
 			}
 		}
+		
+		folder.getSubFolders().forEach((name, sub) -> {
+			scanForRemovedFiles(sub, changes);
+		});
 	}
 
 	public void scanForModifiedFiles(List<ResourceChange> changes) throws EngineException {
@@ -215,6 +226,7 @@ public class ResourceManager {
 			}
 			else if (oldFile.getLastModified() < file.lastModified()) {
 				String path = folder.getPath()+oldFile.getName();
+				folder.removeResource(name);
 				WatchedResource newFile = createWatchedResource(folder, file);
 				if (newFile!=null) {
 					results.add(new ResourceChange(path, oldFile, newFile));

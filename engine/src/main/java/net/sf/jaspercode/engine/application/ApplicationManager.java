@@ -129,7 +129,7 @@ public class ApplicationManager implements ResourceContext,ProcessingContext {
 		resourceManager.scanForRemovedFiles(changes);
 
 		if (changes.size()>origSize) {
-			jasperResources.engineDebug("Scanned for modified files and found "+(changes.size() - origSize));
+			jasperResources.engineDebug("Scanned for removed files and found "+(changes.size() - origSize));
 		}
 	}
 
