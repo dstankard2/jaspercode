@@ -142,7 +142,8 @@ public class ProcessingManager implements ProcessableContext {
 						if (f.getPath().startsWith(item.getPath())) {
 							// If the file was added then add toProcess
 							FolderWatcherProcessable proc = item.getProc(f.getPath());
-							toProcess.add(proc);
+							if (proc!=null)
+								toProcess.add(proc);
 						}
 					}
 				}
@@ -170,7 +171,7 @@ public class ProcessingManager implements ProcessableContext {
 		}
 	}
 	
-	private void addItem(Item item) {
+	private void reAddItem(Item item) {
 		items.add(item);
 		if (item instanceof ComponentItem) {
 			ComponentItem c = (ComponentItem)item;
@@ -296,7 +297,8 @@ public class ProcessingManager implements ProcessableContext {
 			String filePath = entry.getKey();
 			if (filePath.startsWith(path)) {
 				FolderWatcherProcessable proc = item.getProc(filePath);
-				toProcess.add(proc);
+				if (proc!=null)
+					toProcess.add(proc);
 			}
 		}
 	}
@@ -418,11 +420,17 @@ public class ProcessingManager implements ProcessableContext {
 		// Get the item, see if it has already been removed
 		Item item = this.getItem(id);
 		if (item==null) return;
+		FolderWatcherItem folderWatcher = (item instanceof FolderWatcherItem) ? (FolderWatcherItem)item : null;
 
 		jasperResources.engineDebug("Remove item "+item.getName()+"("+id+") with perm as "+permanent);
 
 		// Remove this item from items
 		this.items.remove(item);
+		
+		// If this is a folder watcher, clear its file processors
+		if (folderWatcher!=null) {
+			folderWatcher.clearProcs();
+		}
 		
 		// Remove source files from this item
 		List<String> srcPaths = data.getSourceFilesFromId(id);
@@ -487,7 +495,7 @@ public class ProcessingManager implements ProcessableContext {
 		}
 
 		if (!permanent) {
-			this.addItem(item);
+			this.reAddItem(item);
 		}
 
 		toRemove.forEach(i -> {

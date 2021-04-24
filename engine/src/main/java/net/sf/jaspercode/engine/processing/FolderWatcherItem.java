@@ -1,5 +1,6 @@
 package net.sf.jaspercode.engine.processing;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import net.sf.jaspercode.api.config.Component;
@@ -17,7 +18,8 @@ public class FolderWatcherItem implements Item {
 	private JasperResources jasperResources = null;
 	private Component component = null;
 	private int originatorId = 0;
-
+	private Map<String,FolderWatcherProcessable> procs = new HashMap<>();
+	
 	public FolderWatcherItem(int itemId,FolderWatcher folderWatcher, 
 			String path,ProcessableContext processableContext,ComponentFile componentFile,
 			JasperResources jasperResources,Component component, int originatorId) {
@@ -50,10 +52,17 @@ public class FolderWatcherItem implements Item {
 	
 	public FolderWatcherProcessable getProc(String filePath) {
 		jasperResources.engineDebug("Folder watcher ID "+itemId+" processing for path "+filePath);
+		if (procs.get(filePath)!=null) {
+			return null;
+		}
 		Map<String,String> configs = ProcessingUtilities.getConfigs(componentFile, component);
 		FolderWatcherProcessable ret = new FolderWatcherProcessable(itemId,processableContext,component, componentFile,configs,filePath,folderWatcher,jasperResources);
-
+		procs.put(filePath, ret);
 		return ret;
+	}
+	
+	public void clearProcs() {
+		procs.clear();
 	}
 	
 }

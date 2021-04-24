@@ -34,7 +34,11 @@ public class BuildComponentItem implements Item {
 		this.itemId = itemId;
 		this.buildComp = buildComp;
 		this.pattern = pattern;
-		this.folder = componentFile.getFolder();
+		//if (componentFile!=null) {
+			this.folder = componentFile.getFolder();
+		//} else {
+			//this.folder = jasperResources.get
+		//}
 		this.log = new ProcessorLog(buildComp.getComponentName());
 		this.state = ProcessingState.TO_PROCESS;
 		this.ctx = ctx;

@@ -27,6 +27,7 @@ public class PageAttributeDirective extends AttributeDirectiveBase {
 
 		PageInfo pageInfo = PageUtils.getPageInfo(pageName, ctx.getProcessorContext());
 
+		ctx.getProcessorContext().getVariableType(pageName);
 		if (pageInfo==null) {
 			throw new JasperException("Found no page called '"+pageName+"'");
 		}

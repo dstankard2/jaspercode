@@ -1,0 +1,7 @@
+<jasper:componentSet xmlns="http://jaspercode.sf.net/patterns/java/model"
+		xmlns:jasper="http://jaspercode.sf.net/config">
+
+	<searchIndex name="ByAuthor" entity="Book" params="author" jpaDaoFactoryRef="ds"
+			queryString="author = :author" multiple="true" />
+</jasper:componentSet>
+

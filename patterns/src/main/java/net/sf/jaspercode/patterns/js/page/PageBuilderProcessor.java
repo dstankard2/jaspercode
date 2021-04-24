@@ -44,7 +44,7 @@ public class PageBuilderProcessor implements ComponentProcessor {
 		code.append("var _eventDispatcher = EventDispatcher();\n");
 
 		PageModelType pageModelType = PageUtils.getPageModelType(pageInfo.getName(), ctx);
-		ctx.addVariableType(pageModelType);
+		//ctx.addVariableType(pageModelType);
 		modelCode.append(buildModel(pageInfo.getName(),pageModelType));
 		
 		// Create init function

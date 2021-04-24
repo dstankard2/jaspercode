@@ -53,12 +53,18 @@ public class ProcessorContextImpl implements ProcessorContext {
 			throw new JasperException("Tried to add system attribute "+name+" but it already exists as type '"+t+"'");
 		}
 		changes.attributesAdded.put(name, type);
+		changes.attributeDependencies.add(name);
 	}
 
 	@Override
 	public String getSystemAttribute(String name) {
 		String ret = changes.attributesAdded.get(name);
-		if (ret==null) ret = ctx.getSystemAttribute(name);
+		if (ret==null) {
+			ret = ctx.getSystemAttribute(name);
+			if (ret!=null) {
+				changes.attributeDependencies.add(name);
+			}
+		}
 		return ret;
 	}
 

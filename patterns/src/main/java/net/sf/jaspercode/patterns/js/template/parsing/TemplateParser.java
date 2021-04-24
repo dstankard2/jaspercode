@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Comment;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
@@ -115,12 +116,14 @@ public class TemplateParser {
 			ElementParser parser = new ElementParser(elt,ctx,containerVar,obj,serviceOperation,previousEltVars,this);
 			parser.parseElement(execCtx);
 			ret = parser.getElementCode();
-			//List<ModuleImport> imports = parser.getImports();
 			this.imports.addAll(parser.getImports());
 			String var = parser.getEltVar();
 			if (var!=null) previousEltVars.add(var);
 		} else if (node instanceof TextNode) {
 			ret = processTextNode((TextNode)node,containerVar,execCtx);
+		} else if (node instanceof Comment) {
+			ret = "";
+			// no-op
 		} else {
 			throw new JasperException("Parsed a HTML template node but it is neither text nor a DOM Element");
 		}

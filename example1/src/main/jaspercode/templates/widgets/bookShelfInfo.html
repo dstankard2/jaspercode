@@ -1,7 +1,18 @@
 
 <div class='widget book-shelf-info'>
-
-	<b>Book Shelf Info</b>
+	<js-param name='bookShelfData' />
+	<js-param name='bookDataList' />
+	<h2>{{ bookShelfData.shelfTitle }}</h2>
+	
+	<div js-if='bookDataList.length' class='books'>
+		<div class='book' js-loop='b in bookDataList'>
+		<span class='title'>{{ b.title }}</span><span class='author'>{{ b.author }}</span>
+		</div>
+	</div>
+	
+	<div js-if='!bookDataList.length' class='books'>
+	No books on shelf
+	</div>
 
 </div>
 

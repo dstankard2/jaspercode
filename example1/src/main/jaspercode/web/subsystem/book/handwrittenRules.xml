@@ -3,5 +3,7 @@
 		xmlns:jasper="http://jaspercode.sf.net/config">
 
 	<handwrittenRule rule="getBookDataList" returnType="list/BookData" params="bookShelfId" />
+	<handwrittenRule rule="addBookCopy" returnType="" params="bookId" />
+	<handwrittenRule rule="getBooksByAuthor" returnType="list/BookData" params="author" />
 
 </jasper:componentSet>
