@@ -1,45 +1,20 @@
 
-java.lang.NullPointerException
-	at net.sf.jaspercode.engine.application.ResourceManager.scanForModifiedFiles(ResourceManager.java:94)
-	at net.sf.jaspercode.engine.application.ResourceManager.scanForModifiedFiles(ResourceManager.java:86)
-	at net.sf.jaspercode.engine.application.ResourceManager.scanForModifiedFiles(ResourceManager.java:86)
-	at net.sf.jaspercode.engine.application.ResourceManager.scanForModifiedFiles(ResourceManager.java:86)
-	at net.sf.jaspercode.engine.application.ResourceManager.scanForModifiedFiles(ResourceManager.java:86)
-	at net.sf.jaspercode.engine.application.ResourceManager.scanForModifiedFiles(ResourceManager.java:86)
-	at net.sf.jaspercode.engine.application.ResourceManager.scanForModifiedFiles(ResourceManager.java:64)
-	at net.sf.jaspercode.engine.application.ApplicationManager.scanForModifiedFiles(ApplicationManager.java:249)
-	at net.sf.jaspercode.engine.application.ApplicationManager.scan(ApplicationManager.java:145)
-
-
-
-Maven build should not require maven.java.version.  Evaluate that at preprocessing time.
-Processables should have preprocess method?
-
 Bug:
-1) Change jasper.properties for a template
-2) Exception:
-net.sf.jaspercode.api.exception.JasperException: Couldn't find source file at path '/src/main/webapp/js/templates.js'
-	at net.sf.jaspercode.api.JasperUtils.getSourceFile(JasperUtils.java:342)
-	at net.sf.jaspercode.patterns.js.template.TemplateFileWatcher.process(TemplateFileWatcher.java:46)
-	at net.sf.jaspercode.engine.processing.FileWatcherEntry.process(FileWatcherEntry.java:54)
-3) (Works fine on initial scan)
+	If you add a component that references and updates a shared object, other dependencies of that shared object are not reloaded.
 
-Bug:
-1) Run scan including a system attribute in props that is being used
-2) Remove that unused system attribute.  Let scan run.
-3) Exception
-Could not create snapshot for Tracked class net.sf.jaspercode.engine.processing.BuildComponentEntry
-java.lang.NullPointerException
-Exception while scanning application 'realms-content': 
-	at net.sf.jaspercode.engine.application.ProcessingManager.removeGlobalSystemAttribute(ProcessingManager.java:110)
-	at net.sf.jaspercode.engine.application.ApplicationManager.handleSystemAttributesFileChange(ApplicationManager.java:310)
-	at net.sf.jaspercode.engine.application.ResourceManager.scanForModifiedFiles(ResourceManager.java:107)
-	at net.sf.jaspercode.engine.application.ResourceManager.scanForModifiedFiles(ResourceManager.java:64)
-	at net.sf.jaspercode.engine.application.ApplicationManager.scanForModifiedFiles(ApplicationManager.java:247)
-	at net.sf.jaspercode.engine.application.ApplicationManager.scan(ApplicationManager.java:145)
-	at net.sf.jaspercode.engine.JasperAgent.scanSingleApp(JasperAgent.java:109)
-	at net.sf.jaspercode.engine.JasperAgent.scanApplications(JasperAgent.java:118)
-	at net.sf.jaspercode.engine.JasperAgent.start(JasperAgent.java:48)
-	at net.sf.jaspercode.test.MyJasperTest.runTest(MyJasperTest.java:32)
-	at net.sf.jaspercode.test.MyJasperTest.main(MyJasperTest.java:20)
+If there is a change in ignore files (jasper.properties), ignored files should be removed from output.
+
+Dependencies in Build Context
+	Add ID to build component.  Make it required.
+	When a dependency is defined, search the application's build contexts before adding a dependency via build component.
+
+Variable Types should be on a per-build-context basis instead of per-language
+Analysis: A build context should have a language?
+	Won't work for some embed Tomcat applications - do not support?
+	Perhaps assign a primary language for a build context?
+
+(??) Maven build should not require maven.java.version.  Evaluate that at preprocessing time.
+
+Re-enable plugins
+Enable monitor plugin.  It should generate a HTML page.
 
