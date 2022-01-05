@@ -79,7 +79,6 @@ public class ServiceProcessor implements ComponentProcessor {
 
 		ctx.getLog().info("Creating service result type '"+resultName+"'");
 		ctx.addVariableType(resultType);
-		ctx.addSourceFile(resultSrc);
 
 		resultSrc.getSrc().setPackage(pkg);
 		resultSrc.getSrc().setName(resultName);
@@ -94,6 +93,7 @@ public class ServiceProcessor implements ComponentProcessor {
 
 		code.appendCodeText("return returnValue;\n");
 		JavaUtils.addServiceOperation(op, code, src.getSrc(), ctx);
+		ctx.addSourceFile(resultSrc);
 	}
 	
 	private void processOperations(List<Operation> ops,JavaCode currentCode,

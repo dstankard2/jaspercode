@@ -58,12 +58,8 @@ public class FileProcessorRecord extends ProcessableBase {
 	public boolean init(UserFile userFile) {
 		boolean ret = true;
 
-		try {
-			fileProcessor.init(procCtxImpl);
-			fileProcessor.setFile(userFile);
-		} catch(JasperException e) {
-			ret = false;
-		}
+		fileProcessor.init(procCtxImpl);
+		fileProcessor.setFile(userFile);
 		
 		return ret;
 	}

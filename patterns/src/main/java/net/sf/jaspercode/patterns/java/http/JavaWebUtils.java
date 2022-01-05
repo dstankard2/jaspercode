@@ -47,7 +47,6 @@ public class JavaWebUtils {
 		if (ctx.getVariableType("ServletException")==null) {
 			type = new ExceptionJavaType("ServletException", "javax.servlet", null);
 			ctx.addVariableType(type);
-			ctx.addVariableType(type);
 		}
 		if (ctx.getVariableType("IOException")==null) {
 			type = new ExceptionJavaType("IOException", "java.io", null);

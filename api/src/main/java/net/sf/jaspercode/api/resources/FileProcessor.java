@@ -7,7 +7,7 @@ public interface FileProcessor {
 
 	int getPriority();
 	void init(ProcessorContext ctx);
-	void setFile(ApplicationFile applicationFile) throws JasperException;
+	void setFile(ApplicationFile applicationFile);
 	void process() throws JasperException;
 	String getName();
 

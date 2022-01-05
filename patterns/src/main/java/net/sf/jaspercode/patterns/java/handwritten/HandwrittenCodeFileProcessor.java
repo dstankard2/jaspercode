@@ -1,7 +1,5 @@
 package net.sf.jaspercode.patterns.java.handwritten;
 
-import java.io.IOException;
-
 import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.ApplicationFile;
@@ -13,6 +11,8 @@ public class HandwrittenCodeFileProcessor implements FileProcessor {
 	int priority = 0;
 	FileHandler handler = null;
 	String path = null;
+	
+	String errorMessage = null;
 	
 	public HandwrittenCodeFileProcessor(String path) {
 		this.path = path;
@@ -29,11 +29,11 @@ public class HandwrittenCodeFileProcessor implements FileProcessor {
 	}
 
 	@Override
-	public void setFile(ApplicationFile changedFile) throws JasperException {
+	public void setFile(ApplicationFile changedFile) {
 		try {
 			handler = new FileHandler(changedFile,ctx);
-		} catch(IOException e) {
-			throw new JasperException("Couldn't read file '"+changedFile.getPath()+"'", e);
+		} catch(Exception e) {
+			errorMessage = e.getMessage();
 		}
 	}
 	
@@ -44,6 +44,9 @@ public class HandwrittenCodeFileProcessor implements FileProcessor {
 
 	@Override
 	public void process() throws JasperException {
+		if (errorMessage!=null) {
+			throw new JasperException("Couldn't read application file - "+errorMessage);
+		}
 		handler.process();
 	}
 
