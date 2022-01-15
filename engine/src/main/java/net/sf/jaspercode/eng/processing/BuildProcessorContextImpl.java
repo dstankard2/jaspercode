@@ -10,7 +10,6 @@ import net.sf.jaspercode.api.SourceFile;
 import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.resources.ApplicationFolder;
 import net.sf.jaspercode.eng.files.ApplicationFolderImpl;
-import net.sf.jaspercode.eng.files.ComponentFile;
 
 public class BuildProcessorContextImpl implements BuildProcessorContext {
 
@@ -19,16 +18,14 @@ public class BuildProcessorContextImpl implements BuildProcessorContext {
 	private ApplicationContext applicationContext = null;
 	private Map<String,String> configs = null;
 	private ProcessableContext ctx = null;
-	private ComponentFile componentFile;
 	
 	public BuildProcessorContextImpl(ApplicationFolderImpl folder, ApplicationContext applicationContext, 
-			ProcessorLog log, Map<String,String> configs, ComponentFile componentFile, ProcessableContext ctx) {
+			ProcessorLog log, Map<String,String> configs, ProcessableContext ctx) {
 		super();
 		this.folder = folder;
 		this.log = log;
 		this.applicationContext = applicationContext;
 		this.configs = configs;
-		this.componentFile = componentFile;
 		this.ctx = ctx;
 	}
 
@@ -63,7 +60,7 @@ public class BuildProcessorContextImpl implements BuildProcessorContext {
 	}
 	@Override
 	public void addComponent(Component component) {
-		ctx.addComponent(componentFile, component);
+		ctx.addComponent(configs, component, folder);
 	}
 
 	@Override

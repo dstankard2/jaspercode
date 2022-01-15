@@ -8,7 +8,6 @@ import java.util.Map;
 
 import net.sf.jaspercode.api.BuildContext;
 import net.sf.jaspercode.api.config.BuildComponent;
-import net.sf.jaspercode.api.config.ComponentSet;
 import net.sf.jaspercode.api.resources.ApplicationFolder;
 import net.sf.jaspercode.eng.exception.EngineException;
 import net.sf.jaspercode.eng.processing.BuildComponentItem;
@@ -258,12 +257,9 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 				ret = parent.getCurrentBuildComponent();
 			} else {
 				BuildComponent buildComp = new DefaultBuildComponent();
-				ComponentSet componentSet = new ComponentSet();
-				componentSet.getComponent().add(buildComp);
-				ComponentFile dummyFile = new ComponentFile(componentSet, null, this);
-				ret = new BuildComponentItem(buildComp, null, null, null, dummyFile);
+				ret = new BuildComponentItem(buildComp, null, null, null, new HashMap<>(), this);
 				try {
-				ret.init();
+					ret.init();
 				} catch(EngineException e) {
 					// no-op
 				}

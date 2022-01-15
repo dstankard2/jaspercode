@@ -19,6 +19,7 @@ import net.sf.jaspercode.eng.ComponentPattern;
 import net.sf.jaspercode.eng.EngineLanguages;
 import net.sf.jaspercode.eng.JasperResources;
 import net.sf.jaspercode.eng.exception.EngineException;
+import net.sf.jaspercode.eng.files.ApplicationFolderImpl;
 import net.sf.jaspercode.eng.files.ComponentFile;
 import net.sf.jaspercode.eng.files.UserFile;
 import net.sf.jaspercode.eng.processing.BuildComponentItem;
@@ -27,6 +28,7 @@ import net.sf.jaspercode.eng.processing.FileProcessable;
 import net.sf.jaspercode.eng.processing.FolderWatcherProcessable;
 import net.sf.jaspercode.eng.processing.ProcessableBase;
 import net.sf.jaspercode.eng.processing.ProcessableContext;
+import net.sf.jaspercode.eng.processing.ProcessingUtilities;
 import net.sf.jaspercode.eng.processing.ProcessorLog;
 import net.sf.jaspercode.eng.EnginePatterns;
 
@@ -192,38 +194,49 @@ public class ProcessingManager implements ProcessableContext {
 		sourceFiles.put(src.getPath(), src);
 	}
 
-	@Override
-	public void addComponent(ComponentFile originatorFile, Component comp) {
+	// For internal usage
+	protected void addComponent(ComponentFile componentFile, Component comp) {
+		Map<String,String> configs = ProcessingUtilities.getConfigs(componentFile, comp);
+		addComponent(configs, comp, componentFile.getFolder());
+	}
+
+	//@Override
+	//public void addComponent(Map<String,String> configs, Component comp, ApplicationFolderImpl folder) {
+	//	addComponent(configs, comp, folder);
+	//}
+
+	// Folder is required to interact with build context
+	public void addComponent(Map<String,String> configs, Component comp, ApplicationFolderImpl folder) {
 		if (comp instanceof BuildComponent) {
 			BuildComponent bc = (BuildComponent)comp;
 			BuildComponentPattern pattern = patterns.getBuildPattern(bc.getClass());
-			BuildComponentItem item = new BuildComponentItem(bc, pattern, jasperResources, this, originatorFile);
+			BuildComponentItem item = new BuildComponentItem(bc, pattern, jasperResources, this, configs, folder);
 			buildsToInit.add(item);
 		} else {
 			ComponentPattern pattern = patterns.getPattern(comp.getClass());
-			ComponentItem item = new ComponentItem(comp, this, originatorFile, jasperResources, pattern);
+			ComponentItem item = new ComponentItem(comp, this, configs, jasperResources, pattern, folder);
 			toProcess.add(item);
 		}
 	}
 
 	@Override
-	public void addFolderWatcher(ComponentFile componentFile, String folderPath, FolderWatcher folderWatcher) {
+	public void addFolderWatcher(Map<String,String> configs, String folderPath, FolderWatcher folderWatcher, ApplicationFolderImpl folder) {
 		this.userFiles.entrySet().forEach(entry -> {
 			if (entry.getKey().startsWith(folderPath)) {
 				UserFile userFile = userFiles.get(entry.getKey());
-				FolderWatcherProcessable proc = new FolderWatcherProcessable(this, componentFile, jasperResources, userFile, folderWatcher);
+				FolderWatcherProcessable proc = new FolderWatcherProcessable(this, configs, jasperResources, userFile, folderWatcher, folder);
 				toProcess.add(proc);
 			}
 		});
 	}
 
 	@Override
-	public void addFileProcessor(ComponentFile componentFile, String filePath, FileProcessor fileProcessor) {
+	public void addFileProcessor(Map<String,String> configs, String filePath, FileProcessor fileProcessor, ApplicationFolderImpl folder) {
 		this.userFiles.entrySet().forEach(entry -> {
 			String path = entry.getKey();
 			if (path.equals(filePath)) {
 				UserFile userFile = entry.getValue();
-				FileProcessable proc = new FileProcessable(this, componentFile, jasperResources, fileProcessor, userFile);
+				FileProcessable proc = new FileProcessable(this, configs, jasperResources, fileProcessor, userFile, folder);
 				toProcess.add(proc);
 			}
 		});

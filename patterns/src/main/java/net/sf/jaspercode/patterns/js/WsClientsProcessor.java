@@ -132,7 +132,7 @@ public class WsClientsProcessor implements ComponentProcessor {
 		for(String p : op.getPathVariables()) {
 			String typeName = ctx.getSystemAttribute(p);
 			ctx.setLanguageSupport("Java8");
-			List<JavascriptType> additions = ensureType(typeName);
+			List<JavascriptType> additions = ensureType(typeName, new ArrayList<>());
 			ctx.setLanguageSupport("Javascript");
 			for(JavascriptType t : additions) {
 				ctx.addVariableType(t);
@@ -141,7 +141,7 @@ public class WsClientsProcessor implements ComponentProcessor {
 		for(String p : op.getRequestParameters()) {
 			String typeName = ctx.getSystemAttribute(p);
 			ctx.setLanguageSupport("Java8");
-			List<JavascriptType> additions = ensureType(typeName);
+			List<JavascriptType> additions = ensureType(typeName, new ArrayList<>());
 			ctx.setLanguageSupport("Javascript");
 			for(JavascriptType t : additions) {
 				ctx.addVariableType(t);
@@ -247,7 +247,7 @@ public class WsClientsProcessor implements ComponentProcessor {
 
 			// Ensure that the types exist in Javascript for response body and its
 			// properties
-			List<JavascriptType> additions = ensureType(body);
+			List<JavascriptType> additions = ensureType(body, new ArrayList<>());
 
 			ctx.setLanguageSupport("Javascript");
 			for (JavascriptType a : additions) {
@@ -273,10 +273,16 @@ public class WsClientsProcessor implements ComponentProcessor {
 		return ret;
 	}
 
-	private List<JavascriptType> ensureType(String typeName) throws JasperException {
+	private List<JavascriptType> ensureType(String typeName, List<String> alreadyDone) throws JasperException {
 		List<JavascriptType> ret = new ArrayList<>();
 		// String name = type.getName();
 		boolean create = false;
+		
+		if (alreadyDone.contains(typeName)) {
+			return ret;
+		}
+		alreadyDone.add(typeName);
+		
 		JavaVariableType type = JasperUtils.getType(JavaVariableType.class, typeName, ctx);
 
 		if (!checkJavascriptTypeExists(typeName)) {
@@ -292,7 +298,7 @@ public class WsClientsProcessor implements ComponentProcessor {
 					newType.addAttribute(a, t);
 					// JavaVariableType attType = JasperUtils.getType(JavaVariableType.class, t,
 					// ctx);
-					ret.addAll(ensureType(t));
+					ret.addAll(ensureType(t, alreadyDone));
 				}
 				ret.add(newType);
 			}
@@ -300,13 +306,13 @@ public class WsClientsProcessor implements ComponentProcessor {
 			for (String a : objType.getAttributeNames()) {
 				String name = objType.getAttributeType(a);
 				// JavaVariableType t = JasperUtils.getType(JavaVariableType.class, name, ctx);
-				ensureType(name);
+				ensureType(name, alreadyDone);
 			}
 		} else if ((typeName.startsWith("list/")) && (create)) {
 			String eltTypeName = typeName.substring(5);
 			// JavaVariableType eltType = JasperUtils.getType(JavaVariableType.class,
 			// eltTypeName, ctx);
-			ret.addAll(ensureType(eltTypeName));
+			ret.addAll(ensureType(eltTypeName, alreadyDone));
 		} else if ((type instanceof JavaEnumType) && (create)) {
 			JavascriptEnumType enumType = new JavascriptEnumType(typeName, false, ctx);
 			ret.add(enumType);

@@ -229,7 +229,7 @@ public class FileHandler {
 		for(FieldSource<JavaClassSource> field : src.getFields()) {
 			if (field.getAnnotation("net.sf.jaspercode.patterns.java.handwritten.DataObjectAttribute")!=null) {
 				String name = field.getName();
-				String classname = field.getType().getQualifiedName();
+				String classname = field.getType().getQualifiedNameWithGenerics();
 				String typeName = JavaUtils.getTypeName(classname);
 				type.addProperty(name, typeName);
 				ctx.addSystemAttribute(name, typeName);

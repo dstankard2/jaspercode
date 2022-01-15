@@ -44,7 +44,7 @@ public class OutputManager {
 	public void writeUserFile(UserFile userFile) {
 		File outputFile = null;
 		
-		this.appLog.debug("Write user file "+userFile.getPath());
+		//this.appLog.debug("Write user file "+userFile.getPath());
 		outputFile = new File(outputDir, userFile.getPath());
 		outputFile.getParentFile().mkdirs();
 		try (InputStream in = userFile.getInputStream(); FileOutputStream out = new FileOutputStream(outputFile)) {
@@ -57,11 +57,10 @@ public class OutputManager {
 		} catch(IOException e) {
 			e.printStackTrace();
 		}
-		//userFiles.put(userFile.getPath(), userFile);
 	}
 
 	public void writeSourceFile(SourceFile src) {
-		appLog.debug("Writing source file "+src.getPath());
+		//appLog.debug("Writing source file "+src.getPath());
 
 		File current = getFile(src.getPath());
 		if (current.exists())

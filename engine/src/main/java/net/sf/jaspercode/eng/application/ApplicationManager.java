@@ -51,6 +51,7 @@ public class ApplicationManager implements ProcessingContext {
 	public void scan() {
 		this.appLog.getMessages(true);
 		boolean changeDetected = false;
+		long start = System.currentTimeMillis();
 
 		if (firstScan) {
 			changeDetected = true;
@@ -68,7 +69,8 @@ public class ApplicationManager implements ProcessingContext {
 				List<ComponentFile> componentFiles = getComponentFiles(folder);
 				
 				processingManager.process(systemAttributes, userFiles, componentFiles);
-				appLog.info("Scan completed");
+				long duration = System.currentTimeMillis() - start;
+				appLog.info("Scan completed in "+duration+" millis");
 			} catch(EngineException e) {
 				appLog.error("Couldn't scan application folder", e);
 			}

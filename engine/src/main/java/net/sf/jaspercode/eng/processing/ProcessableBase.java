@@ -2,31 +2,23 @@
 package net.sf.jaspercode.eng.processing;
 
 import java.util.List;
+import java.util.Map;
 
 import net.sf.jaspercode.api.plugin.ProcessorLogMessage;
 import net.sf.jaspercode.eng.JasperResources;
-import net.sf.jaspercode.eng.files.ApplicationFolderImpl;
-import net.sf.jaspercode.eng.files.ComponentFile;
 
 public abstract class ProcessableBase implements Comparable<ProcessableBase> {
 
 	protected ProcessableContext ctx = null;
 	protected ProcessorLog log = null;
-	protected ApplicationFolderImpl folder = null;
-	protected ComponentFile originatorFile = null;
 	protected JasperResources jasperResources = null;
+	protected Map<String,String> configs = null;
 	
-	protected ProcessableBase(ProcessableContext ctx, ComponentFile originatorFile,
-			JasperResources jasperResources) {
+	protected ProcessableBase(Map<String,String> configs, ProcessableContext ctx, JasperResources jasperResources) {
+		this.configs = configs;
 		this.ctx = ctx;
-		this.originatorFile = originatorFile;
-		this.folder = originatorFile.getFolder();
 		this.jasperResources = jasperResources;
 		this.log = new ProcessorLog("ProcessableLog");
-	}
-
-	public ComponentFile getComponentFile() {
-		return originatorFile;
 	}
 
 	public ProcessorLog getLog() {

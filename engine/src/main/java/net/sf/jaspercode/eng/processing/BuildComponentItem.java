@@ -12,7 +12,6 @@ import net.sf.jaspercode.eng.BuildComponentPattern;
 import net.sf.jaspercode.eng.JasperResources;
 import net.sf.jaspercode.eng.exception.EngineException;
 import net.sf.jaspercode.eng.files.ApplicationFolderImpl;
-import net.sf.jaspercode.eng.files.ComponentFile;
 import net.sf.jaspercode.eng.files.DefaultBuildContext;
 
 public class BuildComponentItem {
@@ -20,39 +19,32 @@ public class BuildComponentItem {
 	protected BuildComponent buildComp = null;
 	protected BuildComponentPattern pattern = null;
 	protected ProcessorLog log = null;
-	protected ApplicationFolderImpl folder = null;
 	protected ProcessableContext ctx = null;
 	protected BuildContext buildContext;
 	protected BuildComponentProcessor processor = null;
-	protected ComponentFile componentFile = null;
 	protected JasperResources jasperResources = null;
 	protected BuildProcessorContextImpl bctx = null;
+	protected Map<String,String> configs;
+	protected ApplicationFolderImpl folder;
 
-	public BuildComponentItem(BuildComponent buildComp,BuildComponentPattern pattern,
-			JasperResources jasperResources, ProcessableContext ctx, ComponentFile componentFile) {
+	public BuildComponentItem(BuildComponent buildComp, BuildComponentPattern pattern,
+			JasperResources jasperResources, ProcessableContext ctx, Map<String,String> configs, 
+			ApplicationFolderImpl folder) {
 		this.buildComp = buildComp;
 		this.pattern = pattern;
-		this.folder = componentFile.getFolder();
 		this.log = new ProcessorLog(buildComp.getComponentName());
 		this.ctx = ctx;
-		this.componentFile = componentFile;
 		this.jasperResources = jasperResources;
+		this.configs = configs;
+		this.folder = folder;
 	}
 
 	public BuildComponent getBuildComponent() {
 		return buildComp;
 	}
 	
-	public ComponentFile getComponentFile() {
-		return componentFile;
-	}
-
 	public ProcessorLog getLog() {
 		return this.log;
-	}
-
-	public ApplicationFolderImpl getFolder() {
-		return folder;
 	}
 
 	public BuildContext getBuildContext() {
@@ -75,8 +67,7 @@ public class BuildComponentItem {
 
 			if (pattern!=null) {
 				try {
-					Map<String,String> configs = ProcessingUtilities.getConfigs(componentFile, buildComp);
-					bctx = new BuildProcessorContextImpl(folder, jasperResources, log, configs, componentFile, ctx);
+					bctx = new BuildProcessorContextImpl(folder, jasperResources, log, configs, ctx);
 					ProcessingUtilities.populateConfigurations(buildComp, log, configs);
 					processor = pattern.getProcessor(buildComp);
 					processor.setBuildComponent(buildComp);

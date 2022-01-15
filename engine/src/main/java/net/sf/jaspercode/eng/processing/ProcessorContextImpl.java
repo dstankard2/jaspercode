@@ -14,7 +14,6 @@ import net.sf.jaspercode.api.resources.FileProcessor;
 import net.sf.jaspercode.api.resources.FolderWatcher;
 import net.sf.jaspercode.api.types.VariableType;
 import net.sf.jaspercode.eng.files.ApplicationFolderImpl;
-import net.sf.jaspercode.eng.files.ComponentFile;
 
 public class ProcessorContextImpl implements ProcessorContext {
 
@@ -24,16 +23,14 @@ public class ProcessorContextImpl implements ProcessorContext {
 	private ApplicationFolderImpl folder = null;
 	private String lang = null;
 	private Map<String,String> configs = null;
-	private ComponentFile componentFile;
 	
 	public ProcessorContextImpl(ProcessableContext ctx, ApplicationContext appCtx, ProcessorLog log, 
-			ApplicationFolderImpl folder, Map<String,String> configs,ComponentFile componentFile) {
+			Map<String,String> configs, ApplicationFolderImpl folder) {
 		this.ctx = ctx;
 		this.appCtx = appCtx;
 		this.log = log;
-		this.folder = folder;
 		this.configs = configs;
-		this.componentFile = componentFile;
+		this.folder = folder;
 	}
 
 	@Override
@@ -113,9 +110,10 @@ public class ProcessorContextImpl implements ProcessorContext {
 		return folder.getResource(path);
 	}
 
+	// The added component will have the same configuration properties
 	@Override
 	public void addComponent(Component component) {
-		ctx.addComponent(componentFile, component);
+		ctx.addComponent(configs, component, folder);
 	}
 
 	@Override
@@ -123,14 +121,16 @@ public class ProcessorContextImpl implements ProcessorContext {
 		return log;
 	}
 
+	// The added folder watcher will have the same configuration properties
 	@Override
 	public void addFolderWatcher(String folderPath, FolderWatcher folderWatcher) {
-		ctx.addFolderWatcher(componentFile, folderPath, folderWatcher);
+		ctx.addFolderWatcher(configs, folderPath, folderWatcher, folder);
 	}
 
+	// The added file watcher will have the same configuration properties
 	@Override
 	public void addFileProcessor(String filePath, FileProcessor fileProcessor) {
-		ctx.addFileProcessor(componentFile, filePath, fileProcessor);
+		ctx.addFileProcessor(configs, filePath, fileProcessor, folder);
 	}
 
 	@Override

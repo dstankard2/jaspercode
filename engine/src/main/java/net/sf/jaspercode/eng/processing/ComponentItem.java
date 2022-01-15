@@ -9,18 +9,21 @@ import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.eng.ComponentPattern;
 import net.sf.jaspercode.eng.JasperResources;
 import net.sf.jaspercode.eng.RegisteredProcessor;
-import net.sf.jaspercode.eng.files.ComponentFile;
+import net.sf.jaspercode.eng.files.ApplicationFolderImpl;
 
 public class ComponentItem extends ProcessableBase {
 	Component component = null;
 	ComponentPattern pattern = null;
+	ApplicationFolderImpl folder;
 	
-	public ComponentItem(Component component, ProcessableContext ctx, ComponentFile originatorFile,
-			JasperResources jasperResources, ComponentPattern pattern) {
-		super(ctx, originatorFile, jasperResources);
+	public ComponentItem(Component component, ProcessableContext ctx, Map<String,String> configs,
+			JasperResources jasperResources, ComponentPattern pattern, ApplicationFolderImpl folder) {
+		super(configs, ctx, jasperResources);
 		this.component = component;
 		this.pattern = pattern;
+		this.folder = folder;
 	}
+
 	@Override
 	public int getPriority() {
 		return component.getPriority();
@@ -36,11 +39,10 @@ public class ComponentItem extends ProcessableBase {
 		AtomicBoolean ret = new AtomicBoolean(true);
 		List<RegisteredProcessor> procs = pattern.getProcessors();
 
-		Map<String,String> configs = ProcessingUtilities.getConfigs(originatorFile,  component);
 		ProcessingUtilities.populateConfigurations(component, log, configs);
 
 		procs.stream().forEach(proc -> {
-			ProcessorContextImpl processorCtx = new ProcessorContextImpl(ctx, jasperResources, log, folder, configs, originatorFile);
+			ProcessorContextImpl processorCtx = new ProcessorContextImpl(ctx, jasperResources, log, configs, folder);
 
 			try {
 				Class<? extends ComponentProcessor> procClass = proc.getProcessorClass();

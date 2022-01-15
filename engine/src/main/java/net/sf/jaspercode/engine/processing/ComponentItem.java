@@ -57,7 +57,7 @@ public class ComponentItem extends ProcessableBase implements Item {
 			for(RegisteredProcessor proc : pattern.getProcessors()) {
 				Class<? extends ComponentProcessor> cl = proc.getProcessorClass();
 				try {
-					ComponentProcessor processor = cl.newInstance();
+					ComponentProcessor processor = cl.getConstructor().newInstance();
 					processor.init(component, pctx);
 					processor.process();
 					this.state = ProcessingState.COMPLETE;

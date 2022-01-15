@@ -40,8 +40,15 @@ public class DataObjectProcessor implements ComponentProcessor {
 		String multiple = JasperUtils.getMultiple(lowerCamel);
 		String pkg = comp.getJavaRootPackage()+'.'+comp.getPkg();
 		String props = comp.getAttributes();
-		List<AttribEntry> attribs = JasperUtils.readParametersAsList(props, ctx);
 		JavaDataObjectType newType = new JavaDataObjectType(name,pkg+'.'+name,ctx.getBuildContext());
+
+		ctx.addVariableType(newType);
+		ctx.addSystemAttribute(lowerCamel, name);
+		ctx.addSystemAttribute(lowerCamel+"List", "list/"+name);
+		ctx.addSystemAttribute(multiple, "list/"+name);
+
+		List<AttribEntry> attribs = JasperUtils.readParametersAsList(props, ctx);
+
 		if (name.equals(lowerCamel)) {
 			throw new JasperException("Type name '"+name+"' is not a valid name for a data object");
 		}
@@ -91,12 +98,7 @@ public class DataObjectProcessor implements ComponentProcessor {
 			}
 		}
 		
-		ctx.addVariableType(newType);
 		constructor.setBody(constructorCode.getCodeText());
-		
-		ctx.addSystemAttribute(lowerCamel, name);
-		ctx.addSystemAttribute(lowerCamel+"List", "list/"+name);
-		ctx.addSystemAttribute(multiple, "list/"+name);
 		
 		ctx.addSourceFile(src);
 	}

@@ -65,7 +65,6 @@ public class TemplateSingleFolderWatcher implements FolderWatcher {
 			String webPath = JavascriptUtils.getModulePath(ctx);
 			folderType = new ModuleType(serviceName,webPath, ExportedModuleType.CONST);
 			//folderType = new JavascriptServiceType(serviceName,true,ctx);
-			ctx.addVariableType(folderType);
 			module = new StandardModuleSource(serviceName);
 			module.setExportType(ExportedModuleType.CONST);
 			src.addModule(module);
@@ -141,13 +140,15 @@ public class TemplateSingleFolderWatcher implements FolderWatcher {
 		ctx.getLog().info("Parsing template "+file.getPath());
 		TemplateParser parser = new TemplateParser(templateString.toString(),ctx,objRef,op);
 		CodeExecutionContext execCtx = new CodeExecutionContext(ctx);
-		JavascriptCode code = parser.generateJavascriptCode(execCtx);
-		fn.setParameters(op);
-		fn.setCode(code);
 		mod.addFunction(fn);
 		folderType.addOperation(op);
+		JavascriptCode code = parser.generateJavascriptCode(execCtx);
+		fn.setCode(code);
+		fn.setParameters(op);
 		for(Pair<String,String> s : code.getImportedModules()) {
-			src.importModule(s);
+			if (!s.getKey().equals(folderType.getModuleName())) {
+				src.importModule(s);
+			}
 		}
 	}
 

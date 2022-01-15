@@ -1,12 +1,14 @@
 package net.sf.jaspercode.eng.processing;
 
+import java.util.Map;
+
 import net.sf.jaspercode.api.SourceFile;
 import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.FileProcessor;
 import net.sf.jaspercode.api.resources.FolderWatcher;
 import net.sf.jaspercode.api.types.VariableType;
-import net.sf.jaspercode.eng.files.ComponentFile;
+import net.sf.jaspercode.eng.files.ApplicationFolderImpl;
 import net.sf.jaspercode.eng.files.UserFile;
 
 public interface ProcessableContext {
@@ -21,9 +23,9 @@ public interface ProcessableContext {
 	void addVariableType(String lang, VariableType variableType);
 	void setObject(String name, Object value);
 	void addSourceFile(SourceFile src);
-	void addComponent(ComponentFile originatorFile, Component comp);
-	void addFolderWatcher(ComponentFile componentFile, String folderPath, FolderWatcher folderWatcher);
-	void addFileProcessor(ComponentFile componentFile, String filePath, FileProcessor fileProcessor);
+	void addComponent(Map<String,String> configs, Component comp, ApplicationFolderImpl folder);
+	void addFolderWatcher(Map<String,String> configs, String folderPath, FolderWatcher folderWatcher, ApplicationFolderImpl folder);
+	void addFileProcessor(Map<String,String> configs, String filePath, FileProcessor fileProcessor, ApplicationFolderImpl folder);
 
 }
 

@@ -32,7 +32,20 @@ public class ResourceManager {
 
 	// After the initial scan, are there file changes?
 	public boolean hasChanges() {
-		return rootFolder.lastModified() > lastScan;
+		return folderHasChanges(rootFolder);
+	}
+	private boolean folderHasChanges(File folder) {
+		for(File file : folder.listFiles()) {
+			if (file.isDirectory()) {
+				if (folderHasChanges(file)) {
+					return true;
+				}
+			}
+			if (file.lastModified() > lastScan) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public Map<String,String> readSystemAttributesFile() throws EngineException {

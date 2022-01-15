@@ -46,7 +46,7 @@ public class SassFilesProcessor implements ComponentProcessor {
 	
 	protected void handleMaven(String src,String dest,ProcessorContext ctx) {
 		MavenBuildContext bctx = MavenUtils.getMavenBuildContext(ctx);
-		PluginConfig cfg = new PluginConfig("org.jasig.maven:sass-maven-plugin:1.1.1");
+		PluginConfig cfg = new PluginConfig("nl.geodienstencentrum.maven:sass-maven-plugin:3.5.5");
 		ExecutionConfig execConfig = new ExecutionConfig();
 		String srcPath = ctx.getResource(".").getPath();
 		String buildPath = bctx.getApplicationFolderPath();
@@ -56,7 +56,7 @@ public class SassFilesProcessor implements ComponentProcessor {
 		execConfig.setId("sassProcessSource");
 		execConfig.setPhase("generate-sources");
 		execConfig.getGoals().add("update-stylesheets");
-		ctx.getLog().warn("Defaulting to sass-maven-plugin version 1.1.1");
+		ctx.getLog().warn("Defaulting to sass-maven-plugin version 2.22");
 		
 		execConfig.getConfiguration().addProperty("sassSourceDirectory", srcPath);
 		//execConfig.getConfiguration().addProperty("buildDirectory", "${basedir}/"+dest);

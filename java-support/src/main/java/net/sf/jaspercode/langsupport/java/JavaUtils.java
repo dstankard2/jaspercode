@@ -251,6 +251,7 @@ public class JavaUtils {
 		String ret = null;
 		
 		if (className.equals("java.lang.String")) ret = "string";
+		else if (className.equals("java.lang.Boolean")) ret = "boolean";
 		else if (className.equals("java.lang.Integer")) ret = "integer";
 		else if (className.equals("java.lang.Double")) ret = "double";
 		else if (className.startsWith("java.lang.Object")) ret = "object";
@@ -258,6 +259,10 @@ public class JavaUtils {
 		else if (className.startsWith("java.util.Date")) ret = "date";
 		else if (className.startsWith("java.sql.Date")) ret = "date";
 		else if (className.startsWith("java.sql.Timestamp")) ret = "datetime";
+		else if (className.startsWith("java.util.List<")) {
+			String subtype = className.substring(15);
+			ret = "list/"+getTypeName(subtype.substring(0, subtype.length()-1));
+		}
 		else {
 			int i = className.lastIndexOf('.');
 			ret = className.substring(i+1);
