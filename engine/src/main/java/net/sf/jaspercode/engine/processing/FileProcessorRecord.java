@@ -2,11 +2,10 @@ package net.sf.jaspercode.engine.processing;
 
 import java.util.Map;
 
-import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.FileProcessor;
 import net.sf.jaspercode.engine.JasperResources;
-import net.sf.jaspercode.engine.files.ComponentFile;
+import net.sf.jaspercode.engine.files.ApplicationFolderImpl;
 import net.sf.jaspercode.engine.files.UserFile;
 
 public class FileProcessorRecord extends ProcessableBase {
@@ -16,20 +15,19 @@ public class FileProcessorRecord extends ProcessableBase {
 	private ProcessorContextImpl procCtxImpl = null;
 	
 	protected UserFile userFile;
-	private Map<String,String> configs = null;
+	private ApplicationFolderImpl folder;
 	
-	public FileProcessorRecord(int itemId, String path, Component component, ProcessableContext processableCtx,
-			FileProcessor fileProcessor, ComponentFile componentFile, JasperResources jasperResources) {
-		super(itemId, processableCtx, componentFile, jasperResources);
+	public FileProcessorRecord(int itemId, String path, ProcessableContext processableCtx, FileProcessor fileProcessor, 
+			Map<String,String> configs, JasperResources jasperResources, ApplicationFolderImpl folder) {
+		super(itemId, configs, processableCtx, jasperResources);
 		this.path = path;
 		this.fileProcessor = fileProcessor;
 		this.log = new ProcessorLog(getName());
-		//this.component = component;
+		this.folder = folder;
 
-		configs = ProcessingUtilities.getConfigs(originatorFile, component);
-		changes = new ProcessableChanges(itemId, originatorFile, component);
-		
-		this.procCtxImpl = new ProcessorContextImpl(itemId, processableCtx, jasperResources, log, folder, configs, changes);
+		changes = new ProcessableChanges(itemId);
+
+		this.procCtxImpl = new ProcessorContextImpl(ctx, jasperResources, log, configs, folder, changes);
 	}
 
 	@Override
@@ -69,23 +67,22 @@ public class FileProcessorRecord extends ProcessableBase {
 		boolean ret = true;
 
 		try {
-			this.state = ProcessingState.PROCESSING;
 			ret = ProcessingUtilities.populateConfigurations(fileProcessor, log, configs);
 			if (ret) {
 				fileProcessor.process();
-				this.state = ProcessingState.COMPLETE;
 			}
-			if (!ret) {
-				this.state = ProcessingState.ERROR;
-			}
-			//changes = procCtxImpl.getChanges();
+
 		} catch(JasperException e) {
 			ret = false;
-			this.state = ProcessingState.ERROR;
 			log.error("Exception while processing: "+e.getMessage(), e);
 		}
 		
 		return ret;
+	}
+
+	@Override
+	public ApplicationFolderImpl getFolder() {
+		return folder;
 	}
 
 }

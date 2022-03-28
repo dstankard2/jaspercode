@@ -1,0 +1,5 @@
+
+-Xdebug -Xrunjdwp:transport=dt_socket,address=8001,server=y,suspend=n
+
+java -Xdebug -Xrunjdwp:transport=dt_socket,address=8001,server=y,suspend=n -jar target/example1-jar-with-dependencies.jar
+

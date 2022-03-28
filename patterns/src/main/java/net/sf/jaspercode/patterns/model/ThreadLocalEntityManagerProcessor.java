@@ -58,7 +58,7 @@ public class ThreadLocalEntityManagerProcessor implements ComponentProcessor {
 		factoryInit.setBody("EntityManagerFactory ret = null;\n"
 				+ "try {\n"
 				+ "ret = Persistence.createEntityManagerFactory(\""+pu+"\");\n"
-						+ "} catch(Exception e) {\ne.printStackTrace();\n}\n"
+						+ "} catch(Throwable e) {\ne.printStackTrace();\n}\n"
 						+ "return ret;\n");
 		
 		StringBuilder b = new StringBuilder();

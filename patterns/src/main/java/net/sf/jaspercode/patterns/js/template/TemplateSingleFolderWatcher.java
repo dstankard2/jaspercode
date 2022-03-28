@@ -51,13 +51,12 @@ public class TemplateSingleFolderWatcher implements FolderWatcher {
 	protected Pair<ModuleType,StandardModuleSource> ensureFolderInfo(ProcessorContext ctx) throws JasperException {
 		ModuleType folderType = null;
 		StandardModuleSource module = null;
-		//new StandardModuleSource(folderTypeName);
-		//JavascriptServiceType rootType = templatesInfo.getKey();
 		ModuleSourceFile src = JavascriptUtils.getModuleSource(ctx);
 
 		ctx.addSystemAttribute(serviceRef, serviceName);
 		try {
 			folderType = JasperUtils.getType(ModuleType.class, serviceName, ctx);
+			ctx.modifyVariableType(folderType);
 		} catch(JasperException e) {
 		}
 		

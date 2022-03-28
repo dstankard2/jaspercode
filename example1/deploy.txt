@@ -1,5 +1,0 @@
-
-* Placeholder
-
-This is a user file that should wind up in the root dir of the output.
-

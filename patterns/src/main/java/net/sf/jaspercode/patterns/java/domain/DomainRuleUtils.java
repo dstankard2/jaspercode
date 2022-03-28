@@ -30,6 +30,7 @@ public class DomainRuleUtils {
 	private static final String DEFAULT_SERVICE_GROUP_NAME = "DomainServices";
 
 	// For public use - returns all services available and references to them (including located services - references are the code to locate them)
+	// This method does not mark any dependency types as modified by the current component
 	public static Map<String,JavaServiceType> getDependencyRefs(DomainLogicComponent comp,ProcessorContext ctx) throws JasperException {
 		Map<String,JavaServiceType> ret = new HashMap<>();
 		
@@ -120,6 +121,7 @@ public class DomainRuleUtils {
 		} else {
 			serviceLocatorType = JasperUtils.getType(ServiceLocatorImpl.class, serviceGroup+"Locator", ctx);
 			locatorSource = JavaUtils.getClassSourceFile(pkg+'.'+serviceGroup+"Locator", ctx);
+			ctx.modifyVariableType(serviceLocatorType);
 		}
 
 		// Add locator method for this service

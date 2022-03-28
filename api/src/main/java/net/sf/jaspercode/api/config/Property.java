@@ -8,7 +8,7 @@ import javax.xml.bind.annotation.XmlValue;
 
 import net.sf.jaspercode.api.annotation.Plugin;
 
-@Plugin
+//@Plugin
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name="property",propOrder={ })
 public class Property {

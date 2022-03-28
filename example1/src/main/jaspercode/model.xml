@@ -1,0 +1,15 @@
+<jasper:componentSet xmlns="http://jaspercode.sf.net/patterns/java/model"
+		xmlns:jasper="http://jaspercode.sf.net/config">
+
+	<tableSet databaseType="MySQL" url="jdbc:mysql://localhost:3306" 
+	dbSchema="example1" id="Example1Tables"/>
+	
+	<threadLocalEntityManager name="DefaultTxLocator" txRef="defaultTx" />
+	
+	<persistenceUnit txRef="defaultTx" name="DefaultPU" tableSetId="Example1Tables" />
+	
+	<jpaDaoFactory ref="ds" entityManagerLocator="DefaultTxLocator" name="DefaultDaoFactory" 
+	selectByIndex="T" deleteByIndex="T"/>
+
+</jasper:componentSet>
+

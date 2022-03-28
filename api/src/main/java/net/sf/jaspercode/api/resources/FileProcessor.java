@@ -1,7 +1,7 @@
 package net.sf.jaspercode.api.resources;
 
-import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.api.exception.JasperException;
+import net.sf.jaspercode.api.ProcessorContext;
 
 public interface FileProcessor {
 

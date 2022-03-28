@@ -86,6 +86,60 @@ public class JavaUtils {
 		return code;
 	}
 	
+	/**
+	 * Ensure that the given service ref exists in the current code execution context by creating it if necessary
+	 * @param ref Reference to the service.
+	 * @param type A subclass of JavaServiceType or ServiceLocator
+	 * @param execCtx Current code execution context
+	 * @param ctx Processor Conntext
+	 * @return Code to ensure the service exists.
+	 * @throws JasperException
+	 */
+	public static JavaCode serviceInstance(String ref,JavaVariableType type,CodeExecutionContext execCtx,ProcessorContext ctx) throws JasperException {
+		JavaCode ret = new JavaCode();
+
+		// If the variable is already there, then it is already initialized.
+		if (execCtx.getTypeForVariable(ref)==null) {
+			ret = type.declare(ref, execCtx);
+			execCtx.addVariable(ref, type.getName());
+			if (type instanceof ServiceLocator) {
+				ServiceLocator loc = (ServiceLocator)type;
+				JavaUtils.append(ret, loc.instantiate(ref));
+			} else if (type instanceof JavaServiceType) {
+				JavaServiceType s = (JavaServiceType)type;
+				JavaUtils.append(ret, s.instantiate(ref));
+			} else {
+				throw new JasperException("Couldn't create an instance of service type '"+type.getName()+"' because it isn't a service or service locator");
+			}
+		}
+		
+		return ret;
+	}
+
+	public static JavaCode addServiceToExecutionContext(String ref,CodeExecutionContext execCtx,ProcessorContext ctx) throws JasperException {
+		JavaCode ret = null;
+		String typeName = ctx.getSystemAttribute(ref);
+
+		if (execCtx.getVariableType(ref)!=null) {
+			return new JavaCode();
+		}
+		
+		if (typeName==null) {
+			throw new JasperException("Couldn't recognize service reference '"+ref+"'");
+		}
+		JavaServiceType type = JasperUtils.getType(JavaServiceType.class, typeName, ctx);
+		ret = type.declare(ref, execCtx);
+		execCtx.addVariable(ref, typeName);
+
+		append(ret,type.instantiate(ref));
+		
+		return ret;
+	}
+
+	public static JavaCode callJavaOperation(String resultName,String objName,ServiceOperation op,CodeExecutionContext execCtx,Map<String,String> explicitParams) throws JasperException {
+		return callJavaOperation(resultName,objName,op,execCtx,explicitParams,true);
+	}
+
 	public static void addServiceOperation(ServiceOperation op,JavaCode code,JavaClassSource cl,ProcessorContext ctx) throws JasperException {
 		MethodSource<JavaClassSource> method = cl.addMethod().setName(op.getName()).setBody(code.getCodeText()).setPublic();
 
@@ -114,35 +168,11 @@ public class JavaUtils {
 		}
 
 	}
-	
+
 	public static void addProperty(JavaClassSourceFile src,String name,String typeName,ProcessorContext ctx) throws JasperException {
 		JavaVariableType type = JasperUtils.getType(JavaVariableType.class, typeName, ctx);
 		src.addImport(type);
 		src.getSrc().addProperty(type.getClassName(), name);
-	}
-	
-	public static JavaCode addServiceToExecutionContext(String ref,CodeExecutionContext execCtx,ProcessorContext ctx) throws JasperException {
-		JavaCode ret = null;
-		String typeName = ctx.getSystemAttribute(ref);
-
-		if (execCtx.getVariableType(ref)!=null) {
-			return new JavaCode();
-		}
-		
-		if (typeName==null) {
-			throw new JasperException("Couldn't recognize service reference '"+ref+"'");
-		}
-		JavaServiceType type = JasperUtils.getType(JavaServiceType.class, typeName, ctx);
-		ret = type.declare(ref, execCtx);
-		execCtx.addVariable(ref, typeName);
-
-		append(ret,type.instantiate(ref));
-		
-		return ret;
-	}
-
-	public static JavaCode callJavaOperation(String resultName,String objName,ServiceOperation op,CodeExecutionContext execCtx,Map<String,String> explicitParams) throws JasperException {
-		return callJavaOperation(resultName,objName,op,execCtx,explicitParams,true);
 	}
 
 	public static JavaCode callJavaOperation(String resultName,String objName,ServiceOperation op,CodeExecutionContext execCtx,Map<String,String> explicitParams,boolean addSemicolon) throws JasperException {
@@ -178,36 +208,6 @@ public class JavaUtils {
 		invoke.appendCodeText("\n");
 		JavaUtils.append(ret, invoke);
 
-		return ret;
-	}
-	
-	/**
-	 * Ensure that the given service ref exists in the current code execution context by creating it if necessary
-	 * @param ref Reference to the service.
-	 * @param type A subclass of JavaServiceType or ServiceLocator
-	 * @param execCtx Current code execution context
-	 * @param ctx Processor Conntext
-	 * @return Code to ensure the service exists.
-	 * @throws JasperException
-	 */
-	public static JavaCode serviceInstance(String ref,JavaVariableType type,CodeExecutionContext execCtx,ProcessorContext ctx) throws JasperException {
-		JavaCode ret = new JavaCode();
-
-		// If the variable is already there, then it is already initialized.
-		if (execCtx.getTypeForVariable(ref)==null) {
-			ret = type.declare(ref, execCtx);
-			execCtx.addVariable(ref, type.getName());
-			if (type instanceof ServiceLocator) {
-				ServiceLocator loc = (ServiceLocator)type;
-				JavaUtils.append(ret, loc.instantiate(ref));
-			} else if (type instanceof JavaServiceType) {
-				JavaServiceType s = (JavaServiceType)type;
-				JavaUtils.append(ret, s.instantiate(ref));
-			} else {
-				throw new JasperException("Couldn't create an instance of service type '"+type.getName()+"' because it isn't a service or service locator");
-			}
-		}
-		
 		return ret;
 	}
 
@@ -283,10 +283,6 @@ public class JavaUtils {
 		} else if (ops.size()==1) {
 			op = ops.get(0);
 		} else {
-			/* 
-			 * For the service operations that match, find one that can be executed in the 
-			 * current code execution context with the given explicit parameters.
-			 */
 			for(ServiceOperation o : ops) {
 				boolean correctOp = true;
 				for(String param : o.getParamNames()) {
@@ -314,7 +310,7 @@ public class JavaUtils {
 		}
 		return op;
 	}
-
+	
 	public static JavaCode set(String ref, String valueString, CodeExecutionContext execCtx) throws JasperException {
 		JavaCode ret = new JavaCode();
 		boolean first = true;

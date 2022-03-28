@@ -6,14 +6,13 @@ import java.util.Map;
 
 import net.sf.jaspercode.api.plugin.EnginePlugin;
 import net.sf.jaspercode.engine.application.ApplicationManager;
-import net.sf.jaspercode.engine.processing.ProcessorLog;
 
 public class JasperAgent {
 	private File[] libs = null;
 	private String homeDir = null;
 	private boolean done = false;
 	Map<String,EnginePlugin> enginePlugins = new HashMap<>();
-	private ProcessorLog engineLogger = null;
+	//private ProcessorLog engineLogger = null;
 	private EngineProperties engineProperties = null;
 	private HashMap<String,ApplicationManager> apps = new HashMap<>();
 
@@ -26,7 +25,7 @@ public class JasperAgent {
 		libs = libFiles;
 		this.homeDir = homeDir;
 		this.engineProperties = new EngineProperties(userOptions);
-		this.engineLogger = new ProcessorLog("SYSTEM");
+		//this.engineLogger = new ProcessorLog("SYSTEM");
 	}
 
 	public void start() throws EngineInitException {

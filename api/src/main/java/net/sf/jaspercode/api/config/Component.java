@@ -9,6 +9,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
 import net.sf.jaspercode.api.annotation.Plugin;
+import net.sf.jaspercode.api.config.Property;
 
 /**
  * Base class for any component pattern.  The implementation class 

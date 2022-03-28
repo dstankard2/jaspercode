@@ -51,7 +51,7 @@ public class TableSetComponent extends Component {
 	public void setUrl(String url) {
 		this.url = url;
 	}
-	
+
 	@ConfigProperty(required = true, name = ModelUtils.CONFIG_JDBC_USERNAME)
 	public void setUsername(String username) {
 		this.username = username;

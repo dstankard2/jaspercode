@@ -47,6 +47,7 @@ public class ServiceProcessor implements ComponentProcessor {
 		
 		if (ctx.getVariableType(className)!=null) {
 			type = JasperUtils.getType(JavaServiceType.class, className, ctx);
+			ctx.modifyVariableType(type);
 		} else {
 			type = new JavaServiceType(className,pkg+'.'+className,ctx.getBuildContext());
 			ctx.addVariableType(type);
@@ -64,6 +65,7 @@ public class ServiceProcessor implements ComponentProcessor {
 		String resultName = getResultTypeName();
 		
 		type.addOperation(op);
+		ctx.modifyVariableType(type);
 		List<AttribEntry> params = JasperUtils.readParametersAsList(paramString, ctx);
 		CodeExecutionContext execCtx = new CodeExecutionContext(ctx);
 		op.returnType(resultName);

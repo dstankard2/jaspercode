@@ -1,0 +1,13 @@
+<jasper:componentSet xmlns="http://jaspercode.sf.net/patterns/tomcat"
+		xmlns:jasper="http://jaspercode.sf.net/config">
+
+	<embedTomcatJar jarName="example1" context="/" port="8000"/>
+
+	<tomcatJndiDatasource name="jdbc/example1" 
+		username="example1_user"
+		password="jaspercode"
+		url="jdbc:mysql://localhost:3306"
+	/>
+
+</jasper:componentSet>
+

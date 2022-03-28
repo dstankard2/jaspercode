@@ -2,44 +2,41 @@
 package net.sf.jaspercode.engine.processing;
 
 import java.util.List;
+import java.util.Map;
 
 import net.sf.jaspercode.api.plugin.ProcessorLogMessage;
 import net.sf.jaspercode.engine.JasperResources;
-import net.sf.jaspercode.engine.files.ApplicationFolderImpl;
-import net.sf.jaspercode.engine.files.ComponentFile;
 
 public abstract class ProcessableBase implements Processable {
 
-	protected int itemId = 0;
-	protected ProcessableContext processableCtx = null;
+	protected ProcessableContext ctx = null;
 	protected ProcessorLog log = null;
-	protected ApplicationFolderImpl folder = null;
-	protected ProcessingState state = ProcessingState.TO_PROCESS;
-	protected ComponentFile originatorFile = null;
 	protected JasperResources jasperResources = null;
-	
-	protected ProcessableChanges changes = null;
+	protected Map<String,String> configs = null;
+	protected int itemId;
+	protected ProcessableChanges changes;
 
-	protected ProcessableBase(int itemId, ProcessableContext processingCtx,ComponentFile originatorFile,
-			JasperResources jasperResources) {
+	protected ProcessableBase(int itemId, Map<String,String> configs, ProcessableContext ctx, JasperResources jasperResources) {
 		this.itemId = itemId;
-		this.processableCtx = processingCtx;
-		this.originatorFile = originatorFile;
-		this.folder = originatorFile.getFolder();
+		this.configs = configs;
+		this.ctx = ctx;
 		this.jasperResources = jasperResources;
-		this.changes = null;
+		this.log = new ProcessorLog("ProcessableLog");
 	}
 
-	public ComponentFile getComponentFile() {
-		return originatorFile;
+	public ProcessableChanges getChanges() {
+		return changes;
 	}
 
-	@Override
+	public int getItemId() {
+		return itemId;
+	}
+
 	public ProcessorLog getLog() {
 		return log;
 	}
 
-	// Compares priority of components, for sorting
+	// Compares priority of components, for sorting and processing order
 	@Override
 	public int compareTo(Processable o) {
 		if (o==null) return -1;
@@ -47,43 +44,35 @@ public abstract class ProcessableBase implements Processable {
 		int p = this.getPriority();
 		int op = o.getPriority();
 		if (p>op) return 1;
-		else if (p==op) return 0;
+		else if (p==op) {
+			int id = this.getItemId();
+			int otherId = o.getItemId();
+			if (id > otherId) return 1;
+			else if (id == otherId) return 0;
+			else return -1;
+		}
 		else return -1;
 	}
 	
-	@Override
 	public void clearLogMessages() {
 		if (this.log!=null) {
 			this.log.getMessages(true);
 		}
 	}
-	@Override
-	public int getItemId() {
-		return itemId;
-	}
 
-	@Override
-	public ProcessingState getState() {
-		return this.state;
-	}
-
-	@Override
 	public abstract int getPriority();
 
-	@Override
 	public List<ProcessorLogMessage> getMessages() {
 		return log.getMessages(false);
 	}
 
-	@Override
 	public abstract String getName();
 
-	@Override
 	public abstract boolean process();
 
 	@Override
-	public ProcessableChanges getChanges() {
-		return changes;
+	public Map<String, String> getConfigs() {
+		return configs;
 	}
 
 }

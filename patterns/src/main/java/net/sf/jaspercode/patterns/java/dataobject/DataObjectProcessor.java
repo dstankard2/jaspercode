@@ -52,6 +52,10 @@ public class DataObjectProcessor implements ComponentProcessor {
 		if (name.equals(lowerCamel)) {
 			throw new JasperException("Type name '"+name+"' is not a valid name for a data object");
 		}
+		
+		else if (attribs.size()==0) {
+			throw new JasperException("Data Object "+name+" has no attributes");
+		}
 
 		src.getSrc().setName(name);
 		src.getSrc().setPackage(pkg);

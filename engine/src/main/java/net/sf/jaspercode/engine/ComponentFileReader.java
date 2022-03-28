@@ -33,6 +33,7 @@ public class ComponentFileReader {
 			reader = new FileReader(file);
 			ret = (ComponentSet)um.unmarshal(reader);
 		} catch(Exception e) {
+			//e.printStackTrace();
 			// no-op
 		} finally {
 			if (reader!=null) {

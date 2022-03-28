@@ -23,7 +23,6 @@ public abstract class JavaSourceFile<T extends JavaSource<?>> implements SourceF
 	public JavaSourceFile(Class<T> cl,ProcessorContext ctx) throws JasperException {
 		this.cl = cl;
 		this.ctx = ctx;
-		//this.buildCtx = ctx.getBuildContext();
 		this.src = Roaster.create(cl);
 		this.basePath = ctx.getBuildContext().getOutputRootPath("java");
 	}

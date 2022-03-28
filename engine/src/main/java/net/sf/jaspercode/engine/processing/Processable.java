@@ -1,17 +1,16 @@
 package net.sf.jaspercode.engine.processing;
 
 import java.util.List;
+import java.util.Map;
 
 import net.sf.jaspercode.api.plugin.ProcessorLogMessage;
+import net.sf.jaspercode.engine.files.ApplicationFolderImpl;
 
 // A processable object is an object that may be processed to change the state of the application
 public interface Processable extends Comparable<Processable> {
 
 	// The item that this processable came from
 	int getItemId();
-	
-	// State of processing for this processable
-	ProcessingState getState();
 	
 	// Processing priority.  Lower numbers are handled first
 	int getPriority();
@@ -34,5 +33,9 @@ public interface Processable extends Comparable<Processable> {
 	// Get the logger for this processable
 	ProcessorLog getLog();
 
+	Map<String,String> getConfigs();
+	
+	ApplicationFolderImpl getFolder();
+	
 }
 

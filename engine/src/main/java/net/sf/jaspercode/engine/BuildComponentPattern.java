@@ -1,7 +1,7 @@
 package net.sf.jaspercode.engine;
 
-import net.sf.jaspercode.api.BuildComponentProcessor;
 import net.sf.jaspercode.api.config.BuildComponent;
+import net.sf.jaspercode.api.BuildComponentProcessor;
 
 public class BuildComponentPattern {
 
@@ -23,7 +23,7 @@ public class BuildComponentPattern {
 		BuildComponentProcessor ret = null;
 		
 		try {
-			ret = processorClass.newInstance();
+			ret = processorClass.getConstructor().newInstance();
 		} catch(Exception e) {
 			ret = null;
 		}

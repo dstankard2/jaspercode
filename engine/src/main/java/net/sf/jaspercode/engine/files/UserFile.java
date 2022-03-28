@@ -49,10 +49,6 @@ public class UserFile implements WatchedResource,ApplicationFile {
 		return fin;
 	}
 
-	@Override
-	public void markForReadAgain() {
-		lastModified = 0L;
-	}
 
 }
 

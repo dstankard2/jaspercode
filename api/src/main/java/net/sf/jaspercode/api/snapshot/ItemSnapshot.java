@@ -1,22 +1,18 @@
 package net.sf.jaspercode.api.snapshot;
 
-public class ItemSnapshot {
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
-	private int id = 0;
-	private String name = null;
+@Data
+@EqualsAndHashCode
+@NoArgsConstructor
+@AllArgsConstructor
+public abstract class ItemSnapshot {
 
-	public int getId() {
-		return id;
-	}
-	public void setId(int id) {
-		this.id = id;
-	}
-	public String getName() {
-		return name;
-	}
-	public void setName(String name) {
-		this.name = name;
-	}
+	private int id;
+	private String name;
 
 }
 

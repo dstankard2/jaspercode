@@ -1,7 +1,12 @@
 <jasper:componentSet xmlns="http://jaspercode.sf.net/patterns/java/dataObject"
 		xmlns:jasper="http://jaspercode.sf.net/config">
 
-	<dataObject name="UserSessionData" attributes="userId" />
+	<dataObject name="BookData" attributes="bookId,title" />
+	<dataObject name="SelectionData" attributes="multiple:boolean,itemType" />
+
+	<dataObject name="UserSessionData" attributes="userId,selectionData" />
+
+	<dataObject name="SystemData" attributes="userSessionDataList,name:string" />
 
 </jasper:componentSet>
 

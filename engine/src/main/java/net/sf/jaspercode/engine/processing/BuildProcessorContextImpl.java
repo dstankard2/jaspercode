@@ -4,53 +4,73 @@ import java.util.Map;
 
 import net.sf.jaspercode.api.ApplicationContext;
 import net.sf.jaspercode.api.BuildContext;
-import net.sf.jaspercode.api.BuildProcessorContext;
-import net.sf.jaspercode.api.Log;
+import net.sf.jaspercode.api.logging.Log;
 import net.sf.jaspercode.api.SourceFile;
+import net.sf.jaspercode.api.BuildProcessorContext;
 import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.resources.ApplicationFolder;
+import net.sf.jaspercode.engine.JasperResources;
 import net.sf.jaspercode.engine.files.ApplicationFolderImpl;
 
+// TODO: Create superclass for this and ProcessorContextImpl (ProcessorContextBase?)
 public class BuildProcessorContextImpl implements BuildProcessorContext {
 
 	private ApplicationFolderImpl folder = null;
 	private ProcessorLog log = null;
-	private ApplicationContext applicationContext = null;
+	private JasperResources jasperResources = null;
 	private Map<String,String> configs = null;
 	private ProcessableChanges changes = null;
 	private ProcessableContext ctx = null;
 	
-	public BuildProcessorContextImpl(ApplicationFolderImpl folder, ApplicationContext applicationContext, 
-			ProcessorLog log, Map<String,String> configs) {
-		super();
+	public BuildProcessorContextImpl(ApplicationFolderImpl folder, JasperResources jasperResources, 
+			ProcessorLog log, Map<String,String> configs, ProcessableContext ctx) {
 		this.folder = folder;
+		this.jasperResources = jasperResources;
 		this.log = log;
-		this.applicationContext = applicationContext;
 		this.configs = configs;
+		this.ctx = ctx;
 	}
 
 	@Override
 	public String getProperty(String name) {
 		return configs.get(name);
-		//return folder.getProperties().get(name);
 	}
+
 	@Override
 	public void addSourceFile(SourceFile file) {
 		changes.getSourceFiles().add(file);
 	}
+
 	@Override
 	public SourceFile getSourceFile(String path) {
-		return ctx.getSourceFile(path);
+		SourceFile ret = null;
+		
+		ret = changes.getSourceFiles().stream().filter(src -> path.equals(src.getPath())).findAny().orElse(null);
+		if (ret==null) {
+			ret = ctx.getSourceFile(path);
+			if (ret!=null) {
+				changes.getSourceFilesChanged().add(ret);
+			}
+		}
+		return ret;
 	}
+
 	@Override
 	public void setObject(String name, Object obj) {
 		changes.getObjects().put(name, obj);
 	}
 	@Override
 	public Object getObject(String name) {
-		changes.getObjectDeps().add(name);
-		return ctx.getObject(name);
+		Object ret = this.changes.getObjects().get(name);
+		if (ret==null) {
+			ret = ctx.getObject(name);
+			if (ret!=null) {
+				changes.getObjects().put(name, ret);
+			}
+		}
+		return ret;
 	}
+
 	@Override
 	public ApplicationFolder getFolder() {
 		return folder;
@@ -58,10 +78,6 @@ public class BuildProcessorContextImpl implements BuildProcessorContext {
 	@Override
 	public Log getLog() {
 		return log;
-	}
-	@Override
-	public void addComponent(Component component) {
-		changes.getComponentsAdded().add(component);
 	}
 
 	@Override
@@ -75,11 +91,16 @@ public class BuildProcessorContextImpl implements BuildProcessorContext {
 
 	@Override
 	public ApplicationContext getApplicationContext() {
-		return applicationContext;
+		return jasperResources;
 	}
 	
 	public void setChanges(ProcessableChanges changes) {
 		this.changes = changes;
+	}
+
+	@Override
+	public void addComponent(Component component) {
+		this.changes.getComponentsAdded().add(component);
 	}
 
 }

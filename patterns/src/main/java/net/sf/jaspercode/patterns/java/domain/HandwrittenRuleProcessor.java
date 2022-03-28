@@ -46,7 +46,7 @@ public class HandwrittenRuleProcessor implements ComponentProcessor {
 		}
 
 		if (!src.getSrc().isAbstract()) {
-			throw new JasperException("Handwritten rule requires the domain service to be an sbtract class - you must specify configuration 'java.domain.implClass'");
+			throw new JasperException("Handwritten rule requires the domain service to be an abstract class - you must specify configuration 'java.domain.implClass'");
 		}
 		
 		JavaVariableType returnType = null;
@@ -73,6 +73,7 @@ public class HandwrittenRuleProcessor implements ComponentProcessor {
 			op.addParam(paramName, paramType.getName());
 		}
 		serviceType.addOperation(op);
+		ctx.modifyVariableType(serviceType);
 	}
 	
 }

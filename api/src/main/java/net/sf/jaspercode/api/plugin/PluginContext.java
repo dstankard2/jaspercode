@@ -1,6 +1,6 @@
 package net.sf.jaspercode.api.plugin;
 
-import net.sf.jaspercode.api.Log;
+import net.sf.jaspercode.api.logging.Log;
 
 public interface PluginContext {
 

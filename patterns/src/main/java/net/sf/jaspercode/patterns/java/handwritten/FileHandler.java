@@ -172,6 +172,9 @@ public class FileHandler {
 		if (!found) throw new JasperException("A class with @WebContextListener must implement interface 'javax.servlet.ServletContextListener'");
 		
 		JavaWebappRuntimePlatform platform = JavaWebUtils.getWebPlatform(ctx);
+		if (platform==null) {
+			throw new JasperException("A class with @WebContextListener must have a Java Servlet runtime platform");
+		}
 		platform.addServletContextListener(src.getCanonicalName());
 	}
 	

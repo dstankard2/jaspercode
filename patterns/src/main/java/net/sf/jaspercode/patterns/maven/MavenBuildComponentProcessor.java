@@ -36,7 +36,7 @@ public class MavenBuildComponentProcessor implements BuildComponentProcessor {
 	private List<Command> clean = new ArrayList<>();
 
 	@Override
-	public void setBuildProcessorContext(BuildProcessorContext ctx) throws JasperException {
+	public void setBuildProcessorContext(BuildProcessorContext ctx) {
 		this.ctx = ctx;
 	}
 

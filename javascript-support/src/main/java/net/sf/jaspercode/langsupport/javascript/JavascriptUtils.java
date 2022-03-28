@@ -178,7 +178,10 @@ public class JavascriptUtils {
 			b.append(p);
 		}
 		b.append(") {\n");
-		b.append(fn.getCode().getCodeText());
+		// TODO: This shouldn't be necessary, right?
+		if (fn.getCode()!=null) {
+			b.append(fn.getCode().getCodeText());
+		}
 		b.append("\n}\n");
 
 		return b.toString();

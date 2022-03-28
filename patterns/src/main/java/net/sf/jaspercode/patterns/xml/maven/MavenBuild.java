@@ -101,7 +101,7 @@ public class MavenBuild extends BuildComponent {
 	}
 
 	@ConfigProperty(required = true, name = "maven.java.version",
-			description = "Java compiler target version for Maven", example = "1.8")
+			description = "Java compiler target version for Maven", example = "9")
 	public void setJavaVersion(String javaVersion) {
 		this.javaVersion = javaVersion;
 	}

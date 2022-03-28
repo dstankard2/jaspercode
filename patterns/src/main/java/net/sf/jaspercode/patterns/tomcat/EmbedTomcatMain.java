@@ -44,7 +44,7 @@ public class EmbedTomcatMain implements ComponentProcessor {
 			ctx.getBuildContext().addDependency(dep);
 		});
 		
-		ctx.getLog().warn("Assembling Tomcat Main File");
+		ctx.getLog().info("Assembling Tomcat Main File");
 
 		j.setName(className);
 		j.setPackage(pkg);

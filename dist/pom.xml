@@ -9,37 +9,47 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<version>0.1.0</version>
 	<packaging>pom</packaging>
 
-	<name>JasperCode SPE</name>
+	<name>JasperCode Distribution</name>
 	<url>http://www.sf.net/projects/jaspercode</url>
-
-	<properties>
-		<maven.compiler.source>9</maven.compiler.source>
-		<maven.compiler.target>9</maven.compiler.target>
-	</properties>
 
 	<modules>
 		<module>../api</module>
 		<module>../java-support</module>
 		<module>../javascript-support</module>
+		<module>../engine</module>
 		<module>../patterns-user-api</module>
 		<module>../patterns</module>
 		<module>../launcher</module>
-		<module>../engine</module>
 		<module>../monitor-plugin</module>
 	</modules>
+
+	<properties>
+		<maven.compiler.source>9</maven.compiler.source>
+		<maven.compiler.target>9</maven.compiler.target>
+	</properties>
 	
 	<dependencies>
 
+<!--
 		<dependency>
 			<groupId>javax.xml.bind</groupId>
 			<artifactId>jaxb-api</artifactId>
 			<version>2.4.0-b180830.0359</version>
+		</dependency>
+-->
+
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>1.18.22</version>
+			<scope>provided</scope>
 		</dependency>
 
 	</dependencies>
 	
 	<build>
 		<plugins>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -50,17 +60,6 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
 				</configuration>
 			</plugin>
 
-<!-- 
-			<plugin>
-		        <artifactId>maven-assembly-plugin</artifactId>
-		        <version>3.2.0</version>
-		        <configuration>
-		          <descriptorRefs>
-		            <descriptorRef>jar-with-dependencies</descriptorRef>
-		          </descriptorRefs>
-		        </configuration>
-	        </plugin>
- -->
 		</plugins>
 	</build>
 

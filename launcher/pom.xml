@@ -14,30 +14,5 @@
 	<packaging>jar</packaging>
 
 	<name>JasperCode Engine Launcher</name>
-	
-	<!-- No compile-time dependencies
-	<dependencies>
-		<dependency>
-			<groupId>net.sf.jaspercode</groupId>
-			<artifactId>api</artifactId>
-			<version>0.1.0</version>
-		</dependency>
-		<dependency>
-			<groupId>net.sf.jaspercode</groupId>
-			<artifactId>engine</artifactId>
-			<version>0.1.0</version>
-		</dependency>
-		<dependency>
-			<groupId>net.sf.jaspercode</groupId>
-			<artifactId>java-support</artifactId>
-			<version>0.1.0</version>
-		</dependency>
-		<dependency>
-			<groupId>net.sf.jaspercode</groupId>
-			<artifactId>javascript-support</artifactId>
-			<version>0.1.0</version>
-		</dependency>
-	</dependencies>
-	 -->
 
 </project>

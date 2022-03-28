@@ -38,9 +38,10 @@ public class OutputManager {
 		if (!userFiles.containsKey(userFile.getPath())) {
 			return;
 		}
+		jasperResources.engineDebug("Removing user file "+userFile.getPath());
 		this.appLog.debug("Removing user file "+userFile.getPath());
 		File outputFile = null;
-		
+
 		outputFile = new File(outputDir, userFile.getPath());
 		if (outputFile.exists()) {
 			File dir = outputFile.getParentFile();
@@ -60,8 +61,8 @@ public class OutputManager {
 		if (userFiles.containsKey(userFile.getPath())) {
 			return;
 		}
-		
-		this.appLog.debug("Write user file "+userFile.getPath());
+
+		jasperResources.engineDebug("Write user file "+userFile.getPath());
 		outputFile = new File(outputDir, userFile.getPath());
 		outputFile.getParentFile().mkdirs();
 		try (InputStream in = userFile.getInputStream(); FileOutputStream out = new FileOutputStream(outputFile)) {
@@ -81,10 +82,10 @@ public class OutputManager {
 	public Map<String,UserFile> getUserFiles() {
 		return userFiles;
 	}
-	
+
 	public SourceFile getSourceFile(String path) {
 		SourceFile ret = null;
-		
+
 		ret = updates.stream().filter(src -> src.getPath().equals(path)).findFirst().orElse(null);
 		if (ret==null) {
 			SourceFile existing = sourceFiles.get(path);
@@ -130,7 +131,7 @@ public class OutputManager {
 	}
 
 	private void saveSourceFile(SourceFile src) {
-		appLog.debug("Writing source file "+src.getPath());
+		jasperResources.engineDebug("Writing source file "+src.getPath());
 		removeSourceFile(src.getPath());
 
 		File current = getFile(src.getPath());
@@ -145,8 +146,7 @@ public class OutputManager {
 			writer.flush();
 			sourceFiles.put(src.getPath(), src);
 		} catch(IOException e) {
-			System.err.println("Couldn't write file "+src.getPath());
-			e.printStackTrace();
+			appLog.error("Couldn't write file "+src.getPath(), e);
 		}
 		sourceFiles.put(src.getPath(), src);
 	}

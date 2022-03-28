@@ -18,7 +18,7 @@ public class EngineLanguages {
 		try {
 			Set<Class<LanguageSupport>> classes = pluginManager.getPluginSubclasses(LanguageSupport.class);
 			for(Class<LanguageSupport> cl : classes) {
-				LanguageSupport lang = cl.newInstance();
+				LanguageSupport lang = cl.getConstructor().newInstance();
 				languages.put(lang.getLanguageName(), lang);
 			}
 		} catch(Exception e) {

@@ -4,7 +4,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.sf.jaspercode.api.Log;
+import net.sf.jaspercode.api.logging.Log;
 import net.sf.jaspercode.api.logging.ProcessorLogLevel;
 import net.sf.jaspercode.api.plugin.ProcessorLogMessage;
 

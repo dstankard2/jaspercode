@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import net.sf.jaspercode.api.RuntimePlatform;
-import net.sf.jaspercode.patterns.http.WebServiceDefinition;
+//import net.sf.jaspercode.patterns.http.WebServiceDefinition;
 
 public abstract class JavaWebappRuntimePlatform implements RuntimePlatform {
 	protected String contextRoot = "";
@@ -17,7 +17,7 @@ public abstract class JavaWebappRuntimePlatform implements RuntimePlatform {
 	protected Map<String,String> filters = new HashMap<>();
 	protected Map<String,List<String>> filterMappings = new HashMap<>();
 	protected Map<String,String> websocketEndpoints = new HashMap<>();
-	protected List<WebServiceDefinition> services = new ArrayList<>();
+	//protected List<WebServiceDefinition> services = new ArrayList<>();
 	protected List<String> dependencies = new ArrayList<>();
 
 	public void addDependency(String name) {

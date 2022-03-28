@@ -1,0 +1,9 @@
+<jasper:componentSet xmlns="http://jaspercode.sf.net/patterns/java/http"
+		xmlns:jasper="http://jaspercode.sf.net/config">
+	
+	<endpoint module="Librarian" method="GET" path="/getBookData/{bookId}" operation="librarianService.getBookData">
+		<response httpStatus="200" responseBody="result" />
+	</endpoint>
+
+</jasper:componentSet>
+

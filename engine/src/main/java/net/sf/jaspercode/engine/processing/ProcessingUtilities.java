@@ -4,10 +4,10 @@ import java.lang.reflect.Method;
 import java.util.Map;
 
 import net.sf.jaspercode.api.annotation.ConfigProperty;
-import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.config.Property;
 import net.sf.jaspercode.engine.files.ApplicationFolderImpl;
 import net.sf.jaspercode.engine.files.ComponentFile;
+import net.sf.jaspercode.api.config.Component;
 
 public class ProcessingUtilities {
 
@@ -16,7 +16,6 @@ public class ProcessingUtilities {
 		ApplicationFolderImpl folder = file.getFolder();
 		
 		ret = folder.getProperties();
-		//ret = folder.getJasperProperties();
 
 		// Override folder properties with properties defined in the component file.
 		for(Property prop : file.getComponentSet().getProperty()) {

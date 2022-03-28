@@ -18,7 +18,5 @@ public interface WatchedResource extends ApplicationResource {
 	
 	public ApplicationFolderImpl getFolder();
 
-	public void markForReadAgain();
-
 }
 

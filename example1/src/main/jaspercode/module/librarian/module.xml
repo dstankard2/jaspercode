@@ -1,0 +1,7 @@
+<jasper:componentSet xmlns="http://jaspercode.sf.net/patterns/java/http"
+		xmlns:jasper="http://jaspercode.sf.net/config">
+
+	<webServiceModule name="Librarian" uri="/librarian" filterGroup="">
+	</webServiceModule>
+
+</jasper:componentSet>

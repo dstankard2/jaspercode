@@ -20,6 +20,7 @@ public interface SourceFile {
 	 * Create a copy of this source file for a component processor to make uncommited changes.
 	 * @return
 	 */
+	@Deprecated
 	public SourceFile copy();
 
 }

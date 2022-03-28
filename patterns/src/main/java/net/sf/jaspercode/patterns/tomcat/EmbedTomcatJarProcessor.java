@@ -34,7 +34,7 @@ public class EmbedTomcatJarProcessor implements ComponentProcessor {
 		Integer port = comp.getPort();
 		String pkg = comp.getPkg();
 		String jarPath = null;
-		Integer debugPort = comp.getDebugPort();
+		//Integer debugPort = comp.getDebugPort();
 
 		ctx.getLog().info("Processing embed tomcat application "+comp.getComponentName());
 

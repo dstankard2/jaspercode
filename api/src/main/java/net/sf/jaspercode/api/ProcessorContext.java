@@ -2,6 +2,7 @@ package net.sf.jaspercode.api;
 
 import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.exception.JasperException;
+import net.sf.jaspercode.api.logging.Log;
 import net.sf.jaspercode.api.resources.ApplicationResource;
 import net.sf.jaspercode.api.resources.FileProcessor;
 import net.sf.jaspercode.api.resources.FolderWatcher;
@@ -12,10 +13,12 @@ public interface ProcessorContext {
 	public void setLanguageSupport(String language) throws JasperException;
 
 	public void addSystemAttribute(String name,String type) throws JasperException;
+	public void originateSystemAttribute(String name);
 	public String getSystemAttribute(String name);
 
-	public void addVariableType(VariableType variableType) throws JasperException;
-	public VariableType getVariableType(String name) throws JasperException;
+	public void addVariableType(VariableType variableType);
+	public VariableType getVariableType(String name);
+	void modifyVariableType(VariableType type);
 
 	public void setObject(String name,Object obj);
 	public Object getObject(String name);

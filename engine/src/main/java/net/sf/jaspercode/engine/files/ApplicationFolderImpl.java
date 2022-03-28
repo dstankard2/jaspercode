@@ -2,13 +2,13 @@ package net.sf.jaspercode.engine.files;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import net.sf.jaspercode.api.BuildContext;
 import net.sf.jaspercode.api.config.BuildComponent;
-import net.sf.jaspercode.api.config.ComponentSet;
 import net.sf.jaspercode.api.resources.ApplicationFolder;
 import net.sf.jaspercode.engine.processing.BuildComponentItem;
 
@@ -48,6 +48,11 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 		this.userFiles.remove(name);
 	}
 
+	public boolean isIgnore(String filename) {
+		if (ignoreFiles.contains(filename)) return true;
+		return false;
+	}
+
 	// TODO: Calculate property map once here when jasper properties is set
 	public void setJasperProperties(JasperPropertiesFile jasperProperties) {
 		this.jasperProperties = jasperProperties;
@@ -59,6 +64,17 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 		else if (logLevel.equalsIgnoreCase("INFO")) this.setLogLevel("INFO");
 		else if (logLevel.equalsIgnoreCase("DEBUG")) this.setLogLevel("DEBUG");
 		else if (logLevel.equalsIgnoreCase("WARN")) this.setLogLevel("WARN");
+		
+		if (jasperProperties!=null) {
+			String ig = jasperProperties.getProperties().get("ignore");
+			if (ig!=null) {
+				this.ignoreFiles.addAll(Arrays.asList(ig.split(",")));
+			} else {
+				this.ignoreFiles.clear();
+			}
+		} else {
+			this.ignoreFiles.clear();
+		}
 	}
 
 	public void setLogLevel(String logLevel) {
@@ -257,10 +273,7 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 				ret = parent.getCurrentBuildComponent();
 			} else {
 				BuildComponent buildComp = new DefaultBuildComponent();
-				ComponentSet componentSet = new ComponentSet();
-				componentSet.getComponent().add(buildComp);
-				ComponentFile dummyFile = new ComponentFile(componentSet, null, this);
-				ret = new BuildComponentItem(-99, buildComp, null, null, null, dummyFile);
+				ret = new BuildComponentItem(buildComp, this);
 				ret.init();
 			}
 		}
@@ -289,19 +302,6 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 	@Override
 	public ApplicationFolderImpl getFolder() {
 		return this.getParent();
-	}
-
-	@Override
-	public void markForReadAgain() {
-		userFiles.entrySet().stream().forEach(f -> {
-			f.getValue().markForReadAgain();
-		});
-		subFolders.entrySet().stream().forEach(f -> {
-			f.getValue().markForReadAgain();
-		});
-		componentFiles.entrySet().stream().forEach(f -> {
-			f.getValue().markForReadAgain();
-		});
 	}
 
 }

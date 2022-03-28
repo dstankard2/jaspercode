@@ -38,7 +38,7 @@ public class JasperUtils {
 		
 		return ret;
 	}
-
+	
 	/**
 	 * Assuming that the type name if a variable type name (generally 
 	 * upper camel), returns the lower camel variation.
@@ -77,6 +77,14 @@ public class JasperUtils {
 		return ret;
 	}
 	
+	/**
+	 * Read a list of comma-separated parameters.  Each parameter can be of format "name" or "name:type" where name is a system attribute.
+	 * The types returned should not be modifying without first informing the ProcessorContext
+	 * @param paramString
+	 * @param ctx
+	 * @return
+	 * @throws JasperException
+	 */
 	public static List<AttribEntry> readParametersAsList(String paramString,ProcessorContext ctx) throws JasperException {
 		List<AttribEntry> ret = new ArrayList<>();
 		
@@ -98,7 +106,7 @@ public class JasperUtils {
 				if (typeName.startsWith("list/")) {
 					ListType listType = (ListType)type;
 					String elementTypeName = typeName.substring(5);
-					VariableType elementType = JasperUtils.getType(VariableType.class, elementTypeName, ctx);
+					VariableType elementType = getType(VariableType.class, elementTypeName, ctx);
 					type = listType.getListTypeWithElementTypName(elementType);
 				}
 				ctx.addSystemAttribute(name, typeName);
@@ -111,10 +119,9 @@ public class JasperUtils {
 					throw new JasperException("Couldn't find type for attribute '"+part+"'");
 				}
 				VariableType type = JasperUtils.getType(VariableType.class, typeName, ctx);
-				//VariableType type = ctx.getVariableType(typeName);
 				if ((type instanceof ListType) && (typeName.startsWith("list/"))) {
 					String elementTypeName = typeName.substring(5);
-					VariableType elementType = JasperUtils.getType(VariableType.class, elementTypeName, ctx);
+					VariableType elementType = getType(VariableType.class, elementTypeName, ctx);
 					ListType listType = (ListType)type;
 					type = listType.getListTypeWithElementTypName(elementType);
 				}
@@ -174,6 +181,21 @@ public class JasperUtils {
 		return ret;
 	}
 	
+	public static HashMap<String,String> readParametersAsMap(String paramString,ProcessorContext ctx) throws JasperException {
+		HashMap<String,String> ret = new HashMap<>();
+		String params[] = paramString.split(",");
+		if (paramString.trim().length()==0) return ret;
+		
+		for(String p : params) {
+			int i = p.indexOf("=");
+			String name = p.substring(0, i);
+			String value = p.substring(i+1);
+			ret.put(name, value);
+		}
+		
+		return ret;
+	}
+	
 	public static String getObjectName(String ref) throws JasperException {
 		String ret = null;
 		int i = ref.indexOf('.');
@@ -194,16 +216,27 @@ public class JasperUtils {
 		return ret;
 	}
 
-	public static HashMap<String,String> readParametersAsMap(String paramString,ProcessorContext ctx) throws JasperException {
-		HashMap<String,String> ret = new HashMap<>();
-		String params[] = paramString.split(",");
-		if (paramString.trim().length()==0) return ret;
+	public static String evaluateReference(String ref,CodeExecutionContext execCtx) throws JasperException {
+		String ret = null;
 		
-		for(String p : params) {
-			int i = p.indexOf("=");
-			String name = p.substring(0, i);
-			String value = p.substring(i+1);
-			ret.put(name, value);
+		String parts[] = ref.split("\\.");
+		if (parts.length==1) {
+			ret = ref;
+		} else {
+			DataObjectType parentType = null;
+			String parentTypeName = null;
+			for(String part : parts) {
+				if (ret==null) {
+					ret = part;
+					parentTypeName = execCtx.getVariableType(part);
+					parentType = execCtx.getType(DataObjectType.class, parentTypeName);
+				} else {
+					if (parentType.getAttributeType(part)==null) {
+						throw new JasperException("Couldn't evaluate reference '"+ref+"' - type '"+parentTypeName+"' didn't have an attribute called '"+part+"'");
+					}
+					ret = parentType.getCodeToRetrieveAttribute(ret, part, null, execCtx);
+				}
+			}
 		}
 		
 		return ret;
@@ -249,6 +282,8 @@ public class JasperUtils {
 		return ret;
 	}
 	
+	/* TODO: Fix this file.  Determine what to do about type dependencies vs originators
+
 	public static String getTypeForRef(String ref,ProcessorContext ctx) throws JasperException {
 		String ret = null;
 		String parts[] = ref.split("\\.");
@@ -276,32 +311,6 @@ public class JasperUtils {
 		return ret;
 	}
 
-	public static String evaluateReference(String ref,CodeExecutionContext execCtx) throws JasperException {
-		String ret = null;
-		
-		String parts[] = ref.split("\\.");
-		if (parts.length==1) {
-			ret = ref;
-		} else {
-			DataObjectType parentType = null;
-			String parentTypeName = null;
-			for(String part : parts) {
-				if (ret==null) {
-					ret = part;
-					parentTypeName = execCtx.getVariableType(part);
-					parentType = execCtx.getType(DataObjectType.class, parentTypeName);
-				} else {
-					if (parentType.getAttributeType(part)==null) {
-						throw new JasperException("Couldn't evaluate reference '"+ref+"' - type '"+parentTypeName+"' didn't have an attribute called '"+part+"'");
-					}
-					ret = parentType.getCodeToRetrieveAttribute(ret, part, null, execCtx);
-				}
-			}
-		}
-		
-		return ret;
-	}
-	
 	/**
 	 * Does the data object type have the super
 	 * @param type
@@ -309,7 +318,7 @@ public class JasperUtils {
 	 * @param ctx
 	 * @return
 	 * @throws JasperException
-	 */
+	 //
 	public static boolean isSubclass(DataObjectType type,String superTypeName,ProcessorContext ctx) throws JasperException {
 		boolean ret = false;
 		
@@ -319,7 +328,7 @@ public class JasperUtils {
 				return true;
 			}
 			for(String typeName : typeNames) {
-				DataObjectType s = JasperUtils.getType(DataObjectType.class, typeName, ctx);
+				DataObjectType s = JasperUtils.getType(DataObjectType.class, typeName, ctx, true);
 				if (isSubclass(s, superTypeName,ctx)) {
 					return true;
 				}
@@ -348,4 +357,5 @@ public class JasperUtils {
 		
 		return ret;
 	}
+*/
 }

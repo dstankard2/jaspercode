@@ -2,31 +2,28 @@ package net.sf.jaspercode.engine.processing;
 
 import java.util.Map;
 
-import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.exception.JasperException;
 import net.sf.jaspercode.api.resources.FolderWatcher;
+import net.sf.jaspercode.api.ProcessorContext;
 import net.sf.jaspercode.engine.JasperResources;
-import net.sf.jaspercode.engine.files.ComponentFile;
+import net.sf.jaspercode.engine.files.ApplicationFolderImpl;
 import net.sf.jaspercode.engine.files.UserFile;
 
 public class FolderWatcherProcessable extends ProcessableBase {
+	
+	private String filePath;
+	private FolderWatcher folderWatcher;
+	private Map<String,String> configs;
+	private ApplicationFolderImpl folder;
 
-	private FolderWatcher folderWatcher = null;
-	private String userFilePath = null;
-	private Component component = null;
-
-	public FolderWatcherProcessable(int itemId,ProcessableContext processableContext,
-			Component component, ComponentFile originatorFile, Map<String,String> configs,String userFilePath,
-			FolderWatcher folderWatcher,JasperResources jasperResources) {
-		super(itemId, processableContext, originatorFile, jasperResources);
-		this.userFilePath = userFilePath;
+	public FolderWatcherProcessable(int itemId, ProcessableContext ctx, Map<String,String> configs,
+			JasperResources jasperResources, String filePath, FolderWatcher folderWatcher, 
+			ApplicationFolderImpl folder) {
+		super(itemId, configs, ctx, jasperResources);
+		this.filePath = filePath;
 		this.folderWatcher = folderWatcher;
-		this.log = new ProcessorLog(getName());
-		this.component = component;
-	}
-
-	public String getUserFilePath() {
-		return userFilePath;
+		this.configs = configs;
+		this.folder = folder;
 	}
 
 	@Override
@@ -36,36 +33,35 @@ public class FolderWatcherProcessable extends ProcessableBase {
 
 	@Override
 	public String getName() {
-		return folderWatcher.getName()+"["+userFilePath+"]";
+		return "FolderWatcher["+filePath+"]";
 	}
 
 	@Override
 	public boolean process() {
-		boolean ret = false;
-		Map<String,String> configs = ProcessingUtilities.getConfigs(originatorFile, component);
-		changes = new ProcessableChanges(itemId, originatorFile, component);
+		boolean ret = true;
 		
-		ret = ProcessingUtilities.populateConfigurations(folderWatcher, log, configs);
-		if (ret) {
-			try {
-				UserFile userFile = (UserFile)processableCtx.getUserFile(userFilePath);
-				ProcessorContextImpl c = new ProcessorContextImpl(itemId, processableCtx, jasperResources, log, folder, configs, changes);
-				folderWatcher.process(c, userFile);
-				ret = true;
-			} catch(JasperException e) {
-				// TODO: Have to produce error condition in caller
-				this.log.error(e.getMessage(), e);
+		changes = new ProcessableChanges(itemId);
+		
+		ProcessorContext procCtx = new ProcessorContextImpl(ctx,  jasperResources, log, configs, folder, changes);
+		
+		try {
+			UserFile userFile = ctx.getUserFile(filePath);
+			if (userFile!=null) {
+				folderWatcher.process(procCtx,  userFile);
+			} else {
 				ret = false;
 			}
-		}
-		
-		if (ret) {
-			this.state = ProcessingState.COMPLETE;
-		} else {
-			this.state = ProcessingState.ERROR;
+		} catch(JasperException e) {
+			this.log.error("Exception in processing of folder watcher", e);
+			ret = false;
 		}
 
 		return ret;
+	}
+
+	@Override
+	public ApplicationFolderImpl getFolder() {
+		return folder;
 	}
 
 }

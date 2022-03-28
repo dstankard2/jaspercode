@@ -41,9 +41,4 @@ public class SystemAttributesFile implements WatchedResource {
 		return folder;
 	}
 
-	@Override
-	public void markForReadAgain() {
-		lastModified = 0L;
-	}
-
 }

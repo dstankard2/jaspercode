@@ -1,13 +1,31 @@
-<html>
 
-	<head>
-	<title>Hello world</title>
-	</head>
-	
-	
-	<body>
-	This is a test.
-	</body>
+<html>
+<head>
+	<title>JasperCode Example 1 - Library</title>
+	<link href="css/index.css" rel="stylesheet" type="text/css" />
+
+<script type='module' async>
+
+	import {BookDisplayPage} from './js/modules/modules.js';
+	import {LibrarianModule} from './js/ws_clients.js';
+	import {EventDispatcher} from './js/eventDispatcher.js';
+
+	window.librarianModule = LibrarianModule();
+	window.EventDispatcher = EventDispatcher;
+	let cont = document.getElementById('container');
+	let bookDisplayPage = BookDisplayPage();
+	bookDisplayPage.init(cont);
+
+</script>
+
+</head>
+
+<body>
+
+<div id='container'>
+</div>
+
+</body>
 
 </html>
 

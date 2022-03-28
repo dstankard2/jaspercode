@@ -1,319 +1,296 @@
 package net.sf.jaspercode.engine.application;
 
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
-import java.util.Map.Entry;
 
 import net.sf.jaspercode.api.config.ComponentSet;
 import net.sf.jaspercode.engine.ComponentFileReader;
 import net.sf.jaspercode.engine.EngineInitException;
 import net.sf.jaspercode.engine.JasperResources;
-import net.sf.jaspercode.engine.exception.EngineException;
 import net.sf.jaspercode.engine.files.ApplicationFolderImpl;
 import net.sf.jaspercode.engine.files.ComponentFile;
 import net.sf.jaspercode.engine.files.JasperPropertiesFile;
 import net.sf.jaspercode.engine.files.SystemAttributesFile;
 import net.sf.jaspercode.engine.files.UserFile;
-import net.sf.jaspercode.engine.files.WatchedResource;
+import net.sf.jaspercode.engine.processing.AddedFile;
+import net.sf.jaspercode.engine.processing.FileChange;
+import net.sf.jaspercode.engine.processing.RemovedFile;
 
-//Manages reading of files from the input directory
 public class ResourceManager {
-	private ApplicationFolderImpl applicationFolder;
-	//private JasperResources jasperResources = null;
-	private ResourceContext ctx = null;
-	private ComponentFileReader componentFileReader = null;
+	
+	File directory;
+	ComponentFileReader componentFileReader;
+	ApplicationFolderImpl folder = null;
+	SystemAttributesFile attsFile = null;
 
-	public ResourceManager(File rootFolder, JasperResources jasperResources, ResourceContext ctx) throws EngineInitException {
-		this.applicationFolder = new ApplicationFolderImpl(rootFolder, null);
-		//this.jasperResources = jasperResources;
-		this.ctx = ctx;
+	public ResourceManager(File applicationFolder, JasperResources jasperResources) throws EngineInitException {
+		this.directory = applicationFolder;
 		this.componentFileReader = new ComponentFileReader(jasperResources.getXmlConfigClasses());
-	}
-	
-	public void scanForConfigChanges(SystemAttributesFile attributesFile) throws EngineException {
-		scanForConfigChanges(applicationFolder, attributesFile);
-	}
-	
-	private void scanForConfigChanges(ApplicationFolderImpl folder, SystemAttributesFile attributesFile) throws EngineException {
-		File folderFile = folder.getFolderFile();
-		File[] contents = folderFile.listFiles();
-		
-		boolean isRoot = folder == applicationFolder;
-		
-		// Handle jasper properties file
-		JasperPropertiesFile props = folder.getJasperPropertiesFile();
-		File propFile = getFile(contents, "jasper.properties");
-		if ((propFile==null) && (props!=null)) {
-			folder.setJasperProperties(null);
-			folder.setIgnoreFiles(new ArrayList<>());
-			folder.markForReadAgain();
-		} else if ((propFile!=null) && (props==null)) {
-			folder.setJasperProperties(readJasperProperties(propFile, folder));
-			folder.markForReadAgain();
-		} else if ((props==null) && (propFile==null)) {
-			// no-op
-		} else if (props.getLastModified() < propFile.lastModified()) {
-			folder.setJasperProperties(readJasperProperties(propFile, folder));
-			folder.markForReadAgain();
-		}
-
-		// Check system attributes file
-		File attrFile = getFile(contents, "systemAttributes.properties");
-		if (isRoot) {
-			if ((attrFile==null) && (attributesFile==null)) {
-				// no-op
-			} else if ((attrFile==null) && (attributesFile!=null)) {
-				ctx.updateSystemAttributesFile(null);
-				folder.markForReadAgain();
-			} else if ((attrFile!=null) && (attributesFile==null)) {
-				SystemAttributesFile f = createSystemAttributesFile(attrFile, folder);
-				ctx.updateSystemAttributesFile(f);
-				folder.markForReadAgain();
-			} else if ((attributesFile.getLastModified() < attrFile.lastModified())) {
-				SystemAttributesFile f = createSystemAttributesFile(attrFile, folder);
-				ctx.updateSystemAttributesFile(f);
-				folder.markForReadAgain();
-			}
-		}
-		
-		// Look at subdirectories
-		for(File f : contents) {
-			if (f.isDirectory()) {
-				String name = f.getName();
-				ApplicationFolderImpl sub = folder.getSubFolders().get(name);
-				if (sub==null) {
-					sub = new ApplicationFolderImpl(f, folder);
-					folder.getSubFolders().put(name, sub);
-				}
-				scanForConfigChanges(sub, attributesFile);
-			}
-		}
-	}
-	
-	protected SystemAttributesFile createSystemAttributesFile(File file,ApplicationFolderImpl folder) throws EngineException {
-		SystemAttributesFile ret = null;
-		
-		if (file.isDirectory()) {
-			throw new EngineException("File '"+file.getAbsolutePath()+"' is not a valid properties file");
-		}
-		Properties props = new Properties();
-		FileReader reader = null;
-		ret = new SystemAttributesFile(new HashMap<>(), file.lastModified(), folder);
-		
-		try {
-			reader = new FileReader(file);
-			props.load(reader);
-
-			for(Object key : props.keySet()) {
-				String value = props.getProperty(key.toString());
-				ret.getSystemAttributes().put(key.toString(), value);
-			}
-		} catch(IOException e) {
-			throw new EngineException("Couldn't read attributes file '"+file.getAbsolutePath()+"'",e);
-		} finally {
-			if (reader!=null) {
-				try {
-					reader.close();
-				} catch(Exception e) { }
-			}
-		}
-
-		return ret;
-	}
-	
-	protected JasperPropertiesFile readJasperProperties(File file,ApplicationFolderImpl folder) throws EngineException {
-		Properties props = new Properties();
-		JasperPropertiesFile ret = null;
-		FileReader reader = null;
-		
-		try {
-			ret = new JasperPropertiesFile(new HashMap<>(), file.lastModified(), folder);
-
-			reader = new FileReader(file);
-			props.load(reader);
-			for(Object key : props.keySet()) {
-				String value = props.getProperty(key.toString());
-				ret.getProperties().put(key.toString(), value);
-			}
-
-			// Evaluate ignore files in jasper.properties
-			String ignoreStr = ret.getProperties().get("ignore");
-			folder.getIgnoreFiles().clear();
-			if (ignoreStr!=null) {
-				String ignores[] = ignoreStr.split(",");
-				for(String ig : ignores) {
-					folder.getIgnoreFiles().add(ig);
-				}
-			}
-		} catch(IOException e) {
-			throw new EngineException("Couldn't read properties '"+file.getAbsolutePath()+"'",e);
-		} finally {
-			if (reader!=null) {
-				try {
-					reader.close();
-				} catch(Exception e) { }
-			}
-		}
-		return ret;
-	}
-	
-	public void scanForRemovedFiles(List<ResourceChange> changes) {
-		scanForRemovedFiles(applicationFolder, changes);
+		this.folder = new ApplicationFolderImpl(directory, null);
 	}
 
-	private void scanForRemovedFiles(ApplicationFolderImpl folder,List<ResourceChange> changes) {
-		File folderFile = folder.getFolderFile();;
-		File[] files = null;
-		if ((!folderFile.exists()) || (!folderFile.isDirectory())) {
-			files = new File[0];
+	public Map<String,String> getSystemAttributes() {
+		if (attsFile==null) {
+			return new HashMap<>();
 		} else {
-			files = folderFile.listFiles();
+			return attsFile.getSystemAttributes();
 		}
+	}
+
+	public List<FileChange> getFileChanges() {
+		List<FileChange> changes = new ArrayList<>();
 		
-		for(Entry<String,WatchedResource> entry : folder.getFiles().entrySet()) {
-			String name = entry.getKey();
-			WatchedResource res = entry.getValue();
-			if (getFile(files, name)==null) {
-				String path = res.getPath();
-				
-				if (res instanceof ApplicationFolderImpl) {
-					folder.getSubFolders().remove(name);
-					//ApplicationFolderImpl f = (ApplicationFolderImpl)res;
-					//scanForRemovedFiles(f, changes);
-				} else if (res instanceof ComponentFile) {
-					folder.getComponentFiles().remove(name);
-					changes.add(new ResourceChange(path, res, null));
-				} else if (res instanceof UserFile) {
-					folder.getUserFiles().remove(name);
-					changes.add(new ResourceChange(path, res, null));
-				} else if (res instanceof JasperPropertiesFile) {
-					throw new RuntimeException("TODO: Handle removed jasper.properties file");
+		checkFolder(directory, folder, changes);
+		
+		return changes;
+	}
+
+	// The contents of this folder should be removed, and removed files added to changes
+	private void resetFolder(ApplicationFolderImpl folder, List<FileChange> changes) {
+		
+		folder.getSubFolders().entrySet().forEach(e -> {
+			resetFolder(e.getValue(), changes);
+		});
+		folder.getSubFolders().clear();
+		
+		folder.getUserFiles().entrySet().forEach(e -> {
+			changes.add(new RemovedFile(e.getValue()));
+		});
+		folder.getUserFiles().clear();
+
+		folder.getComponentFiles().entrySet().forEach(e -> {
+			changes.add(new RemovedFile(e.getValue()));
+		});
+		folder.getComponentFiles().clear();
+		folder.setJasperProperties(null);
+	}
+
+	private Map<String,String> readProperties(File f) {
+		Properties props = new Properties();
+		Map<String,String> values = new HashMap<>();
+
+		try {
+			try (FileInputStream fin = new FileInputStream(f)) {
+				props.load(fin);
+				props.entrySet().forEach(e -> {
+					values.put(
+							e.getKey() != null ? e.getKey().toString() : "", 
+							e.getValue() != null ? e.getValue().toString() : "");
+				});
+			}
+		} catch(FileNotFoundException e) {
+			// logically can't happen
+		} catch(IOException e) {
+			// TODO: ???
+		}
+
+		return values;
+	}
+
+	private void readSystemAttributesFile(File attrFile, ApplicationFolderImpl rootFolder) {
+		Map<String,String> values = readProperties(attrFile);
+		attsFile = new SystemAttributesFile(values, attrFile.lastModified(), rootFolder);
+	}
+	
+	private JasperPropertiesFile readJasperPropertiesFile(File configFile, ApplicationFolderImpl folder) {
+		JasperPropertiesFile ret = null;
+		Map<String,String> values = readProperties(configFile);
+		
+		ret = new JasperPropertiesFile(values, configFile.lastModified(), folder);
+		
+		return ret;
+	}
+	
+	private File findFile(String name, File dir) {
+		return Arrays.asList(dir.listFiles()).stream().filter(f -> f.getName().equals(name)).findFirst().orElse(null);
+	}
+
+	private void checkFolder(File dir, ApplicationFolderImpl folder, List<FileChange> changes) {
+
+		// Check systemAttributes.properties in the root folder
+		if (folder.getParent()==null) {
+
+			File attrFile = Arrays.asList(dir.listFiles()).stream().filter(f -> f.getName().equals(SystemAttributesFile.SYSTEM_ATTRIBUTES_FILENAME)).findFirst().orElse(null);
+			if (attrFile!=null) {
+				// File currently exists from previous scan
+				if (attsFile==null) {
+					resetFolder(folder, changes);
+					readSystemAttributesFile(attrFile, folder);
+				} else {
+					if (attsFile.getLastModified() < attrFile.lastModified()) {
+						// FIle has been updated
+						resetFolder(folder, changes);
+						readSystemAttributesFile(attrFile, folder);
+					}
 				}
-				
+			} else {
+				// File doesn't exist from previous scan
+				if (attsFile==null) {
+					// no-op - it's still not there
+				} else {
+					resetFolder(folder, changes);
+					attsFile = null;
+				}
 			}
 		}
 		
-		folder.getSubFolders().forEach((name, sub) -> {
-			scanForRemovedFiles(sub, changes);
+		File configFile = Arrays.asList(dir.listFiles()).stream().filter(f -> f.getName().equals(JasperPropertiesFile.JASPER_PROPERTIES_FILE)).findFirst().orElse(null);
+		if (configFile!=null) {
+			// File is found
+			if (folder.getJasperPropertiesFile() == null) {
+				// jasper.properties was added
+				resetFolder(folder, changes);
+				folder.setJasperProperties(readJasperPropertiesFile(configFile, folder));
+			} else {
+				if (folder.getJasperPropertiesFile().getLastModified() < configFile.lastModified()) {
+					resetFolder(folder, changes);
+					folder.setJasperProperties(readJasperPropertiesFile(configFile, folder));
+				}
+			}
+		} else {
+			if (folder.getJasperPropertiesFile() == null) {
+				// no-op - it's still not there
+			} else {
+				resetFolder(folder, changes);
+				folder.setJasperProperties(null);
+			}
+		}
+
+		// Check for files and folders that have been removed.
+		List<String> toRemove = new ArrayList<>();
+		folder.getSubFolders().entrySet().forEach(e -> {
+			String name = e.getKey();
+			File f = findFile(name, dir);
+			if ((f==null) || (f.isDirectory()==false)) {
+				toRemove.add(name);
+			}
+			else if (folder.isIgnore(name)) {
+				toRemove.add(name);
+			}
+		});
+		toRemove.forEach(name -> {
+			resetFolder(folder.getSubFolders().get(name), changes);
+			folder.getSubFolders().remove(name);
+		});
+		toRemove.clear();
+		folder.getComponentFiles().entrySet().forEach(e -> {
+			String name = e.getKey();
+			File f = findFile(name, dir);
+			if ((f==null) || f.isDirectory()) {
+				toRemove.add(name);
+			} else if (folder.isIgnore(name)) {
+				toRemove.add(name);
+			}
+		});
+		toRemove.forEach(name -> {
+			changes.add(new RemovedFile(folder.getComponentFiles().get(name)));
+			folder.getComponentFiles().remove(name);
+		});
+		toRemove.clear();
+
+		folder.getUserFiles().entrySet().forEach(e -> {
+			String name = e.getKey();
+			File f = findFile(name, dir);
+			if ((f==null) || (f.isDirectory())) {
+				toRemove.add(name);
+			} else if (folder.isIgnore(name)) {
+				toRemove.add(name);
+			}
+		});
+		toRemove.forEach(name -> {
+			changes.add(new RemovedFile(folder.getUserFiles().get(name)));
+			folder.getUserFiles().remove(name);
+		});
+
+		// Handle pre-existing and added subfolders
+		Arrays.asList(dir.listFiles()).forEach(f -> {
+			if ((f.isDirectory()) && (!folder.isIgnore(f.getName()))) {
+				ApplicationFolderImpl subFolder = folder.getSubFolders().get(f.getName());
+				if (subFolder==null) {
+					subFolder = new ApplicationFolderImpl(f, folder);
+					folder.getSubFolders().put(f.getName(), subFolder);
+				}
+				checkFolder(f, subFolder, changes);
+			}
+		});
+		
+		// Read files in the directory.  Check for files that have been changed.  Remove them.
+		Arrays.asList(dir.listFiles()).forEach(f -> {
+			if (f.isDirectory()) return;
+			long lastModified = f.lastModified();
+			String name = f.getName();
+			
+			if (name.equals(SystemAttributesFile.SYSTEM_ATTRIBUTES_FILENAME)) return;
+			if (name.equals(JasperPropertiesFile.JASPER_PROPERTIES_FILE)) return;
+
+			if (folder.getComponentFiles().get(name)!=null) {
+				ComponentFile cf = folder.getComponentFiles().get(name);
+				if (cf.getLastModified() < lastModified) {
+					changes.add(new RemovedFile(cf));
+					folder.getComponentFiles().remove(name);
+				}
+			}
+			if (folder.getUserFiles().get(name)!=null) {
+				UserFile uf = folder.getUserFiles().get(name);
+				if (uf.getLastModified() < lastModified) {
+					changes.add(new RemovedFile(uf));
+					folder.getUserFiles().remove(name);
+				}
+			}
+		});
+		
+		// Read files in the directory.  Check for files that have been added (this includes changed).  Add them.
+		// Check them against ignore files in this folder
+		Arrays.asList(dir.listFiles()).forEach(f -> {
+			
+			// First check ignore list.
+			if (folder.isIgnore(f.getName())) return;
+			
+			if (f.isDirectory()) {
+				ApplicationFolderImpl subFolder = folder.getSubFolders().get(f.getName());
+				if (subFolder==null) {
+					subFolder = new ApplicationFolderImpl(f, folder);
+					folder.getSubFolders().put(f.getName(), subFolder);
+				}
+				checkFolder(f, subFolder, changes);
+			} else {
+				// A file, not a folder
+				if (f.getName().equals(SystemAttributesFile.SYSTEM_ATTRIBUTES_FILENAME)) {
+					return;
+				} else if (f.getName().equals(JasperPropertiesFile.JASPER_PROPERTIES_FILE)) {
+					return;
+				}
+				
+				if (folder.getComponentFiles().get(f.getName())!=null) {
+					return;
+				}
+				if (folder.getUserFiles().get(f.getName())!=null) {
+					return;
+				}
+				ComponentFile compFile = null;
+				if (f.getName().endsWith(".xml")) {
+					ComponentSet set = componentFileReader.readFile(f);
+					if (set!=null) {
+						compFile = new ComponentFile(set, f, folder);
+						folder.getComponentFiles().put(f.getName(), compFile);
+						changes.add(new AddedFile(compFile));
+						return;
+					}
+				}
+				UserFile uf = new UserFile(f, folder);
+				folder.getUserFiles().put(f.getName(), uf);
+				changes.add(new AddedFile(uf));
+			}
 		});
 	}
 
-	public void scanForModifiedFiles(List<ResourceChange> changes) throws EngineException {
-		scanForModifiedFiles(applicationFolder, changes);
-	}
-
-	private void scanForModifiedFiles(ApplicationFolderImpl folder,List<ResourceChange> results) throws EngineException {
-		File folderFile = folder.getFolderFile();;
-		File[] files = null;
-		
-		if ((!folderFile.exists()) || (!folderFile.isDirectory())) {
-			files = new File[0];
-		} else {
-			files = folderFile.listFiles();
-		}
-		for(Entry<String,WatchedResource> entry : folder.getFiles().entrySet()) {
-			String name = entry.getKey();
-			WatchedResource oldFile = entry.getValue();
-			File file = getFile(files, name);
-			if (file==null) continue;
-			if (oldFile instanceof ApplicationFolderImpl) {
-				scanForModifiedFiles((ApplicationFolderImpl)oldFile, results);
-			}
-			else if (oldFile.getLastModified() < file.lastModified()) {
-				String path = folder.getPath()+oldFile.getName();
-				folder.removeResource(name);
-				WatchedResource newFile = createWatchedResource(folder, file);
-				if (newFile!=null) {
-					results.add(new ResourceChange(path, oldFile, newFile));
-				}
-			}
-		}
-	}
-	
-	protected WatchedResource createWatchedResource(ApplicationFolderImpl folder, File file) {
-		WatchedResource ret = null;
-		if (file.getName().equals("jasper.properties")) return null;
-		else if (file.getName().contentEquals("systemAttributes.properties")) return null;
-
-		if (!file.getName().endsWith(".xml")) {
-			ret = new UserFile(file,folder);
-			folder.getUserFiles().put(file.getName(), (UserFile)ret);
-		} else {
-			ComponentSet comps = componentFileReader.readFile(file);
-			if (comps!=null) {
-				ret = new ComponentFile(comps,file,folder);
-				folder.getComponentFiles().put(file.getName(), (ComponentFile)ret);
-			} else {
-				ret = new UserFile(file,folder);
-				folder.getUserFiles().put(file.getName(), (UserFile)ret);
-			}
-		}
-		
-		return ret;
-	}
-	
-	public void scanForAddedFiles(List<ResourceChange> changes) throws EngineException {
-		scanForAddedFiles(applicationFolder, changes);
-	}
-
-	private void scanForAddedFiles(ApplicationFolderImpl folder,List<ResourceChange> results) throws EngineException {
-		File folderFile = folder.getFolderFile();;
-		File[] files = null;
-		
-		if ((!folderFile.exists()) || (!folderFile.isDirectory())) {
-			files = new File[0];
-		} else {
-			files = folderFile.listFiles();
-		}
-		
-		// We'll handle folders after files are handled
-		List<File> directories = new ArrayList<>();
-		
-		for(File file : files) {
-			String name = file.getName();
-			if (name.equals("jasper.properties")) continue;
-			if (name.equals("systemAttributes.properties")) continue;
-			if (folder.getIgnoreFiles().contains(name)) continue;
-			if (file.isDirectory()) {
-				directories.add(file);
-			}
-			else if (folder.getFiles().get(name)==null) {
-				ComponentSet set = componentFileReader.readFile(file);
-				if (set==null) {
-					UserFile f = new UserFile(file, folder);
-					folder.getUserFiles().put(name, f);
-					results.add(new ResourceChange(f.getPath(), null, f));
-				} else {
-					ComponentFile f = new ComponentFile(set, file, folder);
-					folder.getComponentFiles().put(name, f);
-					results.add(new ResourceChange(f.getPath(), null, f));
-				}
-			}
-		}
-		for (File dir : directories) {
-			String name = dir.getName();
-		//directories.forEach(dir -> {
-			ApplicationFolderImpl sub = folder.getSubFolders().get(name);
-			if (sub==null) {
-				sub = new ApplicationFolderImpl(dir, folder);
-				folder.getSubFolders().put(name, sub);
-			}
-			scanForAddedFiles(sub, results);
-		}
-	}
-	
-	protected File getFile(File[] files, String name) {
-		for(File f : files) {
-			if (f.getName().equals(name)) {
-				return f;
-			}
-		}
-		return null;
-	}
-
 }
+

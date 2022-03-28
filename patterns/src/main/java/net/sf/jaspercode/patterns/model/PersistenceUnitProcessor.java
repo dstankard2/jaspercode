@@ -52,6 +52,10 @@ public class PersistenceUnitProcessor implements ComponentProcessor {
 
 		TableSet tableSet = ModelUtils.getTableSet(tableSetId, ctx);
 
+		if (tableSet==null) {
+			throw new JasperException("Could find table definitions for table set named '"+tableSetId+"'");
+		}
+
 		ctx.getLog().info("Processing persistence unit '"+persistenceUnit.getName()+"'");
 
 		persistenceXml = ModelUtils.getPersistenceXml(ctx);
@@ -73,6 +77,8 @@ public class PersistenceUnitProcessor implements ComponentProcessor {
 		if (persistenceUnit.getJndiDataSource()!=null) {
 			String name = persistenceUnit.getJndiDataSource();
 			pu.addElement("non-jta-data-source").setText(name);
+		} else {
+			throw new JasperException("A persistence unit requires a JNDI data source (with property 'jpa.jndiDataSource'), or the database connection will not be available.");
 		}
 		
 		for(TableInfo ti : tableSet.getTableInfos()) {
@@ -95,6 +101,7 @@ public class PersistenceUnitProcessor implements ComponentProcessor {
 
 		ctx.getBuildContext().addDependency("jpa");
 		ctx.getBuildContext().addDependency(jpaImplementation);
+		ctx.getBuildContext().addDependency("jaxb-impl");
 
 		ModelUtils.enableJpa(ctx);
 		EntityManagerType emType = new EntityManagerType(puName,tableSet,ctx.getBuildContext());

@@ -3,53 +3,29 @@ package net.sf.jaspercode.api.snapshot;
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+
+@Builder
+@Data
+@EqualsAndHashCode
+@AllArgsConstructor
+@NoArgsConstructor
 public class SystemAttributeSnapshot {
 
+	@Builder.Default
 	private String name = null;
+	@Builder.Default
 	private String type = null;
+	@Builder.Default
 	private String description = null;
+	@Builder.Default
 	private List<Integer> originators = new ArrayList<>();
+	@Builder.Default
 	private List<Integer> dependants = new ArrayList<>();
 
-	public SystemAttributeSnapshot(String name, String type, String description, List<Integer> originators,
-			List<Integer> dependants) {
-		super();
-		this.name = name;
-		this.type = type;
-		this.description = description;
-		this.originators = originators;
-		this.dependants = dependants;
-	}
-
-	public String getName() {
-		return name;
-	}
-	public void setName(String name) {
-		this.name = name;
-	}
-	public String getType() {
-		return type;
-	}
-	public void setType(String type) {
-		this.type = type;
-	}
-	public String getDescription() {
-		return description;
-	}
-	public void setDescription(String description) {
-		this.description = description;
-	}
-	public List<Integer> getOriginators() {
-		return originators;
-	}
-	public void setOriginators(List<Integer> originators) {
-		this.originators = originators;
-	}
-	public List<Integer> getDependants() {
-		return dependants;
-	}
-	public void setDependants(List<Integer> dependants) {
-		this.dependants = dependants;
-	}
-
 }
+

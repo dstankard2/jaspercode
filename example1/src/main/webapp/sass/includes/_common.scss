@@ -1,0 +1,180 @@
+
+@mixin flexbox($direction) {
+	display: -webkit-flex;
+	display:flex;
+	/*
+	display: -moz-box;
+	display: -ms-flexbox;
+	display: -webkit-flex;
+	*/
+	flex-direction: $direction;
+	align-items: stretch;
+}
+
+@mixin flex($amt) {
+	flex-grow: $amt;
+	flex-shrink: $amt;
+	flex-basis: 0px;
+}
+
+@mixin flex-align-items($alignment) {
+	-webkit-box-align: $alignment;
+	-moz-box-align: $alignment;
+	-webkit-align-items: $alignment;
+	-ms-flex-align: $alignment;
+	align-items: $alignment;
+}
+.flex-align-center {
+	@include flex-align-items(center);
+}
+
+.flex-align-top {
+	@include flex-align-items(flex-start);
+}
+
+.flex-align-bottom {
+	@include flex-align-items(flex-end);
+}
+
+html,body {
+	height: 100%;
+	width: 100%;
+	padding: 0px;margin: 0px;
+}
+div.section {
+	padding: 20px;
+}
+.flexbox-column {
+	@include flexbox(column);
+}
+.flexbox-row {
+	@include flexbox(row);
+}
+.flex {
+	@include flex(1);
+}
+.flex-2 {
+	@include flex(2);
+}
+.flex-3 {
+	@include flex(3);
+}
+.flex-left {
+	align-items: left;
+}
+.flex-right {
+	align-items: right;
+}
+.flex-center {
+	align-items: center;
+}
+
+
+* {
+	font-family: arial,sans-serif;
+	font-color: #444444;
+	font-size: 12px;
+	color: white;
+	cursor: default;
+}
+
+input[type=text] {
+	color: black;
+}
+input[type=password] {
+	color: blue;
+}
+a {
+	cursor: pointer;
+	> i {
+		cursor: pointer;
+	}
+}
+body {
+	//background-color: lightgrey;
+	background-color: black;
+}
+
+.content-area {
+	padding: 10px;
+}
+.scroll-y {
+	overflow-y: auto;
+}
+.scroll-x {
+	overflow-x: auto;
+}
+table {
+	border-collapse: collapse;
+}
+table.detail-table {
+	th {
+		padding: 5px;
+	}
+	td {
+		padding: 5px;
+	}
+}
+
+h1 {
+	font-size: 24px;
+}
+h2 {
+	font-size: 20px;
+}
+
+i.target {
+	cursor: pointer;
+}
+
+.left {
+	float:left;
+}
+.right {
+	float:right;
+}
+.clear-both {
+	clear:both;
+}
+.target {
+	cursor: pointer;
+}
+
+button {
+	color: blue;
+	border-radius: 3px;
+	cursor: pointer;
+}
+button.save-button {
+	border: 1px solid green;
+}
+button.save-button[disabled] {
+	border: 1px solid red;
+	color: red;
+}
+.error {
+	color: red;
+}
+ul.select-list {
+	list-style-type: none;
+	> li {
+		border: 1px solid blue;
+		padding: 2px 5px 2px 5px;
+	}
+	> li.selected {
+		background-color: blue;
+		color: white;
+	}
+}
+div.inline {
+	display:inline;
+}
+ul.inline {
+	> li {
+		display:inline;
+		margin-right: 10px;
+	}
+}
+div.horizontal-divider {
+	padding: 0px 10px 0px 10px;
+}

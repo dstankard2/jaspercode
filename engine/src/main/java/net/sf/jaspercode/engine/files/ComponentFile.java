@@ -53,10 +53,5 @@ public class ComponentFile implements WatchedResource {
 		return folder;
 	}
 
-	@Override
-	public void markForReadAgain() {
-		lastModified = 0L;
-	}
-
 }
 

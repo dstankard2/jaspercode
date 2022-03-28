@@ -7,6 +7,7 @@ public interface Item {
 	int getItemId();
 	int getOriginatorId();
 	String getName();
+	void assignItemId(int itemId);
 
 }
 

@@ -40,9 +40,4 @@ public class JasperPropertiesFile implements WatchedResource {
 		return folder;
 	}
 
-	@Override
-	public void markForReadAgain() {
-		lastModified = 0L;
-	}
-
 }

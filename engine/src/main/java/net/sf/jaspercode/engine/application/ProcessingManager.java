@@ -6,11 +6,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.commons.lang3.tuple.Pair;
+
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import net.sf.jaspercode.api.SourceFile;
 import net.sf.jaspercode.api.config.BuildComponent;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.config.ComponentSet;
 import net.sf.jaspercode.api.logging.ProcessorLogLevel;
 import net.sf.jaspercode.api.plugin.ProcessorLogMessage;
 import net.sf.jaspercode.api.resources.FileProcessor;
@@ -21,10 +26,17 @@ import net.sf.jaspercode.engine.ComponentPattern;
 import net.sf.jaspercode.engine.EngineLanguages;
 import net.sf.jaspercode.engine.EnginePatterns;
 import net.sf.jaspercode.engine.JasperResources;
+import net.sf.jaspercode.engine.exception.StaleObjectException;
+import net.sf.jaspercode.engine.exception.StaleSourceFileException;
+import net.sf.jaspercode.engine.exception.StaleVariableTypeException;
+import net.sf.jaspercode.engine.files.ApplicationFolderImpl;
 import net.sf.jaspercode.engine.files.ComponentFile;
 import net.sf.jaspercode.engine.files.UserFile;
+import net.sf.jaspercode.engine.files.WatchedResource;
+import net.sf.jaspercode.engine.processing.AddedFile;
 import net.sf.jaspercode.engine.processing.BuildComponentItem;
 import net.sf.jaspercode.engine.processing.ComponentItem;
+import net.sf.jaspercode.engine.processing.FileChange;
 import net.sf.jaspercode.engine.processing.FileProcessorRecord;
 import net.sf.jaspercode.engine.processing.FolderWatcherItem;
 import net.sf.jaspercode.engine.processing.FolderWatcherProcessable;
@@ -33,274 +45,134 @@ import net.sf.jaspercode.engine.processing.Processable;
 import net.sf.jaspercode.engine.processing.ProcessableChanges;
 import net.sf.jaspercode.engine.processing.ProcessableContext;
 import net.sf.jaspercode.engine.processing.ProcessingDataManager;
+import net.sf.jaspercode.engine.processing.ProcessingUtilities;
 import net.sf.jaspercode.engine.processing.ProcessorLog;
+import net.sf.jaspercode.engine.processing.RemovedFile;
 
 public class ProcessingManager implements ProcessableContext {
-	private JasperResources jasperResources;
-	private EnginePatterns patterns;
-	private ProcessingContext ctx;
-	private ProcessorLog appLog;
-	private ProcessingDataManager data = null;
+	ProcessingContext ctx;
+	JasperResources jasperResources;
+	EnginePatterns patterns;
+	EngineLanguages languages;
+	ProcessorLog appLog;
+	ProcessingDataManager processingDataManager;
+
+	List<Item> items = new ArrayList<>();
+	List<Processable> toProcess = new ArrayList<>();
 	
-	private List<ComponentFile> componentFilesAdded = new ArrayList<>();
-	private List<ComponentFile> componentFilesRemoved = new ArrayList<>();
-	private List<UserFile> userFilesAdded = new ArrayList<>();
-	private List<UserFile> userFilesRemoved = new ArrayList<>();
-
-	// Processables that have committed changes
-	private List<Processable> processed = new ArrayList<>();
-	// Processables that do not have committed changes
-	private List<Processable> toProcess = new ArrayList<>();
-	// Items that have been detected by processing manager, derived from component files
-	private List<Item> items = new ArrayList<>();
-
-	private List<BuildComponentItem> buildItemsToInit = new ArrayList<>();
-	private List<BuildComponentItem> buildItemsToGenerate = new ArrayList<>();
-
-	public ProcessingManager(JasperResources jasperResources,EnginePatterns patterns,EngineLanguages languages,
-			ProcessingContext ctx, ProcessorLog appLog) {
+	List<BuildComponentItem> buildsToInit = new ArrayList<>();
+	List<BuildComponentItem> buildsToProcess = new ArrayList<>();
+	
+	// Modifiable data added in this run - If a second item tries to modify it, then the item must be re-evaluated
+	private List<String> objectsAddedThisRun = new ArrayList<>();
+	private List<String> sourceFilesAddedThisRun = new ArrayList<>();
+	private List<VariableType> typesAddedThisRun = new ArrayList<>();
+	
+	public ProcessingManager(ProcessingContext ctx, JasperResources jasperResources, EnginePatterns patterns,
+			EngineLanguages languages, ProcessorLog appLog) {
+		this.ctx = ctx;
 		this.jasperResources = jasperResources;
 		this.patterns = patterns;
-		this.ctx = ctx;
+		this.languages = languages;
 		this.appLog = appLog;
-		this.data = new ProcessingDataManager(languages, jasperResources);
-	}
-
-	/* Public API for ApplicationManager */
-	
-	// Remove any FileProcessor for this file path
-	public void removeUserFile(UserFile userFile) {
-		this.userFilesRemoved.add(userFile);
-	}
-
-	// Check folder watchers for this path
-	public void addUserFile(UserFile userFile) {
-		this.userFilesAdded.add(userFile);
-	}
-
-	// Add these components to be processed.
-	public void addComponentFile(ComponentFile file) {
-		this.componentFilesAdded.add(file);
+		this.processingDataManager = new ProcessingDataManager(languages, jasperResources);
 	}
 	
-	// Remove items for the components in this file
-	public void removeComponentFile(ComponentFile file) {
-		this.componentFilesRemoved.add(file);
+	private int nextItemId = 1;
+	public int newItemId() {
+		return nextItemId++;
 	}
 	
-	public void processChanges() {
+	// Since items are being both added and removed, we first determine all changes to be made (add/remove) and then 
+	// at the end remove all changes and add all new additions
+	// This avoids a problem of trying to add something that is intended to be removed but hasn't been yet
+	public void processChanges(Map<String,String> globalSystemAttributes, List<FileChange> changes) {
 		Set<Item> itemsToAdd = new HashSet<>();
-
-		// Handle userFiles removed
-		for(UserFile f : userFilesRemoved) {
-			itemsToAdd.addAll(userFileRemoved(f));
-		}
-		userFilesRemoved.clear();
-
-		List<Item> itemsToRemove = new ArrayList<>();
-		// Manage component files that have been removed
-		for(ComponentFile file : componentFilesRemoved) {
-			for(Component comp : file.getComponentSet().getComponent()) {
-				ComponentItem item = getComponentItem(comp);
-				if (item!=null) {
-					itemsToRemove.add(item);
-					//itemsToAdd.addAll(removeItem(item.getItemId(), true));
-					//removeItem(item.getItemId(), true);
+		Set<UserFile> userFilesAdded = new HashSet<>();
+		Set<UserFile> userFilesRemoved = new HashSet<>();
+		
+		processingDataManager.setGlobalSystemAttributes(globalSystemAttributes);
+		for(FileChange change : changes) {
+			if (change instanceof AddedFile) {
+				AddedFile f = (AddedFile)change;
+				WatchedResource res = f.getFile();
+				if (res instanceof UserFile) {
+					UserFile userFile = (UserFile)res;
+					userFilesAdded.add(userFile);
+				} else if (res instanceof ComponentFile) {
+					ComponentFile file = (ComponentFile)res;
+					ApplicationFolderImpl folder = file.getFolder();
+					ComponentSet set = file.getComponentSet();
+					if (set!=null) {
+						set.getComponent().forEach(comp -> {
+							int itemId = newItemId();
+							Map<String,String> configs = ProcessingUtilities.getConfigs(file, comp);
+							
+							if (comp instanceof BuildComponent) {
+								BuildComponent build = (BuildComponent)comp;
+								BuildComponentPattern pattern = patterns.getBuildPattern(build.getClass());
+								BuildComponentItem item = new BuildComponentItem(itemId, build, pattern,
+										jasperResources, this, file, configs);
+								itemsToAdd.add(item);
+							} else {
+								ComponentPattern pattern = this.patterns.getPattern((Class<? extends Component>)comp.getClass());
+								ComponentItem item = new ComponentItem(itemId, comp, configs, this, 
+										pattern, jasperResources, -1, folder);
+								itemsToAdd.add(item);
+								//items.add(item);
+								//toProcess.add(item);
+							}
+						});
+					}
 				}
-				BuildComponentItem buildItem = getBuildComponentItem(comp);
-				if (buildItem!=null) {
-					itemsToRemove.add(buildItem);
-				}
-			}
-		}
-		itemsToRemove.forEach(item -> {
-			removeItem(item.getItemId(), true);
-			//itemsToAdd.addAll(removeItem(item.getItemId(), true));
-		});
-		
-		if (componentFilesRemoved.size()>0) {
-			jasperResources.engineDebug("Cleaned out component files and now there are "+this.items.size()+" items");
-		}
-		
-		componentFilesRemoved.clear();
-		
-		// Look for component Files Added - add component entries
-		for(ComponentFile f : componentFilesAdded) {
-			for(Component comp : f.getComponentSet().getComponent()) {
-				addComponent(f, comp);
-			}
-		}
-		componentFilesAdded.clear();
-		
-		// Look for userFiles added - check folder watchers
-		if (userFilesAdded.size()>0) {
-			List<FolderWatcherItem> l = this.getFolderWatchers();
-			for(UserFile f : userFilesAdded) {
-				ctx.writeUserFile(f);
-				if (l.size()>0) {
-					for(FolderWatcherItem item : l) {
-						if (f.getPath().startsWith(item.getPath())) {
-							// If the file was added then add toProcess
-							FolderWatcherProcessable proc = item.getProc(f.getPath());
-							if (proc!=null)
-								toProcess.add(proc);
-						}
+			} else if (change instanceof RemovedFile) {
+				RemovedFile f = (RemovedFile)change;
+				WatchedResource res = f.getFile();
+				if (res instanceof UserFile) {
+					UserFile userFile = (UserFile)res;
+					userFilesRemoved.add(userFile);
+				} else if (res instanceof ComponentFile) {
+					ComponentFile compFile = (ComponentFile)res;
+					if (compFile.getComponentSet() != null) {
+						compFile.getComponentSet().getComponent().forEach(comp -> {
+							ComponentItem item = getComponentItem(comp);
+							if (item!=null) {
+								this.removeItem(item.getItemId(), true);
+							}
+							BuildComponentItem buildItem = getBuildComponentItem(comp);
+							if (buildItem!=null) {
+								this.removeItem(buildItem.getItemId(), true);
+							}
+						});
 					}
 				}
 			}
-			userFilesAdded.clear();
 		}
 
-		// Run processing of items in queue
-		runProcessables();
-	}
-
-	private void addComponent(ComponentFile f, Component comp) {
-		int itemId = newId();
-		if (comp instanceof BuildComponent) {
-			BuildComponent buildComp = (BuildComponent)comp;
-			BuildComponentPattern pattern =  patterns.getBuildPattern(buildComp.getClass());
-			BuildComponentItem i = new BuildComponentItem(itemId, buildComp, pattern, jasperResources, this, f);
-			buildItemsToInit.add(i);
-			items.add(i);
-		} else {
-			ComponentPattern pattern = patterns.getPattern(comp.getClass());
-			ComponentItem item = new ComponentItem(itemId, comp, this, f, pattern, jasperResources, 0);
-			toProcess.add(item);
-			items.add(item);
-		}
-	}
-	
-	private void reAddItem(Item item) {
-		items.add(item);
-		if (item instanceof ComponentItem) {
-			ComponentItem c = (ComponentItem)item;
-			toProcess.add(c);
-			//items.add(c);
-		} else if (item instanceof BuildComponentItem) {
-			BuildComponentItem b = (BuildComponentItem)item;
-			buildItemsToInit.add(b);
-			//items.add(b);
-		} else if (item instanceof FolderWatcherItem) {
-			FolderWatcherItem f = (FolderWatcherItem)item;
-			checkFilesForFolderWatcher(f);
-		}
-	}
-
-	/* End of public API for ApplicationManager */
-
-	protected void runProcessables() {
-		jasperResources.engineDebug("runProcessables - There are "+buildItemsToInit.size()+" builds to init");
-		jasperResources.engineDebug("runProcessables - There are "+buildItemsToGenerate.size()+" builds to generate");
-		jasperResources.engineDebug("runProcessables - There are "+toProcess.size()+" processables to process");
-
-		// Initialize build components to process
-		while(buildItemsToInit.size()>0) {
-			BuildComponentItem b = buildItemsToInit.get(0);
-
-			appLog.info("Initializing build '"+b.getName()+"'");
-			appLog.outputToSystem();
-			ProcessableChanges changes = b.init();
-			if (changes!=null) {
-				buildItemsToGenerate.add(b);
-				buildItemsToInit.remove(b);
-				commitChanges(changes);
-			} else {
-				errorState(b.getLog());
-				return;
-			}
-		}
-		
-		// Run as many processables as we can without error
-		while(toProcess.size()>0) {
-			Collections.sort(toProcess);
-			Processable p = toProcess.get(0);
-			appLog.info("Processing component "+p.getName());
-			appLog.outputToSystem();
-			boolean success = p.process();
-
-			if (success) {
-				ProcessableChanges changes = p.getChanges();
-				toProcess.remove(0);
-				processed.add(p);
-				commitChanges(changes);
-			} else {
-				errorState(p.getLog());
-				return;
-			}
-		}
-
-		// generate builds
-		while(buildItemsToGenerate.size()>0) {
-			BuildComponentItem b = buildItemsToGenerate.get(0);
-			appLog.info("Generating build '"+b.getName()+"'");
-			appLog.outputToSystem();
-			ProcessableChanges changes = b.process();
-
-			if (changes != null) {
-				commitChanges(changes);
-				//commitChanges(b.getChanges());
-				buildItemsToGenerate.remove(b);
-			} else {
-				errorState(b.getLog());
-				return;
-			}
-		}
-	}
-
-	public void commitChanges(ProcessableChanges changes) {
-		int itemId = changes.getItemId();
-		changes.getSourceFiles().forEach(src -> {
-			ctx.writeSourceFile(src);
+		userFilesRemoved.forEach(userFile -> {
+			userFileRemoved(userFile);
 		});
-		data.commitChanges(changes);
-		
-		ComponentFile componentFile = changes.getOriginalFile();
-		Component originalComponent = changes.getOriginalComponent();
-		changes.getComponentsAdded().forEach(comp -> {
-			int id = newId();
-			ComponentPattern pattern = patterns.getPattern(comp.getClass());
-			ComponentItem item = new ComponentItem(id, comp, this, componentFile, pattern, jasperResources, itemId);
-			toProcess.add(item);
-			items.add(item);
+		itemsToAdd.forEach(item -> {
+			this.addItem(item);
 		});
 		
-		changes.getFolderWatchersAdded().forEach(pair -> {
-			String path = pair.getKey();
-			FolderWatcher w = pair.getValue();
-			
-			int id = newId();
-			
-			FolderWatcherItem item = new FolderWatcherItem(id, w, path, this, componentFile,
-					jasperResources, originalComponent, itemId);
-			items.add(item);
-			checkFilesForFolderWatcher(item);
+		userFilesAdded.forEach(uf -> {
+			checkFileAgainstFolderWatchers(uf);
+			ctx.writeUserFile(uf);
 		});
 		
-		changes.getFileProcessorsAdded().forEach(proc -> {
-			String path = proc.getKey();
-			FileProcessor p = proc.getRight();
-			UserFile userFile = ctx.getUserFiles().get(path);
-			if (userFile!=null) {
-				FileProcessorRecord rec = new FileProcessorRecord(itemId, path, originalComponent, this, p, componentFile, jasperResources);
-				rec.init(userFile);
-				this.toProcess.add(rec);
-			}
-		});
+		runProcessing();
 	}
 
-	protected void checkFilesForFolderWatcher(FolderWatcherItem item) {
-		String path = item.getPath();
-		// Check all user files for the given folder watcher
-		Map<String,UserFile> files = ctx.getUserFiles();
-		for(Entry<String,UserFile> entry : files.entrySet()) {
-			String filePath = entry.getKey();
-			if (filePath.startsWith(path)) {
-				FolderWatcherProcessable proc = item.getProc(filePath);
-				if (proc!=null)
-					toProcess.add(proc);
+	protected void checkFileAgainstFolderWatchers(UserFile userFile) {
+		this.getFolderWatchers().stream().forEach(watcher -> {
+			if (userFile.getPath().startsWith(watcher.getPath())) {
+				Processable proc = watcher.getProc(userFile.getPath());
+				if (proc!=null) {
+					this.toProcess.add(proc);
+				}
 			}
-		}
+		});
 	}
 
 	protected void errorState(ProcessorLog log) {
@@ -321,10 +193,334 @@ public class ProcessingManager implements ProcessableContext {
 			}
 		}
 	}
+	
+	protected void runProcessing() {
+		jasperResources.engineDebug("runProcessables - There are "+buildsToInit.size()+" builds to init");
+		jasperResources.engineDebug("runProcessables - There are "+buildsToProcess.size()+" builds to process");
+		jasperResources.engineDebug("runProcessables - There are "+toProcess.size()+" processables to process");
 
-	int nextId = 0;
-	protected int newId() {
-		return ++nextId;
+		typesAddedThisRun.clear();
+		sourceFilesAddedThisRun.clear();
+		objectsAddedThisRun.clear();
+
+		while(buildsToInit.size()>0) {
+			BuildComponentItem b = buildsToInit.get(0);
+
+			appLog.info("Initializing build '"+b.getName()+"'");
+			appLog.outputToSystem();
+			ProcessableChanges changes = b.init();
+			if (changes!=null) {
+				buildsToProcess.add(b);
+				buildsToInit.remove(b);
+				commitChanges(changes, b.getConfigs(), b.getFolder());
+			} else {
+				errorState(b.getLog());
+				return;
+			}
+		}
+		
+		while(toProcess.size() > 0) {
+			if (toProcess.contains(null)) {
+				appLog.warn("Found a null entry in toProcess");
+			}
+			Collections.sort(toProcess);
+			Processable proc = toProcess.get(0);
+			appLog.info("*** Processing "+proc.getName()+" ***");
+			appLog.outputToSystem();
+			boolean success = false;
+
+			try {
+				success = proc.process();
+				if (success) {
+					ProcessableChanges changes = proc.getChanges();
+					commitChanges(changes, proc.getConfigs(), proc.getFolder());
+					toProcess.remove(proc);
+				} else {
+					// todo?
+				}
+				proc.getLog().outputToSystem();
+			} catch(StaleObjectException e) {
+				String objectName = e.getName();
+				List<Integer> toReAdd = processingDataManager.getItemsForObjectName(objectName);
+				toReAdd.stream().forEach(id -> this.removeItem(id, false));
+
+				// Clear the processable's log
+				proc.getLog().getMessages(true);
+				
+				// Remove this object
+				processingDataManager.getObjects().remove(objectName);
+				this.objectsAddedThisRun.remove(objectName);
+			} catch(StaleVariableTypeException e) {
+				String lang = e.getLang();
+				String name = e.getName();
+				List<Integer> toReAdd = processingDataManager.getItemsForType(lang, name);
+				toReAdd.stream().forEach(id -> this.removeItem(id, false));
+				// Clear the processable's log
+				proc.getLog().getMessages(true);
+
+				// Remove this type so it can be added again
+				VariableType type = processingDataManager.getTypes(lang).get(name);
+				// TODO: This should never be null?
+				if (type!=null) {
+					processingDataManager.getTypes(lang).remove(name);
+					this.typesAddedThisRun.remove(type);
+				}
+			} catch(StaleSourceFileException e) {
+				String path = e.getPath();
+				List<Integer> toReAdd = processingDataManager.getItemsForSourceFile(path);
+				if (toReAdd!=null) {
+					toReAdd.stream().forEach(id -> this.removeItem(id, false));
+				} else {
+					// this shouldn't happen?
+					jasperResources.engineDebug("Source file "+e.getPath()+" was stale but I found no dependent items");
+				}
+				// Clear the processable's log
+				proc.getLog().getMessages(true);
+				// Remove the source file and remove it from source files added this run
+				ctx.removeSourceFile(path);
+				// Not sure this is required
+				this.sourceFilesAddedThisRun.remove(path);
+			}
+			if (!success) {
+				return;
+			}
+		}
+		
+		while(buildsToProcess.size()>0) {
+			BuildComponentItem b = buildsToProcess.get(0);
+
+			appLog.info("Processing build '"+b.getName()+"'");
+			appLog.outputToSystem();
+			ProcessableChanges changes = b.process();
+			if (changes!=null) {
+				buildsToProcess.remove(b);
+				commitChanges(changes, b.getConfigs(), b.getFolder());
+			} else {
+				errorState(b.getLog());
+				return;
+			}
+		}
+	}
+
+	// Returns a list of items to be re-added.
+	protected List<Item> userFileRemoved(UserFile userFile) {
+		List<Item> ret = new ArrayList<>();
+		String path = userFile.getPath();
+		List<FileProcessorRecord> procs = getFileProcessors();
+		List<FolderWatcherItem> watchers = getFolderWatchers();
+
+		// Find file processors for this file path
+		List<FileProcessorRecord> procsToRemove = procs.stream().filter(proc -> proc.getFilePath().equals(path)).collect(Collectors.toList());
+		// Remove the items for these processors
+		procsToRemove.forEach(proc -> removeItem(proc.getItemId(), true));
+		
+		// Find folder watchers for this path, remove/readd them.
+		List<FolderWatcherItem> watchersToRemove = watchers.stream().filter(watcher -> path.startsWith(watcher.getPath())).collect(Collectors.toList());
+		// Remove items for these folder watchers
+		watchersToRemove.forEach(watcher -> removeItem(watcher.getItemId(), false));
+		
+		ctx.removeUserFile(userFile);
+		
+		return ret;
+	}
+	
+	// Removes the given itemId.
+	// If remove is not permanent, re-add any items again if they are components or build components
+	// Returns a list of items to be re-added
+	protected void removeItem(int id, boolean permanent) {
+
+		// Get the item, see if it has already been removed
+		Item item = this.getItem(id);
+		if (item==null) return;
+
+		FolderWatcherItem folderWatcher = (item instanceof FolderWatcherItem) ? (FolderWatcherItem)item : null;
+
+		jasperResources.engineDebug("Remove item "+item.getName()+"("+id+") with perm as "+permanent);
+
+		// Remove this item from items
+		this.items.remove(item);
+
+		// If this is a folder watcher, clear its file processors
+		if (folderWatcher!=null) {
+			folderWatcher.clearProcs();
+		}
+		
+		// Remove source files from this item
+		List<String> srcPaths = processingDataManager.getSourceFilesFromId(id);
+		srcPaths.forEach(path -> {
+			ctx.removeSourceFile(path);
+		});
+
+		// Items to remove and re-add
+		Set<Integer> toRemoveAndAdd = new HashSet<>();
+
+		// Other Items to remove permanently
+		Set<Integer> toRemove = new HashSet<>();
+
+		// If the originator originates any application data, it should be removed and re-added.  This item will be removed permanently.
+		if (item.getOriginatorId()>0) {
+
+			if (processingDataManager.originatesProcessingData(item.getOriginatorId())) {
+				toRemoveAndAdd.add(item.getOriginatorId());
+				permanent = true;
+			}
+		}
+
+		// Permanently remove any item that originates from this one
+		items.forEach(i -> {
+			if (i.getOriginatorId()==id) {
+				toRemove.add(i.getItemId());
+			}
+		});
+		
+		// Remove and re-add all items that depend on the same application data
+		toRemoveAndAdd.addAll(processingDataManager.removeItem(id));
+
+		// Remove processables with this itemId
+		this.toProcess.stream().filter(proc -> proc.getItemId()==id).collect(Collectors.toList()).forEach(proc -> {
+			toProcess.remove(proc);
+		});
+
+		BuildComponentItem buildCompItem = (item instanceof BuildComponentItem) ? (BuildComponentItem)item : null;
+
+		if (buildCompItem != null) {
+			buildsToInit.remove(buildCompItem);
+			buildsToProcess.remove(buildCompItem);
+		}
+
+		toRemove.forEach(i -> {
+			removeItem(i, true);
+		});
+
+		// The itemId can wind up in the -add list.  make sure it's not there
+		toRemoveAndAdd.stream().filter(removeId -> removeId != id).forEach(i -> {
+			removeItem(i, false);
+		});
+
+		if (!permanent) {
+			this.addItem(item);
+		}
+
+	}
+	
+	private void addItem(Item item) {
+		if (items.contains(item)) {
+			return;
+		}
+		//item.assignItemId(newItemId());
+		items.add(item);
+		this.appLog.info("Added item #"+item.getItemId()+" as "+item.getName());
+		if (item instanceof ComponentItem) {
+			ComponentItem c = (ComponentItem)item;
+			toProcess.add(c);
+			//items.add(c);
+		} else if (item instanceof BuildComponentItem) {
+			BuildComponentItem b = (BuildComponentItem)item;
+			buildsToInit.add(b);
+			//items.add(b);
+		} else if (item instanceof FolderWatcherItem) {
+			FolderWatcherItem f = (FolderWatcherItem)item;
+			checkFilesForFolderWatcher(f);
+		}
+	}
+
+	// When changes are commited, items are only added (not removed) so we can add them right away instead of after 
+	// everything's done
+	protected void commitChanges(ProcessableChanges changes, Map<String,String> configs, ApplicationFolderImpl folder) {
+		int originatorId = changes.getItemId();
+		//int originatorId = changes.getItemId();
+		changes.getComponentsAdded().forEach(comp -> {
+			int itemId = newItemId();
+			ComponentPattern pattern = patterns.getPattern(comp.getClass());
+			ComponentItem item = new ComponentItem(itemId, comp, configs, this, pattern, jasperResources, originatorId, folder);
+			items.add(item);
+			toProcess.add(item);
+		});
+
+		// Application data that has been manipulated this run
+		changes.getTypesModified().stream().forEach(type -> typesAddedThisRun.add(type.getRight()));
+
+		changes.getObjects().entrySet().forEach(e -> {
+			objectsAddedThisRun.add(e.getKey());
+		});
+
+		changes.getSourceFiles().forEach(sourceFile -> {
+			ctx.updateSourceFile(sourceFile);
+			sourceFilesAddedThisRun.add(sourceFile.getPath());
+		});
+		//changes.getTypesModified().stream().map(Pair::getRight).forEach(type -> {
+		//	typesAddedThisRun.add(type);
+		//});
+
+		// Add folder watchers
+		changes.getFolderWatchersAdded().forEach(pair -> {
+			String path = pair.getKey();
+			FolderWatcher w = pair.getValue();
+			
+			int id = newItemId();
+			
+			FolderWatcherItem item = new FolderWatcherItem(id, path, w, this, jasperResources, configs, originatorId, folder);
+			items.add(item);
+			checkFilesForFolderWatcher(item);
+		});
+
+		// Add file processors
+		changes.getFileProcessorsAdded().forEach(proc -> {
+			String path = proc.getKey();
+			FileProcessor p = proc.getRight();
+			UserFile userFile = ctx.getUserFiles().get(path);
+			if (userFile!=null) {
+				FileProcessorRecord rec = new FileProcessorRecord(originatorId, path, this, p, configs, jasperResources, 
+						folder);
+				rec.init(userFile);
+				this.toProcess.add(rec);
+			}
+		});
+		processingDataManager.commitChanges(changes);
+	}
+
+	protected void checkFilesForFolderWatcher(FolderWatcherItem item) {
+		String path = item.getPath();
+		// Check all user files for the given folder watcher
+		Map<String,UserFile> files = ctx.getUserFiles();
+		for(Entry<String,UserFile> entry : files.entrySet()) {
+			String filePath = entry.getKey();
+			if (filePath.startsWith(path)) {
+				FolderWatcherProcessable proc = item.getProc(filePath);
+				if (proc!=null)
+					toProcess.add(proc);
+			}
+		}
+	}
+
+	// Get item with the given ID
+	protected Item getItem(int itemId) {
+		return items.stream().filter(item -> item.getItemId() == itemId).findAny().orElse(null);
+	}
+	
+	protected ComponentItem getComponentItem(Component component) {
+		for(Item item : items) {
+			if (item instanceof ComponentItem) {
+				ComponentItem i = (ComponentItem)item;
+				if (((ComponentItem) item).getComponent()==component) {
+					return i;
+				}
+			}
+		}
+		return null;
+	}
+
+	protected BuildComponentItem getBuildComponentItem(Component component) {
+		
+		for(Item i : items) {
+			if (i instanceof BuildComponentItem) {
+				BuildComponentItem b = (BuildComponentItem)i;
+				if (b.getBuildComponent()==component) {
+					return b;
+				}
+			}
+		}
+		return null;
 	}
 
 	List<FolderWatcherItem> getFolderWatchers() {
@@ -345,195 +541,59 @@ public class ProcessingManager implements ProcessableContext {
 		return ret;
 	}
 	
-	// Returns a list of items to be re-added.
-	protected List<Item> userFileRemoved(UserFile userFile) {
-		List<Item> ret = new ArrayList<>();
-		String path = userFile.getPath();
-		List<FileProcessorRecord> procs = getFileProcessors();
-		List<FileProcessorRecord> procsToRemove = new ArrayList<>();
-		List<FolderWatcherItem> watchers = getFolderWatchers();
-		List<FolderWatcherItem> watchersToRemove = new ArrayList<>();
-		
-		// Find file processors for this file path
-		procs.forEach(proc -> {
-			if (proc.getFilePath().equals(path)) {
-				procsToRemove.add(proc);
-			}
-		});
-		
-		// Remove the items for these processors
-		procsToRemove.forEach(proc -> {
-			int id = proc.getItemId();
-			removeItem(id, true);
-		});
-		
-		// Find folder watchers for this path, remove/readd them.
-		watchers.forEach(watcher -> {
-			if (path.startsWith(watcher.getPath())) {
-				watchersToRemove.add(watcher);
-			}
-		});
-		watchersToRemove.forEach(watcher -> {
-			removeItem(watcher.getItemId(), false);
-		});
-		
-		ctx.removeUserFile(userFile);
-		
-		return ret;
-	}
+	// ProcessableContext API
 	
-	// Get item with the given ID
-	protected Item getItem(int itemId) {
-		return items.stream().filter(item -> item.getItemId() == itemId).findAny().orElse(null);
-	}
-	
-	protected ComponentItem getComponentItem(Component component) {
-		for(Item item : items) {
-			if (item instanceof ComponentItem) {
-				ComponentItem i = (ComponentItem)item;
-				if (((ComponentItem) item).getComponent()==component) {
-					return i;
-				}
-			}
-		}
-		return null;
-	}
-	
-	protected BuildComponentItem getBuildComponentItem(Component component) {
-		
-		for(Item i : items) {
-			if (i instanceof BuildComponentItem) {
-				BuildComponentItem b = (BuildComponentItem)i;
-				if (b.getBuildComponent()==component) {
-					return b;
-				}
-			}
-		}
-		return null;
-	}
-
-	// Removes the given itemId.
-	// If remove is not permanent, re-add any items again if they are components or build components
-	// Returns a list of items to be re-added
-	protected void removeItem(int id, boolean permanent) {
-
-		// Get the item, see if it has already been removed
-		Item item = this.getItem(id);
-		if (item==null) return;
-		FolderWatcherItem folderWatcher = (item instanceof FolderWatcherItem) ? (FolderWatcherItem)item : null;
-
-		jasperResources.engineDebug("Remove item "+item.getName()+"("+id+") with perm as "+permanent);
-
-		// Remove this item from items
-		this.items.remove(item);
-		
-		// If this is a folder watcher, clear its file processors
-		if (folderWatcher!=null) {
-			folderWatcher.clearProcs();
-		}
-		
-		// Remove source files from this item
-		List<String> srcPaths = data.getSourceFilesFromId(id);
-		srcPaths.forEach(path -> {
-			ctx.removeSourceFile(path);
-		});
-
-		// Items to remove and re-add
-		Set<Integer> toRemoveAndAdd = new HashSet<>();
-
-		// Other Items to remove permanently
-		Set<Integer> toRemove = new HashSet<>();
-
-		// If the originator originates any application data, it should be removed and re-added
-		if (item.getOriginatorId()>0) {
-
-			if (data.originates(item.getOriginatorId())) {
-				toRemoveAndAdd.add(item.getOriginatorId());
-			}
-		}
-
-		// Remove any item that originates from this one
-		items.forEach(i -> {
-			if (i.getOriginatorId()==id) {
-				toRemove.add(i.getItemId());
-			}
-		});
-		
-		// Remove and re-add all items that depend on the same application data
-		toRemoveAndAdd.addAll(data.removeItem(id));
-
-		// List of processables to remove
-		List<Processable> procs = new ArrayList<>();
-
-		// Remove processables with this itemId
-
-		// Remove toProcess and processed processables with this itemId
-		this.processed.forEach(p -> {
-			if (p.getItemId()==id) {
-				procs.add(p);
-			}
-		});
-		procs.forEach(proc -> {
-			processed.remove(proc);
-		});
-		procs.clear();
-		this.toProcess.forEach(p -> {
-			if (p.getItemId()==id) {
-				procs.add(p);
-			}
-		});
-		procs.forEach(p -> {
-			toProcess.remove(p);
-		});
-
-		BuildComponentItem buildCompItem = (item instanceof BuildComponentItem) ? (BuildComponentItem)item : null;
-		//ComponentItem compItem = (item instanceof ComponentItem) ? (ComponentItem)item : null;
-
-		if (buildCompItem != null) {
-			buildItemsToInit.remove(buildCompItem);
-			buildItemsToGenerate.remove(buildCompItem);
-		}
-
-		if (!permanent) {
-			this.reAddItem(item);
-		}
-
-		toRemove.forEach(i -> {
-			removeItem(i, true);
-		});
-
-		toRemoveAndAdd.forEach(i -> {
-			removeItem(i, false);
-		});
-	}
-
-	public void updateGlobalSystemAttributes(Map<String,String> attributes) {
-		data.setGlobalSystemAttributes(attributes);
-	}
-
 	@Override
 	public String getSystemAttribute(String name) {
-		return data.getSystemAttribute(name);
+		return processingDataManager.getSystemAttribute(name);
 	}
 
 	@Override
 	public VariableType getType(String lang, String name) {
-		return data.getTypes(lang).get(name);
+		VariableType ret = null;
+		
+		Map<String,VariableType> types = processingDataManager.getTypes(lang);
+		if (types!=null) {
+			ret = types.get(name);
+		}
+
+		return ret;
+	}
+	
+	@Override
+	public void modifyType(String lang, VariableType type) {
+
+		if (!typesAddedThisRun.contains(type)) {
+			throw new StaleVariableTypeException(lang, type.getName());
+		}
 	}
 
 	@Override
 	public UserFile getUserFile(String path) {
-		return ctx.getUserFiles().get(path);
+		return this.ctx.getUserFiles().get(path);
 	}
 
 	@Override
 	public SourceFile getSourceFile(String path) {
-		return ctx.getSourceFile(path);
+		SourceFile ret = ctx.getSourceFile(path);
+		if (ret!=null) {
+			if (!sourceFilesAddedThisRun.contains(path)) {
+				throw new StaleSourceFileException(path);
+			}
+		}
+		return ret;
 	}
 
 	@Override
 	public Object getObject(String name) {
-		return data.getObjects().get(name);
+		Object obj = processingDataManager.getObjects().get(name);
+
+		if (obj!=null) {
+			if (!objectsAddedThisRun.contains(name)) {
+				throw new StaleObjectException(name);
+			}
+		}
+		return obj;
 	}
 
 }

@@ -1,0 +1,66 @@
+
+Cases for modifying existing component files and user files
+
+Definitions:
+Application Data: system attributes, variable types, source files
+Item: A unit that must be handled in processing
+Folder Watcher: An item that is informed as user files are added/removed
+Configurable: An item that needs some type of processing to modify application data.
+Build: A configurable that represents the build required in a folder
+Processable: A configurable that can take configurations and must be processed to produce application data.
+Component: A Processable that is a component either added in a component file or added by another build/processable.
+FileWatcher: A processable that handles changes in a single file.
+
+Data:
+	toProcess: A set of configurables to process
+	buildsToInit: A set of builds that need to be initialized
+	buildsToProcess: A set of builds to process, which have already been initialized
+
+Rules: 
+Permanent unload ItemId: 
+	Unload all application data for an itemId.  Remove it from items and toProcess.
+	Remove any item that originates from this one.
+	Unload and reload the item that this originates from.
+Unload and reAdd itemId:
+	Permanent unload itemId.
+	Add item.
+Add item:
+	Add item to toProcess or buildsToInit.
+	Add item to items.
+Run Processing: Perform these steps.  Stop if an error is encountered:
+	Init builds in buildsToInit.  For each build successfully handled, add it to buildsToProcess.
+	Run processables in toProcess
+	Process builds in buildsToProcess
+
+
+
+Application scan cases from example1
+
+
+
+* Modify data object component A in a component file src/main/jaspercode/module/librarian/dataObjects.xml
+	Preconditions:
+		dataObjects.xml is loaded already
+		A is loaded as item 1
+		Other items [n] depend on item 1
+	Steps:
+		Unload item 1 permanently.  Find set [n]
+		Unload [n] for re-add
+	Post condition: 
+
+
+
+* Modify build component at /build-comp.xml
+	Preconditions: 
+		Items [n] are loaded in /**
+	Steps:
+		Unload all component files in / recursively
+
+
+
+* Modify source file src/main/java/**/*.java
+
+* Modify file in src/main/jaspercode/templates/pages/LibrarianPortalPage.html
+
+* Modify a component in a file that changes application data
+

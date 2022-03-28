@@ -6,8 +6,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import net.sf.jaspercode.api.ApplicationContext;
 import net.sf.jaspercode.api.BuildContext;
-import net.sf.jaspercode.api.Log;
-import net.sf.jaspercode.api.ProcessorContext;
+import net.sf.jaspercode.api.logging.Log;
 import net.sf.jaspercode.api.SourceFile;
 import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.exception.JasperException;
@@ -15,30 +14,28 @@ import net.sf.jaspercode.api.resources.ApplicationResource;
 import net.sf.jaspercode.api.resources.FileProcessor;
 import net.sf.jaspercode.api.resources.FolderWatcher;
 import net.sf.jaspercode.api.types.VariableType;
+import net.sf.jaspercode.api.ProcessorContext;
+import net.sf.jaspercode.engine.JasperResources;
 import net.sf.jaspercode.engine.files.ApplicationFolderImpl;
 
 public class ProcessorContextImpl implements ProcessorContext {
 
-	private ProcessableChanges changes = null;
 	private ProcessableContext ctx = null;
-	private ApplicationContext appCtx = null;
+	private JasperResources jasperResources = null;
 	private ProcessorLog log = null;
 	private ApplicationFolderImpl folder = null;
 	private String lang = null;
 	private Map<String,String> configs = null;
+	private ProcessableChanges changes = null;
 	
-	public ProcessorContextImpl(int itemId, ProcessableContext ctx, ApplicationContext appCtx, ProcessorLog log, 
-			ApplicationFolderImpl folder, Map<String,String> configs, ProcessableChanges changes) {
-		this.changes = changes;
+	public ProcessorContextImpl(ProcessableContext ctx, JasperResources jasperResources, ProcessorLog log, 
+			Map<String,String> configs, ApplicationFolderImpl folder,ProcessableChanges changes) {
 		this.ctx = ctx;
-		this.appCtx = appCtx;
+		this.jasperResources = jasperResources;
 		this.log = log;
-		this.folder = folder;
 		this.configs = configs;
-	}
-
-	public ProcessableChanges getChanges() {
-		return changes;
+		this.folder = folder;
+		this.changes = changes;
 	}
 
 	@Override
@@ -52,69 +49,58 @@ public class ProcessorContextImpl implements ProcessorContext {
 		if ((t!=null) && (!t.equals(type))) {
 			throw new JasperException("Tried to add system attribute "+name+" but it already exists as type '"+t+"'");
 		}
-		changes.attributesAdded.put(name, type);
-		changes.attributeDependencies.add(name);
+		changes.getAttributesOriginated().add(name);
+		if (t==null) {
+			changes.getAttributesAdded().put(name, type);
+		}
 	}
 
 	@Override
 	public String getSystemAttribute(String name) {
-		String ret = changes.attributesAdded.get(name);
-		if (ret==null) {
-			ret = ctx.getSystemAttribute(name);
-			if (ret!=null) {
-				changes.attributeDependencies.add(name);
-			}
-		}
-		return ret;
+		changes.getAttributeDependencies().add(name);
+		return ctx.getSystemAttribute(name);
 	}
 
 	@Override
-	public void addVariableType(VariableType variableType) throws JasperException {
+	public void addVariableType(VariableType variableType) {
+		if (variableType==null || variableType.getName()==null) {
+			throw new RuntimeException("Tried to add a variable type that was null or had no name");
+		}
+		if (lang==null) {
+			throw new RuntimeException("Couldn't get variable type because there is no selected language");
+		}
 		if (ctx.getType(lang, variableType.getName())!=null) {
-			throw new JasperException("Added a type '"+variableType.getName()+"' but it already exists for language '"+lang+"'");
+			throw new RuntimeException("Added a type '"+variableType.getName()+"' but it already exists for language '"+lang+"'");
 		}
-		changes.getTypesAdded().add(Pair.of(lang, variableType));
-		// TODO: Either we add to dependencies, or we check types added when removing the item
-		changes.getTypeDependencies().add(Pair.of(lang, variableType));
-	}
-
-	protected VariableType findAddedType(String name) {
-		for(Pair<String,VariableType> p : changes.getTypesAdded()) {
-			if (!p.getKey().equals(lang)) continue;
-			if (p.getRight().getName().equals(name)) return p.getRight();
-		}
-		return null;
+		changes.getTypesModified().add(Pair.of(lang, variableType));
 	}
 
 	@Override
-	public VariableType getVariableType(String name) throws JasperException {
+	public VariableType getVariableType(String name) {
+		if (name.startsWith("list/")) return getVariableType("list");
+		VariableType ret = null;
 		
-		if (name.startsWith("list/")) name = "list";
-		
-		VariableType ret = findAddedType(name);
+		ret = changes.getTypesModified().stream().filter(p -> p.getKey().equals(lang) && p.getValue().getName().equals(name)).findAny().map(Pair::getRight).orElse(null);
+
 		if (ret==null) {
 			ret = ctx.getType(lang, name);
-		}
-		if (ret!=null) {
-			changes.getTypeDependencies().add(Pair.of(lang, ret));
+			if (ret!=null) {
+				changes.getTypeDependencies().add(Pair.of(lang, ret));
+			}
 		}
 
 		return ret;
 	}
-
-	/*
-	@Override
-	public VariableType getVariableType(String name) throws JasperException {
-		if (language==null) throw new JasperException("Cannot get variable type unless a language is specified");
-		if (name==null) throw new JasperException("Cannot get variable type null");
-		
-		if (name.indexOf("list/")==0) {
-			return getVariableType("list");
-		}
-		return ctx.getVariableType(language, name);
-	}
-	*/
 	
+	@Override
+	public void modifyVariableType(VariableType type) {
+		VariableType existing = changes.getTypesModified().stream().filter(p -> p.getLeft().equals(lang) && p.getRight()==type).findAny().map(Pair::getRight).orElse(null);
+		if (existing==null) {
+			ctx.modifyType(lang, type);
+			changes.getTypesModified().add(Pair.of(lang, type));
+		} 
+	}
+
 	@Override
 	public void setObject(String name, Object obj) {
 		changes.getObjects().put(name, obj);
@@ -122,10 +108,14 @@ public class ProcessorContextImpl implements ProcessorContext {
 
 	@Override
 	public Object getObject(String name) {
-		Object value = changes.getObjects().get(name);
-		if (value==null) value = ctx.getObject(name);
-		changes.getObjectDeps().add(name);
-		return value;
+		Object ret = this.changes.getObjects().get(name);
+		if (ret==null) {
+			ret = ctx.getObject(name);
+			if (ret!=null) {
+				changes.getObjects().put(name, ret);
+			}
+		}
+		return ret;
 	}
 
 	@Override
@@ -137,16 +127,13 @@ public class ProcessorContextImpl implements ProcessorContext {
 	public SourceFile getSourceFile(String path) {
 		SourceFile ret = null;
 		
-		for(SourceFile src : changes.getSourceFiles()) {
-			if (src.getPath().equals(path)) {
-				ret = src;
-				break;
-			}
-		}
+		ret = changes.getSourceFiles().stream().filter(src -> path.equals(src.getPath())).findAny().orElse(null);
 		if (ret==null) {
 			ret = ctx.getSourceFile(path);
+			if (ret!=null) {
+				changes.getSourceFilesChanged().add(ret);
+			}
 		}
-		
 		return ret;
 	}
 
@@ -165,9 +152,10 @@ public class ProcessorContextImpl implements ProcessorContext {
 		return folder.getResource(path);
 	}
 
+	// The added component will have the same configuration properties
 	@Override
 	public void addComponent(Component component) {
-		changes.componentsAdded.add(component);
+		changes.getComponentsAdded().add(component);
 	}
 
 	@Override
@@ -175,19 +163,26 @@ public class ProcessorContextImpl implements ProcessorContext {
 		return log;
 	}
 
+	// The added folder watcher will have the same configuration properties
 	@Override
 	public void addFolderWatcher(String folderPath, FolderWatcher folderWatcher) {
-		changes.folderWatchersAdded.add(Pair.of(folderPath, folderWatcher));
+		changes.getFolderWatchersAdded().add(Pair.of(folderPath, folderWatcher));
 	}
 
+	// The added file watcher will have the same configuration properties
 	@Override
 	public void addFileProcessor(String filePath, FileProcessor fileProcessor) {
-		changes.fileProcessorsAdded.add(Pair.of(filePath, fileProcessor));
+		changes.getFileProcessorsAdded().add(Pair.of(filePath, fileProcessor));
 	}
 
 	@Override
 	public ApplicationContext getApplicationContext() {
-		return appCtx;
+		return jasperResources;
 	}
 	
+	@Override
+	public void originateSystemAttribute(String name) {
+		changes.getAttributesOriginated().add(name);
+	}
+
 }

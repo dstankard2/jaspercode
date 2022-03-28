@@ -1,0 +1,22 @@
+
+<div class='page librarian-portal-page' js-page='LibrarianPortalPage' js-page-ref='p' js-model-ref='m'>
+	<js-import type='BookDisplayPage' />
+	<js-import type='BookShelfDisplayPage' />
+<!-- 
+	<js-import type='BookCheckInPage' />
+ -->
+
+	<js-var name='bookDisplayPage' type='object' />
+	<js-var name='bookShelfDisplayPage' type='object' />
+
+	<js-fn event='initBookShelfDisplayPage'>
+	bookShelfDisplayPage = BookShelfDisplayPage();
+	bookShelfDisplayPage.init(pageContainer);
+	</js-fn>
+
+	<div class='title'>Librarian Portal Page</div>
+	<div js-var='pageContainer' class='page-container'>
+	</div>
+
+</div>
+

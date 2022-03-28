@@ -16,13 +16,4 @@ public interface BuildComponentProcessor {
 	List<Command> clean();
 	Class<? extends BuildComponent> getComponentClass();
 
-	/*
-	public Class<? extends BuildComponent> getComponentClass();
-	public void initialize(BuildComponent component,BuildProcessorContext ctx) throws JasperException;
-	public BuildContext createBuildContext();
-	public void generateBuild() throws JasperException;
-	public List<Command> build();
-	public List<Command> clean();
-	*/
-
 }

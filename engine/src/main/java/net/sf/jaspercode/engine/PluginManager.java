@@ -10,10 +10,10 @@ import java.util.jar.JarFile;
 
 import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.annotation.XmlConfig;
+import net.sf.jaspercode.api.config.Property;
 import net.sf.jaspercode.api.config.BuildComponent;
 import net.sf.jaspercode.api.config.Component;
 import net.sf.jaspercode.api.config.ComponentSet;
-import net.sf.jaspercode.api.config.Property;
 import net.sf.jaspercode.api.plugin.ApplicationPlugin;
 import net.sf.jaspercode.api.plugin.EnginePlugin;
 

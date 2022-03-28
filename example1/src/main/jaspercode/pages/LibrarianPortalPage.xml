@@ -1,0 +1,7 @@
+<jasper:componentSet xmlns="http://jaspercode.sf.net/patterns/js/page"
+		xmlns:jasper="http://jaspercode.sf.net/config">
+
+	<page name="LibrarianPortalPage" />
+	<pageModel pageName='LibrarianPortalPage' attributes='currentPage:string' />
+
+</jasper:componentSet>

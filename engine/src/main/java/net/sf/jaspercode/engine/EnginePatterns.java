@@ -3,11 +3,11 @@ package net.sf.jaspercode.engine;
 import java.util.HashSet;
 import java.util.Set;
 
-import net.sf.jaspercode.api.BuildComponentProcessor;
-import net.sf.jaspercode.api.ComponentProcessor;
 import net.sf.jaspercode.api.annotation.Processor;
 import net.sf.jaspercode.api.config.BuildComponent;
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.BuildComponentProcessor;
+import net.sf.jaspercode.api.ComponentProcessor;
 
 public class EnginePatterns {
 	private Set<ComponentPattern> patterns = new HashSet<>();
@@ -25,16 +25,6 @@ public class EnginePatterns {
 			Set<Class<Component>> componentClasses = pluginManager.getPluginSubclasses(Component.class);
 			Set<Class<BuildComponentProcessor>> buildProcessors = pluginManager.getPluginSubclasses(BuildComponentProcessor.class);
 
-			
-			//Set<Class<?>> xmlConfigClasses = pluginManager.getPluginsWithAnnotation(XmlConfig.class);
-			
-			/*
-			xmlConfigClasses = AnnotationHelper.findAnnotatedClasses(XmlConfig.class);
-			xmlConfigClasses.add(Component.class);
-			xmlConfigClasses.add(ComponentSet.class);
-			xmlConfigClasses.add(Property.class);
-			*/
-	
 			for(Class<?> comp : componentClasses) {
 				if (BuildComponent.class.isAssignableFrom(comp)) {
 					Class<? extends BuildComponentProcessor> processorClass = null;
@@ -73,6 +63,7 @@ public class EnginePatterns {
 		}
 	}
 
+	// Never returns null for a component that has been read from a XML file.
 	public ComponentPattern getPattern(Class<? extends Component> compClass) {
 		for(ComponentPattern pattern : patterns) {
 			if (pattern.getPatternClass()==compClass) {
@@ -90,15 +81,5 @@ public class EnginePatterns {
 		}
 		return null;
 	}
-
-	/*
-	public <T> Set<Class<T>> getSubclasses(Class<T> superclass) {
-		return AnnotationHelper.findSubclasses(superclass);
-	}
-
-	public Set<Class<?>> getClassesWithAnnotation(Class<? extends Annotation> annotation) {
-		return AnnotationHelper.findAnnotatedClasses(annotation);
-	}
-	*/
 
 }

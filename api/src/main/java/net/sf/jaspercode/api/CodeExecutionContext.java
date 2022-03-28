@@ -85,7 +85,6 @@ public class CodeExecutionContext {
 			if (ret==null) {
 				throw new JasperException("Couldn't find type '"+type+"' for variable '"+var+"'");
 			}
-			return ctx.getVariableType(type);
 		}
 
 		return ret;

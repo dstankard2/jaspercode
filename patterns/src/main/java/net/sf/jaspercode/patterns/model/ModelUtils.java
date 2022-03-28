@@ -35,10 +35,10 @@ public class ModelUtils {
 		} catch(SQLException e) {
 			throw new JasperException("Unable to connect to database URL "+url,e);
 		}
-		
+
 		return ret;
 	}
-	
+
 	public static void saveSchemaInfo(TableSet schema,String schemaId,ProcessorContext ctx) throws JasperException {
 		ctx.setObject("Schema_"+schemaId, schema);
 	}

@@ -1,6 +1,7 @@
 package net.sf.jaspercode.api;
 
 import net.sf.jaspercode.api.config.Component;
+import net.sf.jaspercode.api.logging.Log;
 import net.sf.jaspercode.api.resources.ApplicationFolder;
 
 public interface BuildProcessorContext {
