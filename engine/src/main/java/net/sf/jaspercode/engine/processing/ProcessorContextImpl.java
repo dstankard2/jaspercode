@@ -120,14 +120,17 @@ public class ProcessorContextImpl implements ProcessorContext {
 
 	@Override
 	public void addSourceFile(SourceFile file) {
-		changes.getSourceFiles().add(file);
+		changes.getSourceFilesAdded().add(file);
 	}
 
 	@Override
 	public SourceFile getSourceFile(String path) {
 		SourceFile ret = null;
 		
-		ret = changes.getSourceFiles().stream().filter(src -> path.equals(src.getPath())).findAny().orElse(null);
+		ret = changes.getSourceFilesAdded().stream().filter(src -> path.equals(src.getPath())).findAny().orElse(null);
+		if (ret==null) {
+			ret = changes.getSourceFilesChanged().stream().filter(src -> path.equals(src.getPath())).findAny().orElse(null);
+		}
 		if (ret==null) {
 			ret = ctx.getSourceFile(path);
 			if (ret!=null) {

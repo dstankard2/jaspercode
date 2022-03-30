@@ -28,6 +28,9 @@ public class DirectiveUtils {
 	
 	public static final String TEMPLATE_ROOT_ELEMENT_REF = "_r";
 
+	// TODO: Create an engine plugin that will create these directives and store them in a central location, so they don't 
+	// have to be stored in application object map.
+	// TODO: This should use streaming
 	@SuppressWarnings("unchecked")
 	public static List<AttributeDirective> getAttributeDirectives(ProcessorContext ctx) throws JasperException {
 		List<AttributeDirective> ret = new ArrayList<AttributeDirective>();

@@ -94,8 +94,8 @@ public class ApplicationManager implements ProcessingContext {
 	}
 
 	@Override
-	public void updateSourceFile(SourceFile srcFile) {
-		outputManager.updateSourceFile(srcFile);
+	public void addSourceFile(SourceFile srcFile) {
+		outputManager.addSourceFile(srcFile);
 	}
 
 	@Override

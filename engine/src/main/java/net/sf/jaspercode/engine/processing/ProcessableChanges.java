@@ -23,7 +23,7 @@ public class ProcessableChanges {
 
 	protected int itemId = 0;
 	
-	protected List<SourceFile> sourceFiles = new ArrayList<>();
+	protected List<SourceFile> sourceFilesAdded = new ArrayList<>();
 	protected List<SourceFile> sourceFilesChanged = new ArrayList<>();
 
 	protected List<Pair<String,VariableType>> typeDependencies = new ArrayList<>();

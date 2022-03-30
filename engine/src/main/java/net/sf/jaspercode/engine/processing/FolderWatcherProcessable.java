@@ -15,15 +15,17 @@ public class FolderWatcherProcessable extends ProcessableBase {
 	private FolderWatcher folderWatcher;
 	private Map<String,String> configs;
 	private ApplicationFolderImpl folder;
+	private FolderWatcherItem folderWatcherItem;
 
 	public FolderWatcherProcessable(int itemId, ProcessableContext ctx, Map<String,String> configs,
 			JasperResources jasperResources, String filePath, FolderWatcher folderWatcher, 
-			ApplicationFolderImpl folder) {
+			ApplicationFolderImpl folder, FolderWatcherItem folderWatcherItem) {
 		super(itemId, configs, ctx, jasperResources);
 		this.filePath = filePath;
 		this.folderWatcher = folderWatcher;
 		this.configs = configs;
 		this.folder = folder;
+		this.folderWatcherItem = folderWatcherItem;
 	}
 
 	@Override
@@ -34,6 +36,10 @@ public class FolderWatcherProcessable extends ProcessableBase {
 	@Override
 	public String getName() {
 		return "FolderWatcher["+filePath+"]";
+	}
+
+	public void remove() {
+		folderWatcherItem.removeProcessable(filePath);
 	}
 
 	@Override

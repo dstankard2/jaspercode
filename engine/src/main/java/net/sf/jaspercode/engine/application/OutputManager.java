@@ -6,9 +6,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import net.sf.jaspercode.api.SourceFile;
@@ -21,7 +19,6 @@ public class OutputManager {
 	JasperResources jasperResources;
 	Map<String,UserFile> userFiles = new HashMap<>();
 	Map<String,SourceFile> sourceFiles = new HashMap<>();
-	List<SourceFile> updates = new ArrayList<>();
 	ProcessorLog appLog = null;
 	
 	public OutputManager(File outputDir, JasperResources jasperResources, ProcessorLog appLog) {
@@ -84,18 +81,7 @@ public class OutputManager {
 	}
 
 	public SourceFile getSourceFile(String path) {
-		SourceFile ret = null;
-
-		ret = updates.stream().filter(src -> src.getPath().equals(path)).findFirst().orElse(null);
-		if (ret==null) {
-			SourceFile existing = sourceFiles.get(path);
-			if (existing!=null) {
-				ret = existing.copy();
-				updates.add(ret);
-			}
-		}
-		
-		return ret;
+		return sourceFiles.get(path);
 	}
 	
 	// The file will never be in updates.  updates should be empty when this is invoked
@@ -112,34 +98,27 @@ public class OutputManager {
 		}
 	}
 
-	// Update the record for a source file.
-	public void updateSourceFile(SourceFile src) {
-		SourceFile existing = updates.stream().filter(f -> f.getPath().equals(src.getPath())).findFirst().orElse(null);
-		if (existing!=null) {
-			updates.remove(existing);
-		}
-		updates.add(src);
+	public void addSourceFile(SourceFile src) {
+		this.sourceFiles.put(src.getPath(), src);
 	}
-	
+
 	// For all source files that have been updated, write them to the file system. 
 	public void flushSourceFiles() {
-		updates.forEach(update -> {
-			saveSourceFile(update);
-			sourceFiles.put(update.getPath(), update);
+		sourceFiles.values().forEach(src -> {
+			saveSourceFile(src);
 		});
-		updates.clear();
 	}
 
 	private void saveSourceFile(SourceFile src) {
 		jasperResources.engineDebug("Writing source file "+src.getPath());
-		removeSourceFile(src.getPath());
+		//removeSourceFile(src.getPath());
 
 		File current = getFile(src.getPath());
-		if (current.exists())
-			current.delete();
+		//if (current.exists())
+		//	current.delete();
 		StringBuilder content = src.getSource();
 		
-		current = getFile(src.getPath());
+		//current = getFile(src.getPath());
 		current.getParentFile().mkdirs();
 		try (FileWriter writer = new FileWriter(current)) {
 			writer.write(content.toString());

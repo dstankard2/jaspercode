@@ -7,8 +7,8 @@ import java.lang.annotation.Target;
 
 /**
  * Marks a class as a Jasper plugin that will be found by the classpath scanner.
- * Any ComponentBase subclass, component processor or plugin must have 
- * this annotation.
+ * Any Component subclass, component processor, application plugin or engine plugin must have 
+ * this annotation in order to be found by the classpath scanner.
  * @author DCS
  */
 @Target(value=ElementType.TYPE)

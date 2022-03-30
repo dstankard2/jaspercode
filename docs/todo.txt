@@ -1,12 +1,11 @@
 
 * Bugs
 
-Edit LibrarianPortalPage.html.  Template is not parsed again.  Need steps to reproduce.
-	Edit LibrarianPortalPage.html.  Add invalid js-import.  Template is not parsed again.
+Build component should be reprocessed when dependency is added.
 
 
 
-* JasperCode todo for production readiness
+* JasperCode todo for v1 readiness
 
 Superclass for build/ProcessorContextImpl
 

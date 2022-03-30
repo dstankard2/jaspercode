@@ -57,13 +57,13 @@ public class ProcessingDataManager {
 		if (srcDependencies.values().stream().anyMatch(deps -> deps.contains(itemId))) {
 			return true;
 		}
-		if (attributeDependencies.values().stream().anyMatch(deps -> deps.contains(itemId))) {
+		if (attributeOriginators.values().stream().anyMatch(deps -> deps.contains(itemId))) {
 			return true;
 		}
 		if (objectDependencies.values().stream().anyMatch(deps -> deps.contains(itemId))) {
 			return true;
 		}
-		for(Map<String,List<Integer>> typesForLang : typeDependencies.values()) {
+		for(Map<String,List<Integer>> typesForLang : typeOriginators.values()) {
 			if (typesForLang.values().stream().anyMatch(deps -> deps.contains(itemId))) {
 				return true;
 			}
@@ -92,12 +92,6 @@ public class ProcessingDataManager {
 			this.attributes.remove(e.getKey());
 			// Remove and re-add other originators of this attribute
 			ret.addAll(ids);
-			// Remove items that depend on this attribute as well (and re-add them)
-			List<Integer> depIds = attributeDependencies.get(name);
-			if (depIds!=null) {
-				ret.addAll(depIds);
-			}
-			attributeDependencies.remove(name);
 		});
 
 		// Remove this item from object dependencies and re-evaluate everything that depends on it
@@ -253,7 +247,19 @@ public class ProcessingDataManager {
 			deps.add(itemId);
 		});
 
-		changes.getSourceFiles().forEach(src -> {
+		// Source files added
+		changes.getSourceFilesAdded().forEach(src -> {
+			List<Integer> deps = srcDependencies.get(src.getPath());
+			
+			if (deps==null) {
+				deps = new ArrayList<>();
+				srcDependencies.put(src.getPath(), deps);
+			}
+			deps.add(itemId);
+		});
+
+		// Source files updated
+		changes.getSourceFilesChanged().forEach(src -> {
 			List<Integer> deps = srcDependencies.get(src.getPath());
 			
 			if (deps==null) {

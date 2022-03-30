@@ -3,7 +3,7 @@ Cases for modifying existing component files and user files
 
 Definitions:
 Application Data: system attributes, variable types, source files
-Item: A unit that must be handled in processing
+Item: A unit that must be handled in processing.  May originate from another item.
 Folder Watcher: An item that is informed as user files are added/removed
 Configurable: An item that needs some type of processing to modify application data.
 Build: A configurable that represents the build required in a folder
@@ -17,7 +17,7 @@ Data:
 	buildsToProcess: A set of builds to process, which have already been initialized
 
 Rules: 
-Permanent unload ItemId: 
+Permanent unload itemId: 
 	Unload all application data for an itemId.  Remove it from items and toProcess.
 	Remove any item that originates from this one.
 	Unload and reload the item that this originates from.
@@ -25,8 +25,11 @@ Unload and reAdd itemId:
 	Permanent unload itemId.
 	Add item.
 Add item:
-	Add item to toProcess or buildsToInit.
+	Add item to toProcess (for Processable) or buildsToInit (for BuildItem).
 	Add item to items.
+
+* TODO: Revise this one
+
 Run Processing: Perform these steps.  Stop if an error is encountered:
 	Init builds in buildsToInit.  For each build successfully handled, add it to buildsToProcess.
 	Run processables in toProcess
@@ -44,9 +47,11 @@ Application scan cases from example1
 		A is loaded as item 1
 		Other items [n] depend on item 1
 	Steps:
-		Unload item 1 permanently.  Find set [n]
+		Unload all components in dataObjects.xml permanently.  Find set [n]
 		Unload [n] for re-add
+		Add components from dataObjects.xml to toProcess
 	Post condition: 
+		dataObjects.xml is added for processing, along with components that depend on 
 
 
 
@@ -58,9 +63,35 @@ Application scan cases from example1
 
 
 
-* Modify source file src/main/java/**/*.java
+* Modify source file src/main/java/**/*.java (X.java)
+	Preconditions:
+		Component A (Item ID 1) is a handwritten code folder watcher for /src/main/java
+		Items [n] are dependent on item ID 1
+		Item ID 1 originates no application data and originates from another component.
+	Steps:
+		Understand that X.java has been removed and added.
+		Folder watcher Item ID 1 is marked to be unloaded and reloaded.
+		Items [n] are marked to be unloaded and reloaded.
+
+
 
 * Modify file in src/main/jaspercode/templates/pages/LibrarianPortalPage.html
+	Preconditions:
+		Component A (Item ID 1) is a handwritten code folder watcher for /src/main/java
+		Items [n] are dependent on item ID 1
+
+
 
 * Modify a component in a file that changes application data
+
+
+
+*** Processing for watching resource folders ***
+
+When processing starts:
+	Find all folder watcher items.  Check them against all user files.  Add processables to toProcess where appropriate.
+
+When processing ends:
+	Remove folderWatcherProcessables from toProcess.  Reset those processables in respective folder watcher items.
+	Check all folder watcher items against all user files.  Add to toProcess if that item has no processable for that file.
 

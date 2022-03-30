@@ -7,9 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.lang3.tuple.Pair;
-
-import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import net.sf.jaspercode.api.SourceFile;
@@ -157,20 +154,34 @@ public class ProcessingManager implements ProcessableContext {
 		});
 		
 		userFilesAdded.forEach(uf -> {
-			checkFileAgainstFolderWatchers(uf);
 			ctx.writeUserFile(uf);
 		});
-		
-		runProcessing();
-	}
 
-	protected void checkFileAgainstFolderWatchers(UserFile userFile) {
-		this.getFolderWatchers().stream().forEach(watcher -> {
-			if (userFile.getPath().startsWith(watcher.getPath())) {
-				Processable proc = watcher.getProc(userFile.getPath());
-				if (proc!=null) {
-					this.toProcess.add(proc);
-				}
+		// For every folder watcher, check for user files that apply to it.
+		checkFolderWatchers();
+
+		runProcessing();
+
+		toProcess.stream().filter(proc -> proc instanceof FolderWatcherProcessable).collect(Collectors.toList()).stream().forEach(proc -> {
+			FolderWatcherProcessable p = (FolderWatcherProcessable)proc;
+			p.remove();
+			toProcess.remove(proc);
+		});
+	}
+	
+	private void checkFolderWatchers() {
+		this.getFolderWatchers().forEach(item -> {
+			checkFolderWatcherAgainstUserFiles(item);
+		});
+	}
+	
+	private void checkFolderWatcherAgainstUserFiles(FolderWatcherItem item) {
+		List<String> userFilePaths = ctx.getUserFiles().keySet().stream().collect(Collectors.toList());
+
+		userFilePaths.forEach(path -> {
+			Processable proc = item.getProc(path);
+			if (proc!=null) {
+				toProcess.add(proc);
 			}
 		});
 	}
@@ -225,9 +236,9 @@ public class ProcessingManager implements ProcessableContext {
 			}
 			Collections.sort(toProcess);
 			Processable proc = toProcess.get(0);
-			appLog.info("*** Processing "+proc.getName()+" ***");
+			appLog.info("*** Processing "+proc.getName()+"("+proc.getItemId()+") ***");
 			appLog.outputToSystem();
-			boolean success = false;
+			boolean success = true;
 
 			try {
 				success = proc.process();
@@ -235,8 +246,11 @@ public class ProcessingManager implements ProcessableContext {
 					ProcessableChanges changes = proc.getChanges();
 					commitChanges(changes, proc.getConfigs(), proc.getFolder());
 					toProcess.remove(proc);
+					proc.getLog().outputToSystem();
 				} else {
 					// todo?
+					//errorState(proc.getLog());
+					proc.getLog().outputToSystem();
 				}
 				proc.getLog().outputToSystem();
 			} catch(StaleObjectException e) {
@@ -250,6 +264,7 @@ public class ProcessingManager implements ProcessableContext {
 				// Remove this object
 				processingDataManager.getObjects().remove(objectName);
 				this.objectsAddedThisRun.remove(objectName);
+				this.checkFolderWatchers();
 			} catch(StaleVariableTypeException e) {
 				String lang = e.getLang();
 				String name = e.getName();
@@ -265,6 +280,7 @@ public class ProcessingManager implements ProcessableContext {
 					processingDataManager.getTypes(lang).remove(name);
 					this.typesAddedThisRun.remove(type);
 				}
+				this.checkFolderWatchers();
 			} catch(StaleSourceFileException e) {
 				String path = e.getPath();
 				List<Integer> toReAdd = processingDataManager.getItemsForSourceFile(path);
@@ -280,6 +296,7 @@ public class ProcessingManager implements ProcessableContext {
 				ctx.removeSourceFile(path);
 				// Not sure this is required
 				this.sourceFilesAddedThisRun.remove(path);
+				this.checkFolderWatchers();
 			}
 			if (!success) {
 				return;
@@ -409,7 +426,7 @@ public class ProcessingManager implements ProcessableContext {
 		}
 		//item.assignItemId(newItemId());
 		items.add(item);
-		this.appLog.info("Added item #"+item.getItemId()+" as "+item.getName());
+		jasperResources.engineDebug("Added item #"+item.getItemId()+" as "+item.getName());
 		if (item instanceof ComponentItem) {
 			ComponentItem c = (ComponentItem)item;
 			toProcess.add(c);
@@ -418,9 +435,9 @@ public class ProcessingManager implements ProcessableContext {
 			BuildComponentItem b = (BuildComponentItem)item;
 			buildsToInit.add(b);
 			//items.add(b);
-		} else if (item instanceof FolderWatcherItem) {
-			FolderWatcherItem f = (FolderWatcherItem)item;
-			checkFilesForFolderWatcher(f);
+		//} else if (item instanceof FolderWatcherItem) {
+		//	FolderWatcherItem f = (FolderWatcherItem)item;
+		//	checkFilesForFolderWatcher(f);
 		}
 	}
 
@@ -444,13 +461,10 @@ public class ProcessingManager implements ProcessableContext {
 			objectsAddedThisRun.add(e.getKey());
 		});
 
-		changes.getSourceFiles().forEach(sourceFile -> {
-			ctx.updateSourceFile(sourceFile);
+		changes.getSourceFilesAdded().forEach(sourceFile -> {
+			ctx.addSourceFile(sourceFile);
 			sourceFilesAddedThisRun.add(sourceFile.getPath());
 		});
-		//changes.getTypesModified().stream().map(Pair::getRight).forEach(type -> {
-		//	typesAddedThisRun.add(type);
-		//});
 
 		// Add folder watchers
 		changes.getFolderWatchersAdded().forEach(pair -> {
@@ -461,8 +475,8 @@ public class ProcessingManager implements ProcessableContext {
 			
 			FolderWatcherItem item = new FolderWatcherItem(id, path, w, this, jasperResources, configs, originatorId, folder);
 			items.add(item);
-			checkFilesForFolderWatcher(item);
-		});
+			checkFolderWatcherAgainstUserFiles(item);
+ 		});
 
 		// Add file processors
 		changes.getFileProcessorsAdded().forEach(proc -> {
@@ -479,6 +493,7 @@ public class ProcessingManager implements ProcessableContext {
 		processingDataManager.commitChanges(changes);
 	}
 
+	/*
 	protected void checkFilesForFolderWatcher(FolderWatcherItem item) {
 		String path = item.getPath();
 		// Check all user files for the given folder watcher
@@ -492,7 +507,8 @@ public class ProcessingManager implements ProcessableContext {
 			}
 		}
 	}
-
+*/
+	
 	// Get item with the given ID
 	protected Item getItem(int itemId) {
 		return items.stream().filter(item -> item.getItemId() == itemId).findAny().orElse(null);

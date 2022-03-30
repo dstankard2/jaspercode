@@ -1,0 +1,10 @@
+<jasper:componentSet xmlns="http://jaspercode.sf.net/patterns/js/page"
+		xmlns:jasper="http://jaspercode.sf.net/config">
+
+	<page name="BookCheckInPage" />
+
+<!-- 
+	<pageModel pageName='BookCheckInPage' attributes='title' />
+ -->
+
+</jasper:componentSet>

@@ -54,13 +54,20 @@ public class FolderWatcherItem implements Item {
 		return path;
 	}
 	
+	public void removeProcessable(String filepath) {
+		procs.remove(filepath);
+	}
+
 	public FolderWatcherProcessable getProc(String filePath) {
-		jasperResources.engineDebug("Folder watcher ID "+itemId+" processing for path "+filePath);
+		if (!filePath.startsWith(path)) {
+			return null;
+		}
 		if (procs.get(filePath)!=null) {
 			return null;
 		}
+		jasperResources.engineDebug("Folder watcher ID "+itemId+" adding processor for path "+filePath);
 		FolderWatcherProcessable ret = new FolderWatcherProcessable(itemId, processableContext, configs, 
-				jasperResources, filePath, folderWatcher, folder);
+				jasperResources, filePath, folderWatcher, folder, this);
 		procs.put(filePath, ret);
 		return ret;
 	}

@@ -14,7 +14,7 @@ public interface ProcessingContext {
 	void writeUserFile(UserFile userFile);
 	void removeUserFile(UserFile userFile);
 	SourceFile getSourceFile(String path);
-	void updateSourceFile(SourceFile srcFile);
+	void addSourceFile(SourceFile srcFile);
 	void removeSourceFile(String path);
 
 }
