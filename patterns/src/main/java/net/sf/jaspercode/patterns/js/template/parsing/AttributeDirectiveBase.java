@@ -1,6 +1,6 @@
 package net.sf.jaspercode.patterns.js.template.parsing;
 
-public abstract class AttributeDirectiveBase implements AttributeDirective,Comparable<AttributeDirective> {
+public abstract class AttributeDirectiveBase implements AttributeDirective {
 
 	@Override
 	public int getPriority() { return 10; }

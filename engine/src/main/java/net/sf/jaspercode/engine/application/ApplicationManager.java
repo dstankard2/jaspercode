@@ -26,10 +26,10 @@ public class ApplicationManager implements ProcessingContext {
 	long lastScan = 0L;
 
 	public ApplicationManager(String applicationName, File applicationDir,File outputDir, EngineProperties engineProperties,
-			EnginePatterns patterns,EngineLanguages languages,PluginManager pluginManager) throws EngineInitException {
+			EnginePatterns patterns,EngineLanguages languages,PluginManager pluginManager, JasperResources jasperResources) throws EngineInitException {
 		this.applicationName = applicationName;
 		this.appLog = new ProcessorLog("Application:"+applicationName);
-		this.jasperResources = new JasperResources(engineProperties, pluginManager);
+		this.jasperResources = jasperResources;
 		this.resourceManager = new ResourceManager(applicationDir, jasperResources);
 		this.outputManager = new OutputManager(outputDir, jasperResources, appLog);
 		this.processingManager = new ProcessingManager(this, jasperResources, patterns, languages, appLog);
@@ -60,6 +60,7 @@ public class ApplicationManager implements ProcessingContext {
 			if (!firstScan) {
 				appLog.info("*** Begin scan of application "+this.applicationName+" ***");
 			}
+			appLog.info("Scan found "+changes.size()+" updated files");
 			Map<String,String> globalSystemAttributes = resourceManager.getSystemAttributes();
 			// Process changes, output source files
 			processingManager.processChanges(globalSystemAttributes, changes);

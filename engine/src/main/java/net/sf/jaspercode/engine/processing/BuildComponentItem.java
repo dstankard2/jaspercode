@@ -129,7 +129,7 @@ public class BuildComponentItem implements Item {
 					this.buildContext = processor.createBuildContext();
 				}
 			} catch (JasperException e) {
-				this.log.error("Exception while initializing build", e);
+				log.error("Exception while initializing build", e);
 				ret = null;
 			}
 		} else {

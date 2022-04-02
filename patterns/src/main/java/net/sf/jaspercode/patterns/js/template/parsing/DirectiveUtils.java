@@ -9,14 +9,18 @@ import java.util.Set;
 
 import net.sf.jaspercode.api.CodeExecutionContext;
 import net.sf.jaspercode.api.ProcessorContext;
+import net.sf.jaspercode.api.annotation.Plugin;
 import net.sf.jaspercode.api.exception.JasperException;
+import net.sf.jaspercode.api.plugin.EnginePlugin;
+import net.sf.jaspercode.api.plugin.PluginContext;
 import net.sf.jaspercode.langsupport.javascript.JavascriptCode;
 import net.sf.jaspercode.langsupport.javascript.modules.ModuleFunction;
 import net.sf.jaspercode.langsupport.javascript.modules.ModuleSourceFile;
 import net.sf.jaspercode.patterns.js.parsing.JavascriptParser;
 import net.sf.jaspercode.patterns.js.parsing.JavascriptParsingResult;
 
-public class DirectiveUtils {
+@Plugin
+public class DirectiveUtils implements EnginePlugin {
 
 	public static final String PAGE_VAR = "_page";
 
@@ -28,58 +32,70 @@ public class DirectiveUtils {
 	
 	public static final String TEMPLATE_ROOT_ELEMENT_REF = "_r";
 
-	// TODO: Create an engine plugin that will create these directives and store them in a central location, so they don't 
-	// have to be stored in application object map.
-	// TODO: This should use streaming
-	@SuppressWarnings("unchecked")
-	public static List<AttributeDirective> getAttributeDirectives(ProcessorContext ctx) throws JasperException {
-		List<AttributeDirective> ret = new ArrayList<AttributeDirective>();
-		String objName = "net.sf.javascribe.view.templating.AttributeDirectives";
-		
-		List<AttributeDirectiveBase> systemDirectives = (List<AttributeDirectiveBase>)ctx.getObject(objName);
-		if (systemDirectives==null) {
-			systemDirectives = new ArrayList<AttributeDirectiveBase>();
-			ctx.setObject(objName, systemDirectives);
-			Set<Class<AttributeDirective>> cls = ctx.getApplicationContext().getPlugins(AttributeDirective.class);
-			for(Class<?> cl : cls) {
-				AttributeDirectiveBase dir;
-				try {
-					dir = (AttributeDirectiveBase)cl.newInstance();
-					systemDirectives.add(dir);
-				} catch(Exception e) {
-					throw new JasperException("Couldn't find attribute directives",e);
-				}
-			}
-			Collections.sort(systemDirectives);
-		}
-		for(AttributeDirective d : systemDirectives) {
-			ret.add(d);
-		}
-		return ret;
+
+
+	// Implement Engine plugin iterface
+
+	private static List<AttributeDirective> attributeDirectives = new ArrayList<AttributeDirective>();
+	private static Map<String,ElementDirective> elementDirectives = new HashMap<String,ElementDirective>();
+	private PluginContext ctx;
+
+	@Override
+	public void setPluginContext(PluginContext ctx) {
+		this.ctx = ctx;
 	}
 
-	@SuppressWarnings("unchecked")
-	public static Map<String,ElementDirective> getElementDirectives(ProcessorContext ctx) throws JasperException {
-		Map<String,ElementDirective> ret = new HashMap<String,ElementDirective>();
-		String objName = "net.sf.javascribe.view.templating.ElementDirectives";
-		
-		ret = (Map<String,ElementDirective>)ctx.getObject(objName);
-		if (ret==null) {
-			ret = new HashMap<String,ElementDirective>();
-			ctx.setObject(objName, ret);
-			Set<Class<ElementDirective>> cls = ctx.getApplicationContext().getPlugins(ElementDirective.class);
-			for(Class<?> cl : cls) {
-				ElementDirective dir;
-				try {
-					dir = (ElementDirective)cl.newInstance();
-					ret.put(dir.getElementName(), dir);
-				} catch(Exception e) {
-					throw new JasperException("Couldn't load attribute directives",e);
-				}
+	@Override
+	public String getPluginName() {
+		return "HtmlTemplateDirectives";
+	}
+
+	@Override
+	public void engineStart() {
+		Set<Class<AttributeDirective>> directiveClasses = ctx.getPlugins(AttributeDirective.class);
+		directiveClasses.forEach(cl -> {
+			AttributeDirectiveBase dir;
+			try {
+				dir = (AttributeDirectiveBase)cl.getConstructor().newInstance();
+				attributeDirectives.add(dir);
+			} catch(Exception e) {
+				ctx.getLog().error("Couldn't find attribute directives", e);
+			}
+		});
+		Collections.sort(attributeDirectives);
+
+		Set<Class<ElementDirective>> cls = ctx.getPlugins(ElementDirective.class);
+		for(Class<?> cl : cls) {
+			ElementDirective dir;
+			try {
+				dir = (ElementDirective)cl.getConstructor().newInstance();
+				elementDirectives.put(dir.getElementName(), dir);
+			} catch(Exception e) {
+				ctx.getLog().error("Couldn't load attribute directives", e);
 			}
 		}
-		
-		return ret;
+	
+	}
+
+	@Override
+	public void scanFinish(String applicationName) {
+		// no-op
+	}
+	
+	// End of Engine Plugin implementation
+
+	public static List<AttributeDirective> getAttributeDirectives(ProcessorContext ctx) throws JasperException {
+		if (attributeDirectives.size()==0) {
+			ctx.getLog().warn("Found no attribute directives for HTML Templates!");
+		}
+		return new ArrayList<>(attributeDirectives);
+	}
+
+	public static Map<String,ElementDirective> getElementDirectives(ProcessorContext ctx) throws JasperException {
+		if (elementDirectives.size()==0) {
+			ctx.getLog().warn("Found no element directives for HTML Templates!");
+		}
+		return elementDirectives;
 	}
 
 	public static String parsePartialExpression(String s,CodeExecutionContext execCtx) throws JasperException {

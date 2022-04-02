@@ -206,9 +206,9 @@ public class ProcessingManager implements ProcessableContext {
 	}
 	
 	protected void runProcessing() {
-		jasperResources.engineDebug("runProcessables - There are "+buildsToInit.size()+" builds to init");
-		jasperResources.engineDebug("runProcessables - There are "+buildsToProcess.size()+" builds to process");
-		jasperResources.engineDebug("runProcessables - There are "+toProcess.size()+" processables to process");
+		jasperResources.getEngineLogger().debug("runProcessables - There are "+buildsToInit.size()+" builds to init");
+		jasperResources.getEngineLogger().debug("runProcessables - There are "+buildsToProcess.size()+" builds to process");
+		jasperResources.getEngineLogger().debug("runProcessables - There are "+toProcess.size()+" processables to process");
 
 		typesAddedThisRun.clear();
 		sourceFilesAddedThisRun.clear();
@@ -225,7 +225,8 @@ public class ProcessingManager implements ProcessableContext {
 				buildsToInit.remove(b);
 				commitChanges(changes, b.getConfigs(), b.getFolder());
 			} else {
-				errorState(b.getLog());
+				b.getLog().outputToSystem();
+				//errorState(b.getLog());
 				return;
 			}
 		}
@@ -288,7 +289,7 @@ public class ProcessingManager implements ProcessableContext {
 					toReAdd.stream().forEach(id -> this.removeItem(id, false));
 				} else {
 					// this shouldn't happen?
-					jasperResources.engineDebug("Source file "+e.getPath()+" was stale but I found no dependent items");
+					jasperResources.getEngineLogger().debug("Source file "+e.getPath()+" was stale but I found no dependent items");
 				}
 				// Clear the processable's log
 				proc.getLog().getMessages(true);
@@ -352,7 +353,7 @@ public class ProcessingManager implements ProcessableContext {
 
 		FolderWatcherItem folderWatcher = (item instanceof FolderWatcherItem) ? (FolderWatcherItem)item : null;
 
-		jasperResources.engineDebug("Remove item "+item.getName()+"("+id+") with perm as "+permanent);
+		jasperResources.getEngineLogger().debug("Remove item "+item.getName()+"("+id+") with perm as "+permanent);
 
 		// Remove this item from items
 		this.items.remove(item);
@@ -426,7 +427,7 @@ public class ProcessingManager implements ProcessableContext {
 		}
 		//item.assignItemId(newItemId());
 		items.add(item);
-		jasperResources.engineDebug("Added item #"+item.getItemId()+" as "+item.getName());
+		jasperResources.getEngineLogger().debug("Added item #"+item.getItemId()+" as "+item.getName());
 		if (item instanceof ComponentItem) {
 			ComponentItem c = (ComponentItem)item;
 			toProcess.add(c);

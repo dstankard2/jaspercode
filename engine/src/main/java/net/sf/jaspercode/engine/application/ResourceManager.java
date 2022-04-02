@@ -212,6 +212,7 @@ public class ResourceManager {
 
 		// Handle pre-existing and added subfolders
 		Arrays.asList(dir.listFiles()).forEach(f -> {
+			long start = System.currentTimeMillis();
 			if ((f.isDirectory()) && (!folder.isIgnore(f.getName()))) {
 				ApplicationFolderImpl subFolder = folder.getSubFolders().get(f.getName());
 				if (subFolder==null) {
@@ -220,6 +221,8 @@ public class ResourceManager {
 				}
 				checkFolder(f, subFolder, changes);
 			}
+			long end = System.currentTimeMillis();
+			long dur = end - start;
 		});
 		
 		// Read files in the directory.  Check for files that have been changed.  Remove them.

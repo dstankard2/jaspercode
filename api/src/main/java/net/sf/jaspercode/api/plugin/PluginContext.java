@@ -1,5 +1,7 @@
 package net.sf.jaspercode.api.plugin;
 
+import java.util.Set;
+
 import net.sf.jaspercode.api.logging.Log;
 
 public interface PluginContext {
@@ -9,6 +11,8 @@ public interface PluginContext {
 	boolean getBooleanEngineProperty(String name,boolean defaultValue);
 
 	Log getLog();
+
+	public <T> Set<Class<T>> getPlugins(Class<T> superClass);
 
 }
 
