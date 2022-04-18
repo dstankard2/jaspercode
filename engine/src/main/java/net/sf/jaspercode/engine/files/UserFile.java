@@ -49,6 +49,5 @@ public class UserFile implements WatchedResource,ApplicationFile {
 		return fin;
 	}
 
-
 }
 

@@ -1,6 +1,12 @@
 package net.sf.jaspercode.engine.files;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 public class SystemAttributesFile implements WatchedResource {
 
@@ -10,11 +16,33 @@ public class SystemAttributesFile implements WatchedResource {
 	private long lastModified = 0L;
 	private ApplicationFolderImpl folder = null;
 
-	public SystemAttributesFile(Map<String, String> systemAttributes, long lastModified, ApplicationFolderImpl folder) {
+	public SystemAttributesFile(File systemAttributesFile, ApplicationFolderImpl folder) {
 		super();
-		this.systemAttributes = systemAttributes;
-		this.lastModified = lastModified;
+		systemAttributes = readAttributes(systemAttributesFile);
+		//this.lastModified = lastModified;
 		this.folder = folder;
+	}
+
+	private Map<String,String> readAttributes(File f) {
+		Properties props = new Properties();
+		Map<String,String> values = new HashMap<>();
+
+		try {
+			try (FileInputStream fin = new FileInputStream(f)) {
+				props.load(fin);
+				props.entrySet().forEach(e -> {
+					values.put(
+							e.getKey() != null ? e.getKey().toString() : "", 
+							e.getValue() != null ? e.getValue().toString() : "");
+				});
+			}
+		} catch(FileNotFoundException e) {
+			// logically can't happen
+		} catch(IOException e) {
+			// TODO: ???
+		}
+
+		return values;
 	}
 
 	@Override

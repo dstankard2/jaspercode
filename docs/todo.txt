@@ -2,6 +2,7 @@
 * Bugs
 
 Build component should be reprocessed when dependency is added.
+When a build item is removed, all items originating in the folder should be removed/re-added
 
 
 

@@ -1,58 +1,53 @@
 package net.sf.jaspercode.engine.application;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
-import net.sf.jaspercode.api.config.ComponentSet;
 import net.sf.jaspercode.engine.ComponentFileReader;
 import net.sf.jaspercode.engine.EngineInitException;
 import net.sf.jaspercode.engine.JasperResources;
 import net.sf.jaspercode.engine.files.ApplicationFolderImpl;
-import net.sf.jaspercode.engine.files.ComponentFile;
-import net.sf.jaspercode.engine.files.JasperPropertiesFile;
 import net.sf.jaspercode.engine.files.SystemAttributesFile;
-import net.sf.jaspercode.engine.files.UserFile;
-import net.sf.jaspercode.engine.processing.AddedFile;
 import net.sf.jaspercode.engine.processing.FileChange;
-import net.sf.jaspercode.engine.processing.RemovedFile;
 
 public class ResourceManager {
 	
 	File directory;
-	ComponentFileReader componentFileReader;
+	//ComponentFileReader componentFileReader;
 	ApplicationFolderImpl folder = null;
 	SystemAttributesFile attsFile = null;
 
 	public ResourceManager(File applicationFolder, JasperResources jasperResources) throws EngineInitException {
 		this.directory = applicationFolder;
-		this.componentFileReader = new ComponentFileReader(jasperResources.getXmlConfigClasses());
-		this.folder = new ApplicationFolderImpl(directory, null);
+		ComponentFileReader componentFileReader = new ComponentFileReader(jasperResources.getXmlConfigClasses());
+		//try {
+			this.folder = new ApplicationFolderImpl(applicationFolder, null, componentFileReader);
+		//} catch(IOException e) {
+		//	throw new EngineInitException("Couldn't read application folder", e);
+		//}
 	}
 
 	public Map<String,String> getSystemAttributes() {
+		return folder.getGlobalSystemAttributes();
+/*
 		if (attsFile==null) {
 			return new HashMap<>();
 		} else {
 			return attsFile.getSystemAttributes();
 		}
+		*/
 	}
 
 	public List<FileChange> getFileChanges() {
-		List<FileChange> changes = new ArrayList<>();
-		
-		checkFolder(directory, folder, changes);
-		
-		return changes;
+		return folder.findChanges(true);
+	}
+	
+	public void close() {
+		folder.remove(false);
 	}
 
+	/*
 	// The contents of this folder should be removed, and removed files added to changes
 	private void resetFolder(ApplicationFolderImpl folder, List<FileChange> changes) {
 		
@@ -94,7 +89,9 @@ public class ResourceManager {
 
 		return values;
 	}
+	*/
 
+	/*
 	private void readSystemAttributesFile(File attrFile, ApplicationFolderImpl rootFolder) {
 		Map<String,String> values = readProperties(attrFile);
 		attsFile = new SystemAttributesFile(values, attrFile.lastModified(), rootFolder);
@@ -108,7 +105,9 @@ public class ResourceManager {
 		
 		return ret;
 	}
-	
+	*/
+
+	/*
 	private File findFile(String name, File dir) {
 		return Arrays.asList(dir.listFiles()).stream().filter(f -> f.getName().equals(name)).findFirst().orElse(null);
 	}
@@ -294,6 +293,7 @@ public class ResourceManager {
 			}
 		});
 	}
-
+*/
+	
 }
 

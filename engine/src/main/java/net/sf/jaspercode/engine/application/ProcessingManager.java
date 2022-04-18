@@ -404,6 +404,9 @@ public class ProcessingManager implements ProcessableContext {
 		if (buildCompItem != null) {
 			buildsToInit.remove(buildCompItem);
 			buildsToProcess.remove(buildCompItem);
+			// Unset the folder's build component.
+			buildCompItem.getFolder().setBuildComponentItem(null);
+			// TODO: The folder will have to be reloaded.
 		}
 
 		toRemove.forEach(i -> {

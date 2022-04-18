@@ -1,6 +1,15 @@
 package net.sf.jaspercode.engine.files;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 public class JasperPropertiesFile implements WatchedResource {
 
@@ -9,11 +18,37 @@ public class JasperPropertiesFile implements WatchedResource {
 	private Map<String,String> properties = null;
 	private long lastModified = 0L;
 	private ApplicationFolderImpl folder = null;
+	List<String> ignoreList = new ArrayList<>();
 	
-	public JasperPropertiesFile(Map<String,String> properties,long lastModified,ApplicationFolderImpl folder) {
-		this.properties = properties;
-		this.lastModified = lastModified;
+	public JasperPropertiesFile(File file, ApplicationFolderImpl folder) {
+		this.properties = readProperties(file);
 		this.folder = folder;
+		if (properties.containsKey("ignore")) {
+			String ignoreString = properties.get("ignore");
+			ignoreList = Arrays.asList(ignoreString.split(","));
+		}
+	}
+
+	private Map<String,String> readProperties(File f) {
+		Properties props = new Properties();
+		Map<String,String> values = new HashMap<>();
+
+		try {
+			try (FileInputStream fin = new FileInputStream(f)) {
+				props.load(fin);
+				props.entrySet().forEach(e -> {
+					values.put(
+							e.getKey() != null ? e.getKey().toString() : "", 
+							e.getValue() != null ? e.getValue().toString() : "");
+				});
+			}
+		} catch(FileNotFoundException e) {
+			// logically can't happen
+		} catch(IOException e) {
+			// TODO: ???
+		}
+
+		return values;
 	}
 
 	@Override
@@ -38,6 +73,10 @@ public class JasperPropertiesFile implements WatchedResource {
 	@Override
 	public ApplicationFolderImpl getFolder() {
 		return folder;
+	}
+	
+	public boolean isIgnore(String name) {
+		return ignoreList.contains(name);
 	}
 
 }
