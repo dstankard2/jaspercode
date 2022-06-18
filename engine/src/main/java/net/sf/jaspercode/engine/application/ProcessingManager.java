@@ -84,7 +84,7 @@ public class ProcessingManager implements ProcessableContext {
 	// at the end remove all changes and add all new additions
 	// This avoids a problem of trying to add something that is intended to be removed but hasn't been yet
 	public void processChanges(Map<String,String> globalSystemAttributes, List<FileChange> changes) {
-		Set<Item> itemsToAdd = new HashSet<>();
+		List<Item> itemsToAdd = new ArrayList<>();
 		Set<UserFile> userFilesAdded = new HashSet<>();
 		Set<UserFile> userFilesRemoved = new HashSet<>();
 		

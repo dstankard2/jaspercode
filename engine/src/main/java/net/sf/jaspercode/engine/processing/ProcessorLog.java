@@ -29,7 +29,8 @@ public class ProcessorLog implements Log {
 			}
 			p.println(b);
 			if (msg.getThrowable()!=null) {
-				msg.getThrowable().printStackTrace(p);
+				// TODO: This is only necessary when debugging the engine
+				//msg.getThrowable().printStackTrace(p);
 			}
 		}
 	}

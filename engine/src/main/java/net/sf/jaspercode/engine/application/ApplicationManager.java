@@ -53,6 +53,7 @@ public class ApplicationManager implements ProcessingContext {
 		
 		if (firstScan) {
 			appLog.info("*** Begin scan of application "+this.applicationName+" ***");
+			outputManager.clearOutput();
 		}
 		
 		if (changes.size()>0) {

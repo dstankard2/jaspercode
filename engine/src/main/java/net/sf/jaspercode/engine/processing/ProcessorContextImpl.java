@@ -57,8 +57,12 @@ public class ProcessorContextImpl implements ProcessorContext {
 
 	@Override
 	public String getSystemAttribute(String name) {
-		changes.getAttributeDependencies().add(name);
-		return ctx.getSystemAttribute(name);
+		String ret = changes.getAttributesAdded().get(name);
+		if (ret==null) {
+			changes.getAttributeDependencies().add(name);
+			ret = ctx.getSystemAttribute(name);
+		}
+		return ret;
 	}
 
 	@Override

@@ -27,6 +27,21 @@ public class OutputManager {
 		this.appLog = appLog;
 	}
 	
+	public void clearOutput() {
+		clearDirectory(outputDir);
+	}
+	
+	private void clearDirectory(File dir) {
+		for(File f : dir.listFiles()) {
+			if (f.isDirectory()) {
+				clearDirectory(f);
+			} else {
+				f.delete();
+			}
+		}
+		dir.delete();
+	}
+
 	protected File getFile(String path) {
 		return new File(outputDir, path);
 	}

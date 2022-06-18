@@ -141,15 +141,6 @@ public class MavenBuildComponentProcessor implements BuildComponentProcessor {
 		cmd.addPhase(phase);
 	}
 
-	/*
-	@Override
-	public void initialize(BuildComponent component, BuildProcessorContext ctx) throws JasperException {
-		this.component = (MavenBuild)component;
-		this.ctx = ctx;
-
-	}
-	*/
-
 	@Override
 	public void generateBuild() throws JasperException {
 		String path = ctx.getFolder().getPath();

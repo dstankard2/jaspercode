@@ -92,7 +92,7 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 	public List<FileChange> findChanges(boolean required) {
 		List<FileChange> ret = new ArrayList<>();
 
-		if (required) {
+		if ((required) && (watchKey != null)) {
 			List<WatchEvent<?>> events = watchKey.pollEvents();
 			if (events.size()>0) {
 				List<File> filesAdded = new ArrayList<>();
@@ -192,34 +192,6 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 		});
 	}
 
-	/*
-	@SneakyThrows
-	protected void addFile(File file) {
-		String name = file.getName();
-		if (file.isDirectory()) {
-			ApplicationFolderImpl subfolder = new ApplicationFolderImpl(file, this, componentFileReader);
-			this.subFolders.put(name, subfolder);
-			subfolder.initFolder();
-		} else if (name.equals("jasper.properties")) {
-			jasperProperties = new JasperPropertiesFile(file, this);
-			this.clearFolderContents();
-			this.initFolder();
-		} else if ((name.equals("systemAttributes.properties")) && (getParent()==null)) {
-			
-		} else if (name.endsWith(".xml")) {
-			ComponentSet set = componentFileReader.readFile(file);
-			if (set!=null) {
-				ComponentFile compFile = new ComponentFile(set, file, this);
-				this.changes.add(new AddedFile(compFile));
-			}
-		} else {
-			UserFile userFile = new UserFile(file, this);
-			//this.userFiles.put(name, userFile);
-			this.changes.add(new AddedFile(userFile));
-		}
-	}
-	*/
-
 	// Always add changes since we're adding the files
 	// If jasper.properties is changed, remove this folder and initialize it again and that's it.
 	// If systemAttributes.properties is changed and this is the root folder, remove this folder and initialize it again and that's it
@@ -252,6 +224,8 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 			}
 		}
 		
+		// First process files in this folder, then traverse subfolders
+		List<File> foldersToCheck = new ArrayList<>();
 		for(File f : fileList) {
 			String name = f.getName();
 			
@@ -260,9 +234,7 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 				continue;
 			}
 			if (f.isDirectory()) {
-				ApplicationFolderImpl folder = new ApplicationFolderImpl(f, this, componentFileReader);
-				this.subFolders.put(name, folder);
-				this.changes.addAll(folder.findChanges(true));
+				foldersToCheck.add(f);
 			} else {
 				ComponentFile compFile = null;
 				if (f.getName().endsWith(".xml")) {
@@ -279,6 +251,12 @@ public class ApplicationFolderImpl implements WatchedResource,ApplicationFolder 
 					this.userFiles.put(f.getName(), uf);
 				}
 			}
+		}
+		for(File f : foldersToCheck) {
+			String folderName = f.getName();
+			ApplicationFolderImpl folder = new ApplicationFolderImpl(f, this, componentFileReader);
+			this.subFolders.put(folderName, folder);
+			this.changes.addAll(folder.findChanges(true));
 		}
 	}
 
